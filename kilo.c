@@ -217,8 +217,7 @@ void editorAtExit(void) {
     disableRawMode(STDIN_FILENO);
 
     /* Disable alternate screen. */
-    if( E.altscr )
-    {
+    if( E.altscr ) {
         /* "?47l" ~1978 VT100 DECSET magic. "?1049l" is similar xterm magic */
 		/*  from... some indeterminate time, possibly even before X Windows */
 		/*  existed. */
@@ -234,6 +233,11 @@ void editorAtExit(void) {
             exit(1);
         }
         E.altscr = 0;
+    } else if( E.no_altscr ) {
+        /* If we aren't using the alternate-screen, move the cursor to the */
+        /*  end of the screen and force a line-advance instead, to prepare */
+        /*  for the return to the CLI. */
+        printf("\x1b[%d;%dH\n\n",E.screenrows+1,E.screencols+1);
     }
 }
 
