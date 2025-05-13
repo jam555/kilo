@@ -1317,14 +1317,18 @@ void initEditor(void) {
     E.syntax = NULL;
     if( !E.altscr && !E.no_altscr )
     {
-        /* Activate alternate screen. To disable, use 'l' instead of 'h'. */
-        const char altscren[] = "\x1b[?1049h\n";
-        const int altscren_len = sizeof( altscren );
-        if ( write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
-            perror("Unable to select the alternate screen display buffer");
-            exit(1);
+        char *termstr = getenv( "TERM" );
+        if( termstr && strstr( termstr, "xterm" ) )
+        {
+            /* Activate alternate screen. To disable, use 'l' instead of 'h'. */
+            const char altscren[] = "\x1b[?1049h\n";
+            const int altscren_len = sizeof( altscren );
+            if ( write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
+                perror("Unable to select the alternate screen display buffer");
+                exit(1);
+            }
+            E.altscr = 1;
         }
-        E.altscr = 1;
     }
     updateWindowSize();
     signal(SIGWINCH, handleSigWinCh);
