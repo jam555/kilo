@@ -94,6 +94,8 @@ typedef struct hlcolor {
 } hlcolor;
 
 struct editorConfig {
+    int no_altscr;  /* Forbid usage of the alternate-screen. */
+
     int cx,cy;  /* Cursor x and y position in characters */
     int rowoff;     /* Offset of row displayed. */
     int coloff;     /* Offset of column displayed. */
@@ -1309,7 +1311,7 @@ void initEditor(void) {
     E.dirty = 0;
     E.filename = NULL;
     E.syntax = NULL;
-    if( !E.altscr )
+    if( !E.altscr && !E.no_altscr )
     {
         /* Activate alternate screen. To disable, use 'l' instead of 'h'. */
         const char altscren[] = "\x1b[?1049h\n";
@@ -1325,9 +1327,23 @@ void initEditor(void) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr,"Usage: kilo <filename>\n");
+    const char noaltscr_opt[] = "--no-alt-screen";
+    if (argc < 2 || argc > 3) {
+        fprintf(stderr,"Usage: kilo <filename> [%s]\n",noaltscr_opt);
         exit(1);
+    }
+
+    if(argc == 3) {
+        /* Surpress usage of the alternate screen: useful if you */
+        /*  want to keep info displayed on exit. */
+        if( strcmp( noaltscr_opt, argv[2] ) != 0 ) {
+            perror("Unfamiliar option:");
+            fprintf(stderr,"  %s",argv[2]);
+            exit(1);
+        }
+        E.no_altscr = 1;
+    } else {
+        E.no_altscr = 0;
     }
 
     initEditor();
