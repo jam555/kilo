@@ -222,12 +222,12 @@ void editorAtExit(void) {
 		/*  existed. */
             /* To instead enable, use 'h' instead of 'l': note that */
             /*  initEditor() does the enabling already. */
-        const char altscren[] = "\x1b[?47l";
+        const char altscren[] = "\x1b[?1049l";
         const int altscren_len = sizeof( altscren );
-        if (write(STDOUT_FILENO, "\x1b[?47l", altscren_len) != altscren_len) {
+        if (write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
             perror("Unable to deselect the alternate screen display buffer");
             perror("please type" );
-			perror("  echo -e \"\\e[?47l\"");
+			perror("  echo -e \"\\e[?1049l\"");
             perror("and then hit your enter key" );
             exit(1);
         }
@@ -1312,7 +1312,7 @@ void initEditor(void) {
     if( !E.altscr )
     {
         /* Activate alternate screen. To disable, use 'l' instead of 'h'. */
-        const char altscren[] = "\x1b[?47h\n";
+        const char altscren[] = "\x1b[?1049h\n";
         const int altscren_len = sizeof( altscren );
         if ( write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
             perror("Unable to select the alternate screen display buffer");
