@@ -54,6 +54,14 @@
 #include <fcntl.h>
 #include <signal.h>
 
+ /* TODO: Move these into a header and wrap in ifdef()s for */
+ /*  override support. */
+#define KILO_QUERY_LEN 256
+#define KILO_QUIT_TIMES 3
+#define MILA_TABSIZE 8
+	/* This is the number of lines for the status lines. */
+#define MILA_UTILITYLINES 2
+
 /* Syntax highlight types */
 #define HL_NORMAL 0
 #define HL_NONPRINT 1
@@ -223,12 +231,14 @@ void editorAtExit(void) {
 		/*  existed. */
             /* To instead enable, use 'h' instead of 'l': note that */
             /*  initEditor() does the enabling already. */
-        const char altscren[] = "\x1b[?1049l";
+#define MILA_TERMCODES_1 "\x1b[?1049l"
+        const char altscren[] = MILA_TERMCODES_1;
         const int altscren_len = sizeof( altscren );
         if (write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
             perror("Unable to deselect the alternate screen display buffer");
             perror("please type" );
-			perror("  echo -e \"\\e[?1049l\"");
+#define MILA_TERMCODES_2 "\"\\e[?1049l\""
+            fprintf(stderr,"  echo -e %s",MILA_TERMCODES_2);
             perror("and then hit your enter key" );
             exit(1);
         }
@@ -237,7 +247,9 @@ void editorAtExit(void) {
         /* If we aren't using the alternate-screen, move the cursor to the */
         /*  end of the screen and force a line-advance instead, to prepare */
         /*  for the return to the CLI. */
-        printf("\x1b[%d;%dH\n\n",E.screenrows+1,E.screencols+1);
+#error "We can't use this, we need the numbers printed!"
+#define MILA_TERMCODES_3 \x1b[%d;%dH
+        printf("%s\n\n",MILA_TERMCODES_3,E.screenrows+1,E.screencols+1);
     }
 }
 
@@ -336,7 +348,8 @@ int getCursorPosition(int ifd, int ofd, int *rows, int *cols) {
     unsigned int i = 0;
 
     /* Report cursor location */
-    if (write(ofd, "\x1b[6n", 4) != 4) return -1;
+#define MILA_TERMCODES_4 "\x1b[6n"
+    if (write(ofd, MILA_TERMCODES_4, 4) != 4) return -1;
 
     /* Read the response: ESC [ rows ; cols R */
     while (i < sizeof(buf)-1) {
@@ -367,13 +380,16 @@ int getWindowSize(int ifd, int ofd, int *rows, int *cols) {
         if (retval == -1) goto failed;
 
         /* Go to right/bottom margin and get position. */
-        if (write(ofd,"\x1b[999C\x1b[999B",12) != 12) goto failed;
+#define MILA_TERMCODES_5 "\x1b[999C\x1b[999B"
+        if (write(ofd,MILA_TERMCODES_5,12) != 12) goto failed;
         retval = getCursorPosition(ifd,ofd,rows,cols);
         if (retval == -1) goto failed;
 
         /* Restore position. */
         char seq[32];
-        snprintf(seq,32,"\x1b[%d;%dH",orig_row,orig_col);
+#error "We can't do this, because we need to print ints!"
+#define MILA_TERMCODES_6 "\x1b[%d;%dH"
+        snprintf(seq,32,MILA_TERMCODES_6,orig_row,orig_col);
         if (write(ofd,seq,strlen(seq)) == -1) {
             /* Can't recover... */
         }
@@ -591,18 +607,18 @@ void editorUpdateRow(erow *row) {
         if (row->chars[j] == TAB) tabs++;
 
     unsigned long long allocsize =
-        (unsigned long long) row->size + tabs*8 + nonprint*9 + 1;
+        (unsigned long long) row->size + tabs*MILA_TABSIZE + nonprint*9 + 1;
     if (allocsize > UINT32_MAX) {
         printf("Some line of the edited file is too long for kilo\n");
         exit(1);
     }
 
-    row->render = malloc(row->size + tabs*8 + nonprint*9 + 1);
+    row->render = malloc(row->size + tabs*MILA_TABSIZE + nonprint*9 + 1);
     idx = 0;
     for (j = 0; j < row->size; j++) {
         if (row->chars[j] == TAB) {
             row->render[idx++] = ' ';
-            while((idx+1) % 8 != 0) row->render[idx++] = ' ';
+            while((idx+1) % MILA_TABSIZE != 0) row->render[idx++] = ' ';
         } else {
             row->render[idx++] = row->chars[j];
         }
@@ -913,8 +929,10 @@ void editorRefreshScreen(void) {
     char buf[32];
     struct abuf ab = ABUF_INIT;
 
-    abAppend(&ab,"\x1b[?25l",6); /* Hide cursor. */
-    abAppend(&ab,"\x1b[H",3); /* Go home. */
+#define MILA_TERMCODES_7 "\x1b[?25l"
+    abAppend(&ab,MILA_TERMCODES_7,6); /* Hide cursor. */
+#define MILA_TERMCODES_8 "\x1b[H"
+    abAppend(&ab,MILA_TERMCODES_8,3); /* Go home. */
     for (y = 0; y < E.screenrows; y++) {
         int filerow = E.rowoff+y;
 
@@ -922,7 +940,8 @@ void editorRefreshScreen(void) {
             if (E.numrows == 0 && y == E.screenrows/3) {
                 char welcome[80];
                 int welcomelen = snprintf(welcome,sizeof(welcome),
-                    "Kilo editor -- verison %s\x1b[0K\r\n", KILO_VERSION);
+#define MILA_TERMCODES_9 "\x1b[0K"
+                    "Kilo editor -- verison %s%s\r\n", KILO_VERSION,MILA_TERMCODES_9);
                 int padding = (E.screencols-welcomelen)/2;
                 if (padding) {
                     abAppend(&ab,"~",1);
@@ -931,7 +950,8 @@ void editorRefreshScreen(void) {
                 while(padding--) abAppend(&ab," ",1);
                 abAppend(&ab,welcome,welcomelen);
             } else {
-                abAppend(&ab,"~\x1b[0K\r\n",7);
+#define MILA_TERMCODES_10 "~\x1b[0K\r\n"
+                abAppend(&ab,MILA_TERMCODES_10,7);
             }
             continue;
         }
@@ -948,16 +968,19 @@ void editorRefreshScreen(void) {
             for (j = 0; j < len; j++) {
                 if (hl[j] == HL_NONPRINT) {
                     char sym;
-                    abAppend(&ab,"\x1b[7m",4);
+#define MILA_TERMCODES_11 "\x1b[7m"
+                    abAppend(&ab,MILA_TERMCODES_11,4);
                     if (c[j] <= 26)
                         sym = '@'+c[j];
                     else
                         sym = '?';
                     abAppend(&ab,&sym,1);
-                    abAppend(&ab,"\x1b[0m",4);
+#define MILA_TERMCODES_12 "\x1b[0m"
+                    abAppend(&ab,MILA_TERMCODES_12,4);
                 } else if (hl[j] == HL_NORMAL) {
                     if (current_color != -1) {
-                        abAppend(&ab,"\x1b[39m",5);
+#define MILA_TERMCODES_13 "\x1b[39m"
+                        abAppend(&ab,MILA_TERMCODES_13,5);
                         current_color = -1;
                     }
                     abAppend(&ab,c+j,1);
@@ -965,7 +988,9 @@ void editorRefreshScreen(void) {
                     int color = editorSyntaxToColor(hl[j]);
                     if (color != current_color) {
                         char buf[16];
-                        int clen = snprintf(buf,sizeof(buf),"\x1b[%dm",color);
+#error "We can't do this, we need to print ints!"
+#define MILA_TERMCODES_14 "\x1b[%dm"
+                        int clen = snprintf(buf,sizeof(buf),MILA_TERMCODES_14,color);
                         current_color = color;
                         abAppend(&ab,buf,clen);
                     }
@@ -973,14 +998,26 @@ void editorRefreshScreen(void) {
                 }
             }
         }
-        abAppend(&ab,"\x1b[39m",5);
-        abAppend(&ab,"\x1b[0K",4);
+#define MILA_TERMCODES_15 "\x1b[39m"
+        abAppend(&ab,MILA_TERMCODES_15,5);
+#define MILA_TERMCODES_16 "\x1b[0K"
+        abAppend(&ab,MILA_TERMCODES_16,4);
         abAppend(&ab,"\r\n",2);
     }
 
+
+
+
+
+    /* The following code draws the utility area. At the current time it only */
+    /*  handles status lines, but I intend to throw other stuff in too. */
+
+
     /* Create a two rows status. First row: */
-    abAppend(&ab,"\x1b[0K",4);
-    abAppend(&ab,"\x1b[7m",4);
+#define MILA_TERMCODES_17 "\x1b[0K"
+    abAppend(&ab,MILA_TERMCODES_17,4);
+#define MILA_TERMCODES_18 "\x1b[7m"
+    abAppend(&ab,MILA_TERMCODES_18,4);
     char status[80], rstatus[80];
     int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
         E.filename, E.numrows, E.dirty ? "(modified)" : "");
@@ -997,10 +1034,12 @@ void editorRefreshScreen(void) {
             len++;
         }
     }
-    abAppend(&ab,"\x1b[0m\r\n",6);
+#define MILA_TERMCODES_19 "\x1b[0m\r\n"
+    abAppend(&ab,MILA_TERMCODES_19,6);
 
     /* Second row depends on E.statusmsg and the status message update time. */
-    abAppend(&ab,"\x1b[0K",4);
+#define MILA_TERMCODES_20 "\x1b[0K"
+    abAppend(&ab,MILA_TERMCODES_20,4);
     int msglen = strlen(E.statusmsg);
     if (msglen && time(NULL)-E.statusmsg_time < 5)
         abAppend(&ab,E.statusmsg,msglen <= E.screencols ? msglen : E.screencols);
@@ -1017,13 +1056,16 @@ void editorRefreshScreen(void) {
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
     if (row) {
         for (j = E.coloff; j < (E.cx+E.coloff); j++) {
-            if (j < row->size && row->chars[j] == TAB) cx += 7-((cx)%8);
+            if (j < row->size && row->chars[j] == TAB) cx += (MILA_TABSIZE-1)-((cx)%MILA_TABSIZE);
             cx++;
         }
     }
-    snprintf(buf,sizeof(buf),"\x1b[%d;%dH",E.cy+1,cx);
+#error "We can't do this, we need to print stuff!"
+#define MILA_TERMCODES_21 "\x1b[%d;%dH"
+    snprintf(buf,sizeof(buf),MILA_TERMCODES_21,E.cy+1,cx);
     abAppend(&ab,buf,strlen(buf));
-    abAppend(&ab,"\x1b[?25h",6); /* Show cursor. */
+#define MILA_TERMCODES_22 "\x1b[?25h"
+    abAppend(&ab,MILA_TERMCODES_22,6); /* Show cursor. */
     write(STDOUT_FILENO,ab.b,ab.len);
     abFree(&ab);
 }
@@ -1039,8 +1081,6 @@ void editorSetStatusMessage(const char *fmt, ...) {
 }
 
 /* =============================== Find mode ================================ */
-
-#define KILO_QUERY_LEN 256
 
 void editorFind(int fd) {
     char query[KILO_QUERY_LEN+1] = {0};
@@ -1215,9 +1255,6 @@ void editorMoveCursor(int key) {
 
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
- /* TODO: Move this into a header and wrap it in an ifdef() for */
- /*  override support. */
-#define KILO_QUIT_TIMES 3
 void editorProcessKeypress(int fd) {
     /* When the file is modified, requires Ctrl-q to be pressed N times
      * before actually quitting. */
@@ -1297,7 +1334,8 @@ void updateWindowSize(void) {
         perror("Unable to query the screen for size (columns / rows)");
         exit(1);
     }
-    E.screenrows -= 2; /* Get room for status bar. */
+    
+	E.screenrows -= MILA_UTILITYLINES; /* Get room for status bar. */
 }
 
 void handleSigWinCh(int unused __attribute__((unused))) {
@@ -1327,7 +1365,8 @@ void initEditor(void) {
         if( termstr && strstr( termstr, "xterm" ) )
         {
             /* Activate alternate screen. To disable, use 'l' instead of 'h'. */
-            const char altscren[] = "\x1b[?1049h\n";
+#define MILA_TERMCODES_23 "\x1b[?1049h\n"
+            const char altscren[] = MILA_TERMCODES_23;
             const int altscren_len = sizeof( altscren );
             if ( write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
                 perror("Unable to select the alternate screen display buffer");
@@ -1364,7 +1403,7 @@ int main(int argc, char **argv) {
     editorSelectSyntaxHighlight(argv[1]);
     editorOpen(argv[1]);
     enableRawMode(STDIN_FILENO);
-		/* TODO: THis message needs to be displayed by default! */
+		/* TODO: This message needs to be displayed by default! */
     editorSetStatusMessage(
         "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
     while(1) {
