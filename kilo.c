@@ -54,6 +54,8 @@
 #include <fcntl.h>
 #include <signal.h>
 
+/* TODO: Find all of the "warning" directives, and fix them. */
+
  /* TODO: Move these into a header and wrap in ifdef()s for */
  /*  override support. */
 #define KILO_QUERY_LEN 256
@@ -149,6 +151,15 @@ enum KEY_ACTION{
         PAGE_DOWN
 };
 
+
+
+void mila_term_cursseek_setpos( int ofile, int row, int col );
+void mila_term_cursseek_finalchar( void );
+
+void mila_term_altscreen_disable( void );
+
+
+
 void editorSetStatusMessage(const char *fmt, ...);
 
 /* =========================== Syntax highlights DB =========================
@@ -212,6 +223,24 @@ struct editorSyntax HLDB[] = {
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 
+void mila_term_cursseek_setpos( int ofile, int row, int col )
+{
+	/* Restore position. */
+	char seq[32];
+#warning "We can't do this, because we need to print ints!"
+#define MILA_TERMCODES_6 "\x1b[%d;%dH"
+	snprintf(seq,32,MILA_TERMCODES_6,row,col);
+	if (write(ofile,seq,strlen(seq)) == -1) {
+		/* Can't recover... */
+	}
+}
+void mila_term_cursseek_finalchar( void )
+{
+	/* (+1,+1) because the screen size is described with C indexing on our */
+	/*  side, but 1-based indexing on the terminal side. */
+	mila_term_cursseek_setpos( STDOUT_FILENO, screenrows+1, E.screencols+1 );
+}
+
 void disableRawMode(int fd) {
     /* Don't even check the return value as it's too late. */
     if (E.rawmode) {
@@ -219,19 +248,15 @@ void disableRawMode(int fd) {
         E.rawmode = 0;
     }
 }
-
-/* Called at exit to avoid remaining in raw mode. */
-void editorAtExit(void) {
-    disableRawMode(STDIN_FILENO);
-
-    /* Disable alternate screen. */
-    if( E.altscr ) {
+void mila_term_altscreen_disable( void )
+{
+	if( E.altscr )
+	{
         /* "?47l" ~1978 VT100 DECSET magic. "?1049l" is similar xterm magic */
 		/*  from... some indeterminate time, possibly even before X Windows */
 		/*  existed. */
             /* To instead enable, use 'h' instead of 'l': note that */
             /*  initEditor() does the enabling already. */
-#define MILA_TERMCODES_1 "\x1b[?1049l"
         const char altscren[] = MILA_TERMCODES_1;
         const int altscren_len = sizeof( altscren );
         if (write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
@@ -243,13 +268,22 @@ void editorAtExit(void) {
             exit(1);
         }
         E.altscr = 0;
+	}
+}
+
+/* Called at exit to avoid remaining in raw mode. */
+void editorAtExit(void) {
+    disableRawMode(STDIN_FILENO);
+
+    if( E.altscr ) {
+       /* Disable alternate screen. */
+       mila_term_altscreen_disable();
     } else if( E.no_altscr ) {
         /* If we aren't using the alternate-screen, move the cursor to the */
         /*  end of the screen and force a line-advance instead, to prepare */
         /*  for the return to the CLI. */
-#error "We can't use this, we need the numbers printed!"
-#define MILA_TERMCODES_3 \x1b[%d;%dH
-        printf("%s\n\n",MILA_TERMCODES_3,E.screenrows+1,E.screencols+1);
+        mila_term_cursseek_finalchar();
+		printf("\n\n");
     }
 }
 
@@ -386,13 +420,7 @@ int getWindowSize(int ifd, int ofd, int *rows, int *cols) {
         if (retval == -1) goto failed;
 
         /* Restore position. */
-        char seq[32];
-#error "We can't do this, because we need to print ints!"
-#define MILA_TERMCODES_6 "\x1b[%d;%dH"
-        snprintf(seq,32,MILA_TERMCODES_6,orig_row,orig_col);
-        if (write(ofd,seq,strlen(seq)) == -1) {
-            /* Can't recover... */
-        }
+        mila_term_cursseek_setpos( ofd, orig_row,orig_col );
         return 0;
     } else {
         *cols = ws.ws_col;
@@ -988,7 +1016,7 @@ void editorRefreshScreen(void) {
                     int color = editorSyntaxToColor(hl[j]);
                     if (color != current_color) {
                         char buf[16];
-#error "We can't do this, we need to print ints!"
+#warning "We can't do this, we need to print ints!"
 #define MILA_TERMCODES_14 "\x1b[%dm"
                         int clen = snprintf(buf,sizeof(buf),MILA_TERMCODES_14,color);
                         current_color = color;
@@ -1060,7 +1088,7 @@ void editorRefreshScreen(void) {
             cx++;
         }
     }
-#error "We can't do this, we need to print stuff!"
+#warning "We can't do this, we need to print stuff!"
 #define MILA_TERMCODES_21 "\x1b[%d;%dH"
     snprintf(buf,sizeof(buf),MILA_TERMCODES_21,E.cy+1,cx);
     abAppend(&ab,buf,strlen(buf));
