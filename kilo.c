@@ -868,6 +868,7 @@ int editorSave(void) {
     close(fd);
     free(buf);
     E.dirty = 0;
+		/* TODO: Do something to move this to the FIRST status line. */
     editorSetStatusMessage("%d bytes written on disk", len);
     return 0;
 
@@ -1007,6 +1008,9 @@ void editorRefreshScreen(void) {
     /* Put cursor at its current position. Note that the horizontal position
      * at which the cursor is displayed may be different compared to 'E.cx'
      * because of TABs. */
+	 /* TODO: split this code so that the tab-corrected location can be used */
+	 /*  as the text-column value. */
+	 /* Also, add configurability to the tab size. */
     int j;
     int cx = 1;
     int filerow = E.rowoff+E.cy;
@@ -1211,6 +1215,8 @@ void editorMoveCursor(int key) {
 
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
+ /* TODO: Move this into a header and wrap it in an ifdef() for */
+ /*  override support. */
 #define KILO_QUIT_TIMES 3
 void editorProcessKeypress(int fd) {
     /* When the file is modified, requires Ctrl-q to be pressed N times
@@ -1358,10 +1364,14 @@ int main(int argc, char **argv) {
     editorSelectSyntaxHighlight(argv[1]);
     editorOpen(argv[1]);
     enableRawMode(STDIN_FILENO);
+		/* TODO: THis message needs to be displayed by default! */
     editorSetStatusMessage(
         "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
     while(1) {
         editorRefreshScreen();
+			/* TODO: Subject this to a mode switch! */
+			/*  If mode != notepad, then run input through CLI mode! */
+			/*  For CLI mode, try to use "linenoise" from the same author. */
         editorProcessKeypress(STDIN_FILENO);
     }
     return 0;
