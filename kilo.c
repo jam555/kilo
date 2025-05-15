@@ -153,12 +153,12 @@ enum KEY_ACTION{
 
 
 
+#define MILA_TERMCODES_11 "\x1b[7m"
+
 void mila_term_cursseek_setpos( int alter, int ofile, int row, int col );
 int mila_term_cursseek_finalchar( int alter );
 
 void mila_term_altscreen_disable( void );
-
-void mila_ab_curvis_hide( void );
 
 
 
@@ -300,12 +300,11 @@ int mila_term_cursseek_finalchar( int alter )
 	{
 		/* (+1,+1) because the screen size is described with C indexing on our */
 		/*  side, but 1-based indexing on the terminal side. */
-		mila_term_cursseek_setpos( alter, STDOUT_FILENO, screenrows+1, E.screencols+1 );
+		mila_term_cursseek_setpos( alter, STDOUT_FILENO, E.screenrows+1, E.screencols+1 );
 		return( 1 );
 		
 	} else if( alter == -1 )
 	{
-#error "This is the wrong form, perform some actual math instead, like screenrow - cursorrow."
 		/* Alternate case: seek to some insane point. */
 #define MILA_TERMCODES_5 "\x1b[999C\x1b[999B"
 		mila_term_cursseek_setpos( -1, STDOUT_FILENO, 999, 999 );
@@ -331,6 +330,7 @@ void mila_term_altscreen_disable( void )
 		/*  existed. */
             /* To instead enable, use 'h' instead of 'l': note that */
             /*  initEditor() does the enabling already. */
+#define MILA_TERMCODES_1 "\x1b[?1049l"
         const char altscren[] = MILA_TERMCODES_1;
         const int altscren_len = sizeof( altscren );
         if (write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
@@ -1042,11 +1042,11 @@ void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail )
 		
 	} else if( argn == 1 )
 	{
-		snprintf( buf, sizeof(buf), mila_ab_curseek_ONEARG, y,  tail );
+		snprintf( buf, sizeof(buf), mila_ab_curseek_ONEARG, x,  tail );
 		
 	} else if( argn == 2 )
 	{
-		snprintf (buf, sizeof(buf), MILA_TERMCODES_21, y, x,  tail );
+		snprintf (buf, sizeof(buf), MILA_TERMCODES_21, x, y,  tail );
 	}
 	
 	abAppend( ab,buf,strlen(buf));
@@ -1063,19 +1063,19 @@ void mila_ab_curvis_show( struct abuf *ab )
 }
 void mila_ab_curseek_home( struct abuf *ab )
 {
-	void mila_ab_curseek( ab, 0,   0, 0, "" );
+	mila_ab_curseek( ab, 0,   0, 0, "" );
 }
 void mila_ab_clearall( struct abuf *ab )
 {
-#define mila_ab_clearall_TERMCODE "~\x1b[2K\r\n"
+#define mila_ab_clearall_TERMCODE "\x1b[2K\r\n"
 	abAppend( ab,mila_ab_clearall_TERMCODE,7);
 }
 void mila_ab_cleartostart( struct abuf *ab )
 {
-#define mila_ab_cleartostart_TERMCODE "~\x1b[1K\r\n"
+#define mila_ab_cleartostart_TERMCODE "\x1b[1K\r\n"
 	abAppend( ab,mila_ab_cleartostart_TERMCODE,7);
 }
-void mila_ab_cleartoend( struct abuf *ab, chat *tail )
+void mila_ab_cleartoend( struct abuf *ab, char *tail )
 {
 	char buf[32];
 	
@@ -1084,14 +1084,13 @@ void mila_ab_cleartoend( struct abuf *ab, chat *tail )
 		tail = "";
 	}
 	
-#define mila_ab_cleartoend_TERMCODE "~\x1b[0K%s"
+#define mila_ab_cleartoend_TERMCODE "\x1b[0K%s"
 	snprintf( buf, sizeof(buf), mila_ab_cleartoend_TERMCODE,  tail );
 	
 	abAppend( ab,buf,strlen(buf));
 }
 void mila_ab_swapFgBg( struct abuf *ab )
 {
-#define MILA_TERMCODES_11 "\x1b[7m"
 	abAppend( ab,MILA_TERMCODES_11,4);
 }
 void mila_ab_resetAttribs( struct abuf *ab )
