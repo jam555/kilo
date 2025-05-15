@@ -153,10 +153,12 @@ enum KEY_ACTION{
 
 
 
-void mila_term_cursseek_setpos( int ofile, int row, int col );
-void mila_term_cursseek_finalchar( void );
+void mila_term_cursseek_setpos( int alter, int ofile, int row, int col );
+int mila_term_cursseek_finalchar( int alter );
 
 void mila_term_altscreen_disable( void );
+/* TODO: We've replaced three explicit escape-code emissions with wrapper */
+/*  functions, continue on to do most or all of the others. */
 
 
 
@@ -223,22 +225,94 @@ struct editorSyntax HLDB[] = {
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 
-void mila_term_cursseek_setpos( int ofile, int row, int col )
+void mila_term_cursseek_setpos( int alter, int ofile, int row, int col )
 {
-	/* Restore position. */
 	char seq[32];
-#warning "We can't do this, because we need to print ints!"
+	
+#warning "Numeric results haven't been verified."
+		/* Normalize coordinate. */
+	if( row < 0 )
+	{
+		row = E.screenrows - row;
+	}
+	if( col < 0 )
+	{
+		col = E.screencols - col;
+	}
+	
+	if( alter >= 0 )
+	{
+		/* Restore position. */
+		
 #define MILA_TERMCODES_6 "\x1b[%d;%dH"
-	snprintf(seq,32,MILA_TERMCODES_6,row,col);
-	if (write(ofile,seq,strlen(seq)) == -1) {
-		/* Can't recover... */
+		snprintf(seq,32,MILA_TERMCODES_6,row,col);
+		if (write(ofile,seq,strlen(seq)) == -1) {
+			/* Can't recover... */
+		}
+		
+	} else if( alter == -1 )
+	{
+		row -= E.cx;
+		col -= E.cy;
+		
+		CU_jumptarget: ;
+		
+		if( row < 0 )
+		{
+			row = -row;
+			snprintf(seq,32,"\x1b[%dA",row);
+			if (write(ofile,seq,strlen(seq)) == -1) {
+				/* Can't recover... */
+			}
+			
+		} else if( row > 0 )
+		{
+			snprintf(seq,32,"\x1b[%dB",row);
+			if (write(ofile,seq,strlen(seq)) == -1) {
+				/* Can't recover... */
+			}
+		}
+		if( col < 0 )
+		{
+			col = -col;
+			snprintf(seq,32,"\x1b[%dD",col);
+			if (write(ofile,seq,strlen(seq)) == -1) {
+				/* Can't recover... */
+			}
+			
+		} else if( col > 0 )
+		{
+			snprintf(seq,32,"\x1b[%dC",col);
+			if (write(ofile,seq,strlen(seq)) == -1) {
+				/* Can't recover... */
+			}
+		}
+		
+	} else if( alter == -2 )
+	{
+			/* No reason to duplicate that... */
+		goto CU_jumptarget;
 	}
 }
-void mila_term_cursseek_finalchar( void )
+int mila_term_cursseek_finalchar( int alter )
 {
-	/* (+1,+1) because the screen size is described with C indexing on our */
-	/*  side, but 1-based indexing on the terminal side. */
-	mila_term_cursseek_setpos( STDOUT_FILENO, screenrows+1, E.screencols+1 );
+	if( alter >= 0 )
+	{
+		/* (+1,+1) because the screen size is described with C indexing on our */
+		/*  side, but 1-based indexing on the terminal side. */
+		mila_term_cursseek_setpos( alter, STDOUT_FILENO, screenrows+1, E.screencols+1 );
+		return( 1 );
+		
+	} else if( alter == -1 )
+	{
+#error "This is the wrong form, perform some actual math instead, like screenrow - cursorrow."
+		/* Alternate case: seek to some insane point. */
+#define MILA_TERMCODES_5 "\x1b[999C\x1b[999B"
+		mila_term_cursseek_setpos( -1, STDOUT_FILENO, 999, 999 );
+		return( 1 );
+	}
+	
+	return( -1 );
 }
 
 void disableRawMode(int fd) {
@@ -282,7 +356,7 @@ void editorAtExit(void) {
         /* If we aren't using the alternate-screen, move the cursor to the */
         /*  end of the screen and force a line-advance instead, to prepare */
         /*  for the return to the CLI. */
-        mila_term_cursseek_finalchar();
+        mila_term_cursseek_finalchar( 0 );
 		printf("\n\n");
     }
 }
@@ -414,13 +488,12 @@ int getWindowSize(int ifd, int ofd, int *rows, int *cols) {
         if (retval == -1) goto failed;
 
         /* Go to right/bottom margin and get position. */
-#define MILA_TERMCODES_5 "\x1b[999C\x1b[999B"
-        if (write(ofd,MILA_TERMCODES_5,12) != 12) goto failed;
+		if( !mila_term_cursseek_finalchar( -1 ) ) goto failed;
         retval = getCursorPosition(ifd,ofd,rows,cols);
         if (retval == -1) goto failed;
 
         /* Restore position. */
-        mila_term_cursseek_setpos( ofd, orig_row,orig_col );
+        mila_term_cursseek_setpos( 0, ofd, orig_row,orig_col );
         return 0;
     } else {
         *cols = ws.ws_col;
