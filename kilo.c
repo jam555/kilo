@@ -1093,10 +1093,19 @@ void mila_ab_swapFgBg( struct abuf *ab )
 {
 	abAppend( ab,MILA_TERMCODES_11,4);
 }
-void mila_ab_resetAttribs( struct abuf *ab )
+void mila_ab_resetAttribs( struct abuf *ab, char *tail )
 {
-#define MILA_TERMCODES_12 "\x1b[0m"
-	abAppend( ab,MILA_TERMCODES_12,4);
+	char buf[32];
+	
+	if( !tail )
+	{
+		tail = "";
+	}
+	
+#define MILA_TERMCODES_12 "\x1b[0m%s"
+	snprintf( buf, sizeof(buf), MILA_TERMCODES_12,  tail );
+	
+	abAppend( ab,buf,strlen(buf));
 }
 void mila_ab_defaultFg( struct abuf *ab )
 {
@@ -1153,7 +1162,7 @@ void editorRefreshScreen(void) {
                     else
                         sym = '?';
                     abAppend( &ab,&sym,1);
-                    mila_ab_resetAttribs( &ab );
+                    mila_ab_resetAttribs( &ab, "" );
                 } else if (hl[j] == HL_NORMAL) {
                     if( current_color != -1 ) {
                         mila_ab_defaultFg( &ab );
@@ -1177,9 +1186,6 @@ void editorRefreshScreen(void) {
         mila_ab_defaultFg( &ab );
         mila_ab_cleartoend( &ab, "\r\n" );
     }
-
-
-
 
 
     /* The following code draws the utility area. At the current time it only */
@@ -1216,9 +1222,7 @@ void editorRefreshScreen(void) {
             len++;
         }
     }
-#define MILA_TERMCODES_19 "\x1b[0m\r\n"
-		/* This would be mila_ab_resetAttribs(), but that DOESN'T include newlines. */
-    abAppend( &ab,MILA_TERMCODES_19,6 );
+	mila_ab_resetAttribs( &ab, "\r\n" );
 
     /* Second row depends on E.statusmsg and the status message update time. */
     mila_ab_cleartoend( &ab, "" );
