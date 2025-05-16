@@ -33,55 +33,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define KILO_VERSION "0.0.1"
-
-#ifdef __linux__
-#define _POSIX_C_SOURCE 200809L
-#endif
-
-#include <termios.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <errno.h>
-#include <string.h>
-#include <ctype.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <fcntl.h>
-#include <signal.h>
-
-/* TODO: Find all of the "warning" directives, and fix them. */
-
- /* TODO: Move these into a header and wrap in ifdef()s for */
- /*  override support. */
-#define KILO_QUERY_LEN 256
-#define KILO_QUIT_TIMES 3
-#define MILA_TABSIZE 8
-	/* This is the number of lines for the status lines. */
-#define MILA_UTILITYLINES 2
-
-/* Syntax highlight types */
-#define HL_NORMAL 0
-#define HL_NONPRINT 1
-#define HL_COMMENT 2   /* Single line comment. */
-#define HL_MLCOMMENT 3 /* Multi-line comment. */
-#define HL_KEYWORD1 4
-#define HL_KEYWORD2 5
-#define HL_STRING 6
-#define HL_NUMBER 7
-#define HL_MATCH 8      /* Search match. */
-
-#define HL_HIGHLIGHT_STRINGS (1<<0)
-#define HL_HIGHLIGHT_NUMBERS (1<<1)
-
-#include "appenbuf.h"
-
-#define MILA_TERMCODES_11 "\x1b[7m"
+#include "kilo.h"
 
 
 
@@ -187,4 +139,163 @@ void mila_ab_defaultFg( struct abuf *ab )
 {
 #define MILA_TERMCODES_13 "\x1b[39m"
 	abAppend( ab,MILA_TERMCODES_13,5);
+}
+
+
+/* ============================= Terminal update ============================ */
+
+/* This function writes the whole screen using VT100 escape characters
+ * starting from the logical state of the editor in the global state 'E'. */
+void editorRefreshScreen(void) {
+    int y;
+    erow *r;
+    char buf[32];
+    struct abuf ab = ABUF_INIT;
+
+    mila_ab_curvis_hide( &ab );
+    mila_ab_curseek_home( &ab );
+    for (y = 0; y < E.screenrows; y++) {
+        int filerow = E.rowoff+y;
+
+        if (filerow >= E.numrows) {
+            if (E.numrows == 0 && y == E.screenrows/3) {
+                char welcome[80];
+                int welcomelen = snprintf(welcome,sizeof(welcome),
+#define MILA_TERMCODES_9 "\x1b[0K"
+                    "Kilo editor -- verison %s%s\r\n", KILO_VERSION,MILA_TERMCODES_9);
+                int padding = (E.screencols-welcomelen)/2;
+                if (padding) {
+                    abAppend( &ab,"~",1);
+                    padding--;
+                }
+                while(padding--) abAppend(&ab," ",1);
+                abAppend( &ab,welcome,welcomelen);
+            } else {
+                mila_ab_cleartoend(  &ab, "\r\n" );
+            }
+            continue;
+        }
+
+        r = &E.row[filerow];
+
+        int len = r->rsize - E.coloff;
+        int current_color = -1;
+        if (len > 0) {
+            if (len > E.screencols) len = E.screencols;
+            char *c = r->render+E.coloff;
+            unsigned char *hl = r->hl+E.coloff;
+            int j;
+            for (j = 0; j < len; j++) {
+                if (hl[j] == HL_NONPRINT) {
+                    char sym;
+                    mila_ab_swapFgBg( &ab );
+                    if (c[j] <= 26)
+                        sym = '@'+c[j];
+                    else
+                        sym = '?';
+                    abAppend( &ab,&sym,1);
+                    mila_ab_resetAttribs( &ab, "" );
+                } else if (hl[j] == HL_NORMAL) {
+                    if( current_color != -1 ) {
+                        mila_ab_defaultFg( &ab );
+                        current_color = -1;
+                    }
+                    abAppend( &ab,c+j,1);
+                } else {
+                    int color = editorSyntaxToColor( hl[j] );
+                    if (color != current_color) {
+                        char buf[16];
+#warning "We can't do this, we need to print ints!"
+#define MILA_TERMCODES_14 "\x1b[%dm"
+                        int clen = snprintf( buf,sizeof(buf),MILA_TERMCODES_14,color );
+                        current_color = color;
+                        abAppend( &ab,buf,clen );
+                    }
+                    abAppend( &ab,c+j,1 );
+                }
+            }
+        }
+        mila_ab_defaultFg( &ab );
+        mila_ab_cleartoend( &ab, "\r\n" );
+    }
+
+
+    /* The following code draws the utility area. At the current time it only */
+    /*  handles status lines, but I intend to throw other stuff in too. */
+
+
+    /* Create a two rows status. First row: */
+    mila_ab_cleartoend( &ab, "" );
+	mila_ab_swapFgBg( &ab );
+    char status[80], rstatus[80];
+	int len =
+		snprintf
+		(
+			status, sizeof( status ),
+			"%.20s - %d lines %s",  E.filename, E.numrows, E.dirty ? "(modified)" : ""
+		);
+    int rlen =
+		snprintf
+		(
+			rstatus, sizeof(rstatus),
+			"%d : %d/%d",  E.cx+1, E.rowoff+E.cy+1, E.numrows
+		);
+    if( len > E.screencols )
+	{
+		len = E.screencols;
+	}
+    abAppend( &ab,status,len );
+    while( len < E.screencols ) {
+        if( E.screencols - len == rlen ) {
+            abAppend( &ab, rstatus, rlen );
+            break;
+        } else {
+            abAppend( &ab, " ", 1 );
+            len++;
+        }
+    }
+	mila_ab_resetAttribs( &ab, "\r\n" );
+
+    /* Second row depends on E.statusmsg and the status message update time. */
+    mila_ab_cleartoend( &ab, "" );
+    int msglen = strlen( E.statusmsg );
+    if( msglen && time(NULL)-E.statusmsg_time < 5 )
+        abAppend( &ab, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
+
+    /* Put cursor at its current position. Note that the horizontal position
+     * at which the cursor is displayed may be different compared to 'E.cx'
+     * because of TABs. */
+	 /* TODO: split this code so that the tab-corrected location can be used */
+	 /*  as the text-column value. */
+	 /* Also, add configurability to the tab size. */
+    int j;
+    int cx = 1;
+    int filerow = E.rowoff+E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    if( row )
+	{
+        for( j = E.coloff; j < (E.cx+E.coloff); j++ )
+		{
+            if( j < row->size && row->chars[j] == TAB )
+			{
+				cx += (MILA_TABSIZE-1)-((cx)%MILA_TABSIZE);
+			}
+            cx++;
+        }
+    }
+    mila_ab_curseek( &ab, 2,   E.cy+1,cx, "" ); /* Move cursor. */
+	mila_ab_curvis_show( &ab ); /* Show cursor. */
+	
+    write(STDOUT_FILENO,ab.b,ab.len);
+    abFree( &ab );
+}
+
+/* Set an editor status message for the second line of the status, at the
+ * end of the screen. */
+void editorSetStatusMessage(const char *fmt, ...) {
+    va_list ap;
+    va_start( ap,fmt );
+    vsnprintf( E.statusmsg,sizeof(E.statusmsg),fmt,ap );
+    va_end( ap );
+    E.statusmsg_time = time( NULL );
 }
