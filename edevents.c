@@ -218,6 +218,24 @@ void initEditor(void) {
     E.dirty = 0;
     E.filename = NULL;
     E.syntax = NULL;
+	/* Members of E below here aren't currently used. */
+	E.orig_termios ;
+	E.utilrow = 0;
+    /* The utility zone currently just holds the status lines. */
+	/*  The "exten" section is for "auxiliary display" options, */
+	/*  like a character LCD hanging off of a serial port. */
+	E.extenrow = 0;
+	/* These two describe e.g. the character dimensions of an */
+	/*  auxiliary display, such as a character display hanging */
+	/*  off of a serial port. Thus, they're differently sized */
+	/*  than the ones above. */
+	/* A decent minimum for conventional units is 8 wide by 1 */
+	/*  tall, but 12*2, 16*2, and 20*4 are all semi-common, */
+	/*  beware though, that custom LED-based displays can go */
+	/*  MUCH lower in character counts. */
+	E.extenrows = 0;
+	E.extencols = 0;
+	
     if( !E.altscr && !E.no_altscr )
     {
         char *termstr = getenv( "TERM" );

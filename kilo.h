@@ -122,7 +122,20 @@ struct editorConfig {
     char *filename; /* Currently open filename */
     char statusmsg[80];
     time_t statusmsg_time;
+	
     struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
+	
+	
+	/* The things below have been added to convert this into a window-tracker. They are currently unused. */
+	
+	struct termios orig_termios;
+	
+    /* The utility zone currently just holds the status lines. */
+	/*  The "exten" section is for "auxiliary display" options, */
+	/*  like a character LCD hanging off of a serial port. */
+	erow *utilrow, *extenrow;      /* Utility zone rows */
+    int extenrows; /* Number of rows that we can show */
+    int extencols; /* Number of cols that we can show */
 };
 
 enum KEY_ACTION{

@@ -184,6 +184,8 @@ int enableRawMode(int fd) {
     if (!isatty(STDIN_FILENO)) goto fatal;
     atexit(editorAtExit);
     if (tcgetattr(fd,&orig_termios) == -1) goto fatal;
+		/* To support the move to multi-doc capabilities. */
+	E.orig_termios = orig_termios;
 
     raw = orig_termios;  /* modify the original mode */
     /* input modes: no break, no CR to NL, no parity check, no strip char,
