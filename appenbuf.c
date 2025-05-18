@@ -37,22 +37,24 @@
 
 
 
-void abAppend(struct abuf *ab, const char *s, int len) {
-    char *new = realloc(ab->b,ab->len+len);
+void abAppend( struct abuf *ab, const char *s, int len )
+{
+    char *new = realloc( ab->b, ab->len+len );
 
-    if (new == NULL) return;
-    memcpy(new+ab->len,s,len);
+    if( new == NULL ) return;
+    memcpy( new + ab->len,s,len );
     ab->b = new;
     ab->len += len;
 }
 
-void abFree(struct abuf *ab) {
-    free(ab->b);
+void abFree( struct abuf *ab )
+{
+    free( ab->b );
 }
 
 void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail )
 {
-	char buf[32];
+	char buf[ 32 ];
 	
 #define MILA_TERMCODES_8 "\x1b[H%s" /* Go home. */
 #define mila_ab_curseek_ONEARG "\x1b[%dH%s"
@@ -74,20 +76,20 @@ void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail )
 		
 	} else if( argn == 2 )
 	{
-		snprintf (buf, sizeof(buf), MILA_TERMCODES_21, x, y,  tail );
+		snprintf( buf, sizeof(buf), MILA_TERMCODES_21, x, y,  tail );
 	}
 	
-	abAppend( ab,buf,strlen(buf));
+	abAppend( ab, buf, strlen( buf ) );
 }
 void mila_ab_curvis_hide( struct abuf *ab )
 {
 #define MILA_TERMCODES_7 "\x1b[?25l"
-    abAppend( ab,MILA_TERMCODES_7,6); /* Hide cursor. */
+    abAppend( ab, MILA_TERMCODES_7, 6 ); /* Hide cursor. */
 }
 void mila_ab_curvis_show( struct abuf *ab )
 {
 #define MILA_TERMCODES_22 "\x1b[?25h"
-    abAppend( ab,MILA_TERMCODES_22,6); /* Show cursor. */
+    abAppend( ab, MILA_TERMCODES_22, 6 ); /* Show cursor. */
 }
 void mila_ab_curseek_home( struct abuf *ab )
 {
@@ -96,16 +98,16 @@ void mila_ab_curseek_home( struct abuf *ab )
 void mila_ab_clearall( struct abuf *ab )
 {
 #define mila_ab_clearall_TERMCODE "\x1b[2K\r\n"
-	abAppend( ab,mila_ab_clearall_TERMCODE,7);
+	abAppend( ab, mila_ab_clearall_TERMCODE, 7 );
 }
 void mila_ab_cleartostart( struct abuf *ab )
 {
 #define mila_ab_cleartostart_TERMCODE "\x1b[1K\r\n"
-	abAppend( ab,mila_ab_cleartostart_TERMCODE,7);
+	abAppend( ab, mila_ab_cleartostart_TERMCODE, 7 );
 }
 void mila_ab_cleartoend( struct abuf *ab, char *tail )
 {
-	char buf[32];
+	char buf[ 32 ];
 	
 	if( !tail )
 	{
@@ -113,17 +115,17 @@ void mila_ab_cleartoend( struct abuf *ab, char *tail )
 	}
 	
 #define mila_ab_cleartoend_TERMCODE "\x1b[0K%s"
-	snprintf( buf, sizeof(buf), mila_ab_cleartoend_TERMCODE,  tail );
+	snprintf( buf, sizeof( buf ), mila_ab_cleartoend_TERMCODE,  tail );
 	
-	abAppend( ab,buf,strlen(buf));
+	abAppend( ab, buf, strlen( buf ) );
 }
 void mila_ab_swapFgBg( struct abuf *ab )
 {
-	abAppend( ab,MILA_TERMCODES_11,4);
+	abAppend( ab, MILA_TERMCODES_11, 4 );
 }
 void mila_ab_resetAttribs( struct abuf *ab, char *tail )
 {
-	char buf[32];
+	char buf[ 32 ];
 	
 	if( !tail )
 	{
@@ -131,162 +133,243 @@ void mila_ab_resetAttribs( struct abuf *ab, char *tail )
 	}
 	
 #define MILA_TERMCODES_12 "\x1b[0m%s"
-	snprintf( buf, sizeof(buf), MILA_TERMCODES_12,  tail );
+	snprintf( buf, sizeof( buf ), MILA_TERMCODES_12,  tail );
 	
-	abAppend( ab,buf,strlen(buf));
+	abAppend( ab, buf, strlen( buf ) );
 }
 void mila_ab_defaultFg( struct abuf *ab )
 {
 #define MILA_TERMCODES_13 "\x1b[39m"
-	abAppend( ab,MILA_TERMCODES_13,5);
+	abAppend( ab, MILA_TERMCODES_13, 5 );
 }
 
 
 /* ============================= Terminal update ============================ */
 
+/* Draws the status line. Pulled out of editorRefreshScreen() for */
+/*  modularity. */
+void editorStatusLine( struct abuf *ab, struct abuf *util,   char *status, int stat_len,  char *rstatus, int rstat_len )
+{
+	(void)util;
+	
+	stat_len =
+		snprintf
+		(
+			status, stat_len,
+			"%.20s - %d lines %s",  E.filename, E.numrows, E.dirty ? "(modified)" : ""
+		);
+	rstat_len =
+		snprintf
+		(
+			rstatus, rstat_len,
+			"%d : %d/%d",  E.cx+1, E.rowoff + E.cy + 1, E.numrows
+		);
+	if( stat_len > E.screencols )
+	{
+		stat_len = E.screencols;
+	}
+	
+	abAppend( ab, status, stat_len );
+	while( stat_len < E.screencols )
+	{
+		if( E.screencols - stat_len == rstat_len )
+		{
+			abAppend( ab, rstatus, rstat_len );
+			break;
+			
+		} else {
+			
+			abAppend( ab, " ", 1 );
+			stat_len++;
+		}
+	}
+}
+void editorMessageLine( struct abuf *ab, struct abuf *util )
+{
+	(void)util;
+	
+	int msglen = strlen( E.statusmsg );
+	if
+	(
+		msglen &&
+		MILA_MESSAGETIMEOUTS ?
+			( time( NULL ) - E.statusmsg_time < 5 ) :
+			1
+	)
+	{
+		abAppend( ab, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
+	}
+}
+
+    /* The following code draws the utility area. At the current time it only */
+    /*  handles status lines, but I intend to throw other stuff in too. */
+void editorUtilityArea( struct abuf *ab, struct abuf *util )
+{
+    /* Prepare for the utility area: */
+    char status[ 80 ], rstatus[ 80 ];
+	
+	/* First row: */
+		/* We'll use reversed-color, both calls the line out and serves as a divider. */
+	mila_ab_swapFgBg( ab );
+	mila_ab_cleartoend( ab,  "" );
+	editorStatusLine( ab, util,   status, sizeof( status ),  rstatus, sizeof( rstatus ) );
+	
+	/* Second row depends on E.statusmsg and the status message update time. */
+		/* Return foreground/background to normal. */
+	mila_ab_resetAttribs( ab,  "\r\n" );
+	mila_ab_cleartoend( ab,  "" );
+	editorMessageLine( ab, util );
+	
+#if MILA_UTILITYLINES != 2
+	#error "MILA_UTILITYLINES doesn't match editorUtilityArea()."
+#endif
+}
+
+
 /* This function writes the whole screen using VT100 escape characters
  * starting from the logical state of the editor in the global state 'E'. */
-void editorRefreshScreen(void) {
+void editorRefreshScreen( void )
+{
     int y;
     erow *r;
-    char buf[32];
+    char buf[ 32 ];
     struct abuf ab = ABUF_INIT;
 
     mila_ab_curvis_hide( &ab );
     mila_ab_curseek_home( &ab );
-    for (y = 0; y < E.screenrows; y++) {
-        int filerow = E.rowoff+y;
+    for( y = 0; y < E.screenrows; y++ )
+	{
+        int filerow = E.rowoff + y;
 
-        if (filerow >= E.numrows) {
-            if (E.numrows == 0 && y == E.screenrows/3) {
-                char welcome[80];
-                int welcomelen = snprintf(welcome,sizeof(welcome),
+        if( filerow >= E.numrows )
+		{
+            if( E.numrows == 0 && y == E.screenrows / 3 )
+			{
+                char welcome[ 80 ];
 #define MILA_TERMCODES_9 "\x1b[0K"
-                    "Kilo editor -- verison %s%s\r\n", KILO_VERSION,MILA_TERMCODES_9);
-                int padding = (E.screencols-welcomelen)/2;
-                if (padding) {
-                    abAppend( &ab,"~",1);
+                int welcomelen =
+					snprintf
+					(
+						welcome, sizeof( welcome ),
+                    	
+						"Kilo editor -- verison %s%s\r\n",
+						KILO_VERSION, MILA_TERMCODES_9
+					);
+                int padding = ( E.screencols - welcomelen ) / 2;
+                if( padding )
+				{
+                    abAppend( &ab, "~", 1 );
                     padding--;
                 }
-                while(padding--) abAppend(&ab," ",1);
-                abAppend( &ab,welcome,welcomelen);
+                while( padding-- )
+				{
+					abAppend( &ab," ",1 );
+				}
+                abAppend( &ab, welcome, welcomelen );
+				
             } else {
-                mila_ab_cleartoend(  &ab, "\r\n" );
+                
+				mila_ab_cleartoend( &ab, "\r\n" );
             }
             continue;
         }
 
-        r = &E.row[filerow];
+        r = &E.row[ filerow ];
 
         int len = r->rsize - E.coloff;
         int current_color = -1;
-        if (len > 0) {
-            if (len > E.screencols) len = E.screencols;
-            char *c = r->render+E.coloff;
-            unsigned char *hl = r->hl+E.coloff;
+        if( len > 0 )
+		{
+            if( len > E.screencols )
+			{
+				len = E.screencols;
+			}
+            char *c = r->render + E.coloff;
+            unsigned char *hl = r->hl + E.coloff;
             int j;
-            for (j = 0; j < len; j++) {
-                if (hl[j] == HL_NONPRINT) {
+            for( j = 0; j < len; j++ )
+			{
+                if( hl[ j ] == HL_NONPRINT )
+				{
                     char sym;
                     mila_ab_swapFgBg( &ab );
-                    if (c[j] <= 26)
-                        sym = '@'+c[j];
-                    else
-                        sym = '?';
-                    abAppend( &ab,&sym,1);
+                    if( c[ j ] <= 26 )
+					{
+                        sym = '@' + c[ j ];
+						
+                    } else {
+                        
+						sym = '?';
+                    }
+					abAppend( &ab, &sym, 1 );
                     mila_ab_resetAttribs( &ab, "" );
-                } else if (hl[j] == HL_NORMAL) {
-                    if( current_color != -1 ) {
+					
+                } else if( hl[ j ] == HL_NORMAL )
+				{
+                    if( current_color != -1 )
+					{
                         mila_ab_defaultFg( &ab );
                         current_color = -1;
                     }
-                    abAppend( &ab,c+j,1);
+                    abAppend( &ab, c + j, 1 );
+					
                 } else {
-                    int color = editorSyntaxToColor( hl[j] );
-                    if (color != current_color) {
-                        char buf[16];
+                    
+					int color = editorSyntaxToColor( hl[ j ] );
+                    if( color != current_color )
+					{
+                        char buf[ 16 ];
 #warning "We can't do this, we need to print ints!"
 #define MILA_TERMCODES_14 "\x1b[%dm"
-                        int clen = snprintf( buf,sizeof(buf),MILA_TERMCODES_14,color );
+                        int clen =
+							snprintf
+							(
+								buf, sizeof( buf ),
+								MILA_TERMCODES_14, color
+							);
                         current_color = color;
-                        abAppend( &ab,buf,clen );
+                        abAppend( &ab, buf, clen );
                     }
-                    abAppend( &ab,c+j,1 );
+                    abAppend( &ab, c + j, 1 );
                 }
             }
         }
         mila_ab_defaultFg( &ab );
         mila_ab_cleartoend( &ab, "\r\n" );
     }
+	
+	
+	struct abuf util = ABUF_INIT;
 
-
-    /* The following code draws the utility area. At the current time it only */
-    /*  handles status lines, but I intend to throw other stuff in too. */
-
-
-    /* Create a two rows status. First row: */
-    mila_ab_cleartoend( &ab, "" );
-	mila_ab_swapFgBg( &ab );
-    char status[80], rstatus[80];
-	int len =
-		snprintf
-		(
-			status, sizeof( status ),
-			"%.20s - %d lines %s",  E.filename, E.numrows, E.dirty ? "(modified)" : ""
-		);
-    int rlen =
-		snprintf
-		(
-			rstatus, sizeof(rstatus),
-			"%d : %d/%d",  E.cx+1, E.rowoff+E.cy+1, E.numrows
-		);
-    if( len > E.screencols )
-	{
-		len = E.screencols;
-	}
-    abAppend( &ab,status,len );
-    while( len < E.screencols ) {
-        if( E.screencols - len == rlen ) {
-            abAppend( &ab, rstatus, rlen );
-            break;
-        } else {
-            abAppend( &ab, " ", 1 );
-            len++;
-        }
-    }
-	mila_ab_resetAttribs( &ab, "\r\n" );
-
-    /* Second row depends on E.statusmsg and the status message update time. */
-    mila_ab_cleartoend( &ab, "" );
-    int msglen = strlen( E.statusmsg );
-    if( msglen && time(NULL)-E.statusmsg_time < 5 )
-        abAppend( &ab, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
+		/* Render the utility area. */
+	editorUtilityArea( &ab, &util );
 
     /* Put cursor at its current position. Note that the horizontal position
      * at which the cursor is displayed may be different compared to 'E.cx'
      * because of TABs. */
 	 /* TODO: split this code so that the tab-corrected location can be used */
 	 /*  as the text-column value. */
-	 /* Also, add configurability to the tab size. */
     int j;
     int cx = 1;
-    int filerow = E.rowoff+E.cy;
-    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    int filerow = E.rowoff + E.cy;
+    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
     if( row )
 	{
-        for( j = E.coloff; j < (E.cx+E.coloff); j++ )
+        for( j = E.coloff; j < ( E.cx + E.coloff ); j++ )
 		{
-            if( j < row->size && row->chars[j] == TAB )
+            if( j < row->size && row->chars[ j ] == TAB )
 			{
-				cx += (MILA_TABSIZE-1)-((cx)%MILA_TABSIZE);
+				cx += ( MILA_TABSIZE - 1 ) - ( (cx) % MILA_TABSIZE );
 			}
             cx++;
         }
     }
-    mila_ab_curseek( &ab, 2,   E.cy+1,cx, "" ); /* Move cursor. */
+    mila_ab_curseek( &ab, 2,   E.cy + 1, cx, "" ); /* Move cursor. */
 	mila_ab_curvis_show( &ab ); /* Show cursor. */
 	
-    write(STDOUT_FILENO,ab.b,ab.len);
+    /* Render the display. */
+	write( STDOUT_FILENO, ab.b, ab.len );
+    abFree( &util );
     abFree( &ab );
 }
 

@@ -63,9 +63,12 @@
  /*  override support. */
 #define KILO_QUERY_LEN 256
 #define KILO_QUIT_TIMES 3
+
 #define MILA_TABSIZE 8
 	/* This is the number of lines for the status lines. */
 #define MILA_UTILITYLINES 2
+	/* Whether the utility-area messages should timeout or not. */
+#define MILA_MESSAGETIMEOUTS ( 1 )
 
 /* Syntax highlight types */
 #define HL_NORMAL 0
@@ -133,9 +136,14 @@ struct editorConfig {
     /* The utility zone currently just holds the status lines. */
 	/*  The "exten" section is for "auxiliary display" options, */
 	/*  like a character LCD hanging off of a serial port. */
-	erow *utilrow, *extenrow;      /* Utility zone rows */
-    int extenrows; /* Number of rows that we can show */
-    int extencols; /* Number of cols that we can show */
+	erow *utilrow;      /* Utility zone rows */
+	char *extenrow;	/* Storage space for the "extern text". Probably still contains escapes. */
+	/* Extern x & y specifically is to allow for screen scrolling: */
+	/*  there's no telling if it'll match the terminal size, so */
+	/*  it's better to prepare for a mismatch. */
+    int externx, externy;
+	int externrows; /* Number of rows that we can show */
+    int externcols; /* Number of cols that we can show */
 };
 
 enum KEY_ACTION{
