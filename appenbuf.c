@@ -108,14 +108,18 @@ void editorUpdateCurPos( struct abuf *ab )
 
 /* Draws the status line. Pulled out of editorRefreshScreen() for */
 /*  modularity. */
-void editorStatusLine( struct abuf *ab, struct abuf *util,   char *status, int stat_len,  char *rstatus, int rstat_len )
+	/* ab: the primary buffer, will get drawn to the conventional terminal. */
+	/* util: the utility-zone buffer, will ONLY get drawn to an auxiliary display (such as a character LCD), which might not even exist. */
+	/* fstatus & fstat_len: storage for info about the file. */
+	/* rstatus & rstat_len: storage for info about... the display, what does 'r' stand for? Row? */
+void editorStatusLine( struct abuf *ab, struct abuf *util,   char *fstatus, int fstat_len,  char *rstatus, int rstat_len )
 {
 	(void)util;
 	
-	stat_len =
+	fstat_len =
 		snprintf
 		(
-			status, stat_len,
+			fstatus, fstat_len,
 			"%.20s - %d lines %s",  E.filename, E.numrows, E.dirty ? "(modified)" : ""
 		);
 	rstat_len =
@@ -124,16 +128,16 @@ void editorStatusLine( struct abuf *ab, struct abuf *util,   char *status, int s
 			rstatus, rstat_len,
 			"%d : %d/%d",  E.cx+1, E.rowoff + E.cy + 1, E.numrows
 		);
-	if( stat_len > E.screencols )
+	if( fstat_len > E.screencols )
 	{
-		stat_len = E.screencols;
+		fstat_len = E.screencols;
 	}
 	
-	abAppend( ab, status, stat_len );
-	abAppend( util, status, stat_len );
-	while( stat_len < E.screencols )
+	abAppend( ab, fstatus, fstat_len );
+	abAppend( util, fstatus, fstat_len );
+	while( fstat_len < E.screencols )
 	{
-		if( E.screencols - stat_len == rstat_len )
+		if( E.screencols - fstat_len == rstat_len )
 		{
 			abAppend( ab, rstatus, rstat_len );
 			abAppend( util, rstatus, rstat_len );
@@ -143,10 +147,12 @@ void editorStatusLine( struct abuf *ab, struct abuf *util,   char *status, int s
 			
 			abAppend( ab, " ", 1 );
 			abAppend( util, " ", 1 );
-			stat_len++;
+			fstat_len++;
 		}
 	}
 }
+	/* Renders the message line. The message will eventually move to the status line, and be replaced with a CLI area. */
+	/* See editorStatusLine() for argument info. */
 void editorMessageLine( struct abuf *ab, struct abuf *util )
 {
 	(void)util;
@@ -213,6 +219,7 @@ void editorRefreshScreen( void )
             if( E.numrows == 0 && y == E.screenrows / 3 )
 			{
                 char welcome[ 80 ];
+#warning "Move this to a function inside term.c!"
 #define MILA_TERMCODES_9 "\x1b[0K"
                 int welcomelen =
 					snprintf
@@ -286,7 +293,7 @@ void editorRefreshScreen( void )
                     if( color != current_color )
 					{
                         char buf[ 16 ];
-#warning "We can't do this, we need to print ints!"
+#warning "Move this to a function inside term.c!"
 #define MILA_TERMCODES_14 "\x1b[%dm"
                         int clen =
 							snprintf
