@@ -73,6 +73,7 @@ void editorMoveCursor(int key) {
 				E.cx -= 1;
 	        }
 	        break;
+			
 	    case ARROW_RIGHT:
 	        if( row && filecol < row->size )
 			{
@@ -99,6 +100,7 @@ void editorMoveCursor(int key) {
 	            }
 	        }
 	        break;
+			
 	    case ARROW_UP:
 	        if( E.cy == 0 )
 			{
@@ -112,6 +114,7 @@ void editorMoveCursor(int key) {
 				E.cy -= 1;
 	        }
 	        break;
+			
 	    case ARROW_DOWN:
 	        if( filerow < E.numrows )
 			{
@@ -306,6 +309,7 @@ void initEditor( void )
         if( termstr && strstr( termstr, "xterm" ) )
         {
             /* Activate alternate screen. To disable, use 'l' instead of 'h'. */
+#warning "Move this to a function in term.c!"
 #define MILA_TERMCODES_23 "\x1b[?1049h\n"
             const char altscren[] = MILA_TERMCODES_23;
             const int altscren_len = sizeof( altscren );

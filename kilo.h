@@ -109,6 +109,8 @@ typedef struct hlcolor {
     int r,g,b;
 } hlcolor;
 
+	/* TODO: Break this into separate window & pane (frame & glass?) */
+	/*  sections, to support multi-document capability. */
 struct editorConfig {
     int no_altscr;  /* Forbid usage of the alternate-screen. */
 
@@ -175,6 +177,7 @@ enum KEY_ACTION{
 
 
 
+#warning "All uses of this need to be moved to a function in term.c!"
 #define MILA_TERMCODES_11 "\x1b[7m"
 
 void mila_term_cursseek_setpos( int alter, int ofile, int row, int col );

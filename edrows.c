@@ -40,7 +40,8 @@
 /* ======================= Editor rows implementation ======================= */
 
 /* Update the rendered version and the syntax highlight of a row. */
-void editorUpdateRow(erow *row) {
+void editorUpdateRow( erow *row )
+{
     unsigned int tabs = 0, nonprint = 0;
     int j, idx;
 
@@ -54,6 +55,7 @@ void editorUpdateRow(erow *row) {
         (unsigned long long) row->size + tabs*MILA_TABSIZE + nonprint*9 + 1;
     if (allocsize > UINT32_MAX) {
         printf("Some line of the edited file is too long for kilo\n");
+		/* TODO: Print WHICH row it is. */
         exit(1);
     }
 
@@ -76,7 +78,8 @@ void editorUpdateRow(erow *row) {
 
 /* Insert a row at the specified position, shifting the other rows on the bottom
  * if required. */
-void editorInsertRow(int at, char *s, size_t len) {
+void editorInsertRow( int at, char *s, size_t len )
+{
     if (at > E.numrows) return;
     E.row = realloc(E.row,sizeof(erow)*(E.numrows+1));
     if (at != E.numrows) {
@@ -97,15 +100,17 @@ void editorInsertRow(int at, char *s, size_t len) {
 }
 
 /* Free row's heap allocated stuff. */
-void editorFreeRow(erow *row) {
+void editorFreeRow( erow *row )
+{
     free(row->render);
     free(row->chars);
     free(row->hl);
 }
 
-/* Remove the row at the specified position, shifting the remainign on the
+/* Remove the row at the specified position, shifting the remaining onto the
  * top. */
-void editorDelRow(int at) {
+void editorDelRow( int at )
+{
     erow *row;
 
     if (at >= E.numrows) return;
@@ -121,7 +126,8 @@ void editorDelRow(int at) {
  * Returns the pointer to the heap-allocated string and populate the
  * integer pointed by 'buflen' with the size of the string, escluding
  * the final nulterm. */
-char *editorRowsToString(int *buflen) {
+char *editorRowsToString( int *buflen )
+{
     char *buf = NULL, *p;
     int totlen = 0;
     int j;
@@ -145,7 +151,8 @@ char *editorRowsToString(int *buflen) {
 
 /* Insert a character at the specified position in a row, moving the remaining
  * chars on the right if needed. */
-void editorRowInsertChar(erow *row, int at, int c) {
+void editorRowInsertChar( erow *row, int at, int c )
+{
     if (at > row->size) {
         /* Pad the string with spaces if the insert location is outside the
          * current length by more than a single character. */
@@ -168,7 +175,8 @@ void editorRowInsertChar(erow *row, int at, int c) {
 }
 
 /* Append the string 's' at the end of a row */
-void editorRowAppendString(erow *row, char *s, size_t len) {
+void editorRowAppendString( erow *row, char *s, size_t len )
+{
     row->chars = realloc(row->chars,row->size+len+1);
     memcpy(row->chars+row->size,s,len);
     row->size += len;
@@ -178,7 +186,8 @@ void editorRowAppendString(erow *row, char *s, size_t len) {
 }
 
 /* Delete the character at offset 'at' from the specified row. */
-void editorRowDelChar(erow *row, int at) {
+void editorRowDelChar( erow *row, int at )
+{
     if (row->size <= at) return;
     memmove(row->chars+at,row->chars+at+1,row->size-at);
     editorUpdateRow(row);
@@ -187,7 +196,8 @@ void editorRowDelChar(erow *row, int at) {
 }
 
 /* Insert the specified char at the current prompt position. */
-void editorInsertChar(int c) {
+void editorInsertChar( int c )
+{
     int filerow = E.rowoff+E.cy;
     int filecol = E.coloff+E.cx;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
@@ -209,7 +219,8 @@ void editorInsertChar(int c) {
 
 /* Inserting a newline is slightly complex as we have to handle inserting a
  * newline in the middle of a line, splitting the line as needed. */
-void editorInsertNewline(void) {
+void editorInsertNewline( void )
+{
     int filerow = E.rowoff+E.cy;
     int filecol = E.coloff+E.cx;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
@@ -245,7 +256,8 @@ fixcursor:
 }
 
 /* Delete the char at the current prompt position. */
-void editorDelChar(void) {
+void editorDelChar( void )
+{
     int filerow = E.rowoff+E.cy;
     int filecol = E.coloff+E.cx;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];

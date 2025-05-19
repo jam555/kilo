@@ -83,7 +83,8 @@ char *C_HL_keywords[] = {
 
 /* Here we define an array of syntax highlights by extensions, keywords,
  * comments delimiters and flags. */
-struct editorSyntax HLDB[] = {
+struct editorSyntax HLDB[] =
+{
     {
         /* C / C++ */
         C_HL_extensions,
@@ -92,43 +93,48 @@ struct editorSyntax HLDB[] = {
         HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS
     }
 };
-size_t HLBD_entrycount = (sizeof(HLDB)/sizeof(HLDB[0]));
+size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     const char noaltscr_opt[] = "--no-alt-screen";
-    if (argc < 2 || argc > 3) {
-        fprintf(stderr,"Usage: kilo <filename> [%s]\n",noaltscr_opt);
-        exit(1);
+    if( argc < 2 || argc > 3 )
+	{
+        fprintf( stderr, "Usage: kilo <filename> [%s]\n", noaltscr_opt );
+        exit( 1 );
     }
 
-    if(argc == 3) {
+    if( argc == 3 ) {
         /* Surpress usage of the alternate screen: useful if you */
         /*  want to keep info displayed on exit. */
-        if( strcmp( noaltscr_opt, argv[2] ) != 0 ) {
-            perror("Unfamiliar option:");
-            fprintf(stderr,"  %s",argv[2]);
-            exit(1);
+        if( strcmp( noaltscr_opt, argv[ 2 ] ) != 0 ) {
+            perror( "Unfamiliar command-line option:" );
+            fprintf( stderr, "  %s", argv[ 2 ] );
+            exit( 1 );
         }
         E.no_altscr = 1;
+		
     } else {
-        E.no_altscr = 0;
+        
+		E.no_altscr = 0;
     }
 
     initEditor();
-    editorSelectSyntaxHighlight(argv[1]);
-    editorOpen(argv[1]);
-    enableRawMode(STDIN_FILENO);
+    editorSelectSyntaxHighlight( argv[ 1 ] );
+    editorOpen( argv[ 1 ] );
+    enableRawMode( STDIN_FILENO );
 		/* TODO: This message needs to be displayed by default! */
-    editorSetStatusMessage(
-        "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
-    while(1) {
+		/* Note that the max length for a line is currentlt UINT32_MAX stored characters (NOT displayed characters). */
+    editorSetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" );
+    while( 1 )
+	{
         editorRefreshScreen();
 			/* TODO: Subject this to a mode switch! */
 			/*  If mode != notepad, then run input through CLI mode! */
 			/*  For CLI mode, try to use "linenoise" from the same author. */
-        editorProcessKeypress(STDIN_FILENO);
+        editorProcessKeypress( STDIN_FILENO );
     }
     return 0;
 }
