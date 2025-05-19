@@ -146,6 +146,56 @@ void mila_ab_defaultFg( struct abuf *ab )
 
 /* ============================= Terminal update ============================ */
 
+	/* Calculate the on-screen position of the cursor position specified in */
+	/*  the relevant kilo.h:editorConfig{} */
+	/* BE AWARE! This ALTERS the provided ints, but DOES NOT CLEAR THEM, so */
+	/*  the value stored in those ints WILL alter the final result. ALSO, the */
+	/*  ONLY protection against null-pointers is that if the int pointers are */
+	/*  null, then they'll be redirected to an internal int. */
+void editorCalc_CurScreenPos( int *x, int *y )
+{
+	/* TODO: Alter this to take VTAB into account for *y */
+	
+	int x_ = 1, y_ = E.cy + 1;
+	if( !x )
+	{
+		x = &x_;
+	}
+	if( !y )
+	{
+		y = &y_;
+	}
+	
+    int j;
+    int filerow = E.rowoff + E.cy;
+    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
+    if( row )
+	{
+        for( j = E.coloff; j < ( E.cx + E.coloff ); j++ )
+		{
+            if( j < row->size && row->chars[ j ] == TAB )
+			{
+				*x += ( MILA_TABSIZE - 1 ) - ( ( *x ) % MILA_TABSIZE );
+			}
+            ( *x )++;
+        }
+    }
+}
+
+    /* Update the cursor position to reflect it's "official" position. Note */
+	/*  that e.g. TABs may cause the on-screen position to be different than */
+	/*  e.g. E.cx */
+void editorUpdateCurPos( struct abuf *ab )
+{
+	int cx = 1, cy = E.cy + 1;
+	
+	editorCalc_CurScreenPos( &cx, &cy );
+	mila_ab_curseek( ab, 2,   cy, cx, "" ); /* Move cursor. */
+}
+
+
+/* TODO: Start using the util* variables. */
+
 /* Draws the status line. Pulled out of editorRefreshScreen() for */
 /*  modularity. */
 void editorStatusLine( struct abuf *ab, struct abuf *util,   char *status, int stat_len,  char *rstatus, int rstat_len )
@@ -170,16 +220,19 @@ void editorStatusLine( struct abuf *ab, struct abuf *util,   char *status, int s
 	}
 	
 	abAppend( ab, status, stat_len );
+	abAppend( util, status, stat_len );
 	while( stat_len < E.screencols )
 	{
 		if( E.screencols - stat_len == rstat_len )
 		{
 			abAppend( ab, rstatus, rstat_len );
+			abAppend( util, rstatus, rstat_len );
 			break;
 			
 		} else {
 			
 			abAppend( ab, " ", 1 );
+			abAppend( util, " ", 1 );
 			stat_len++;
 		}
 	}
@@ -198,6 +251,7 @@ void editorMessageLine( struct abuf *ab, struct abuf *util )
 	)
 	{
 		abAppend( ab, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
+		abAppend( util, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
 	}
 }
 
@@ -212,12 +266,16 @@ void editorUtilityArea( struct abuf *ab, struct abuf *util )
 		/* We'll use reversed-color, both calls the line out and serves as a divider. */
 	mila_ab_swapFgBg( ab );
 	mila_ab_cleartoend( ab,  "" );
+	mila_ab_swapFgBg( util );
+	mila_ab_cleartoend( util,  "" );
 	editorStatusLine( ab, util,   status, sizeof( status ),  rstatus, sizeof( rstatus ) );
 	
 	/* Second row depends on E.statusmsg and the status message update time. */
 		/* Return foreground/background to normal. */
 	mila_ab_resetAttribs( ab,  "\r\n" );
 	mila_ab_cleartoend( ab,  "" );
+	mila_ab_resetAttribs( util,  "\r\n" );
+	mila_ab_cleartoend( util,  "" );
 	editorMessageLine( ab, util );
 	
 #if MILA_UTILITYLINES != 2
@@ -232,7 +290,6 @@ void editorRefreshScreen( void )
 {
     int y;
     erow *r;
-    char buf[ 32 ];
     struct abuf ab = ABUF_INIT;
 
     mila_ab_curvis_hide( &ab );
@@ -344,41 +401,25 @@ void editorRefreshScreen( void )
 		/* Render the utility area. */
 	editorUtilityArea( &ab, &util );
 
-    /* Put cursor at its current position. Note that the horizontal position
-     * at which the cursor is displayed may be different compared to 'E.cx'
-     * because of TABs. */
-	 /* TODO: split this code so that the tab-corrected location can be used */
-	 /*  as the text-column value. */
-    int j;
-    int cx = 1;
-    int filerow = E.rowoff + E.cy;
-    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
-    if( row )
-	{
-        for( j = E.coloff; j < ( E.cx + E.coloff ); j++ )
-		{
-            if( j < row->size && row->chars[ j ] == TAB )
-			{
-				cx += ( MILA_TABSIZE - 1 ) - ( (cx) % MILA_TABSIZE );
-			}
-            cx++;
-        }
-    }
-    mila_ab_curseek( &ab, 2,   E.cy + 1, cx, "" ); /* Move cursor. */
+		/* Restore the cursor to it's "official" position. */
+	editorUpdateCurPos( &ab );
 	mila_ab_curvis_show( &ab ); /* Show cursor. */
 	
     /* Render the display. */
 	write( STDOUT_FILENO, ab.b, ab.len );
+	/* TODO: We need to copy a "window" from util into... wherever in */
+	/*  E that we write it to. */
     abFree( &util );
     abFree( &ab );
 }
 
 /* Set an editor status message for the second line of the status, at the
  * end of the screen. */
-void editorSetStatusMessage(const char *fmt, ...) {
+void editorSetStatusMessage( const char *fmt, ... )
+{
     va_list ap;
     va_start( ap,fmt );
-    vsnprintf( E.statusmsg,sizeof(E.statusmsg),fmt,ap );
+    vsnprintf( E.statusmsg, sizeof( E.statusmsg ), fmt, ap );
     va_end( ap );
     E.statusmsg_time = time( NULL );
 }
