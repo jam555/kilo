@@ -388,3 +388,45 @@ void updateWindowSize(void);
 void handleSigWinCh(int unused __attribute__((unused)));
 
 void initEditor(void);
+
+
+
+
+
+void editorCalc_CurScreenPos( int *x, int *y );
+void editorUpdateCurPos( struct abuf *ab );
+
+
+
+
+
+/* Draws the status line. Pulled out of editorRefreshScreen() for */
+/*  modularity. */
+	/* ab: the primary buffer, will get drawn to the conventional terminal. */
+	/* util: the utility-zone buffer, will ONLY get drawn to an auxiliary */
+	/*  display (such as a character LCD), which might not even exist. */
+	/* fstatus & fstat_len: storage for info about the file. */
+	/* rstatus & rstat_len: storage for info about... the display, what does */
+	/*  'r' stand for? Row? */
+void editorStatusLine
+(
+	struct abuf *ab, struct abuf *util,
+	
+	char *fstatus, int fstat_len,
+	char *rstatus, int rstat_len
+);
+	/* Renders the message line. The message will eventually move to the */
+	/*  status line, and be replaced with a CLI area. */
+		/* ab: the primary buffer, will get drawn to the conventional */
+		/*  terminal. */
+		/* util: the utility-zone buffer, will ONLY get drawn to an auxiliary */
+		/*  display (such as a character LCD), which might not even exist. */
+void editorMessageLine( struct abuf *ab, struct abuf *util );
+
+    /* The following code draws the utility area. At the current time it only */
+    /*  handles status lines, but I intend to throw other stuff in too. */
+		/* ab: the primary buffer, will get drawn to the conventional */
+		/*  terminal. */
+		/* util: the utility-zone buffer, will ONLY get drawn to an auxiliary */
+		/*  display (such as a character LCD), which might not even exist. */
+void editorUtilityArea( struct abuf *ab, struct abuf *util );

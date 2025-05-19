@@ -56,62 +56,14 @@ void abFree( struct abuf *ab )
 
 /* ============================= Terminal update ============================ */
 
-	/* Calculate the on-screen position of the cursor position specified in */
-	/*  the relevant kilo.h:editorConfig{} */
-	/* BE AWARE! This ALTERS the provided ints, but DOES NOT CLEAR THEM, so */
-	/*  the value stored in those ints WILL alter the final result. ALSO, the */
-	/*  ONLY protection against null-pointers is that if the int pointers are */
-	/*  null, then they'll be redirected to an internal int. */
-void editorCalc_CurScreenPos( int *x, int *y )
-{
-	/* TODO: Alter this to take VTAB into account for *y */
-	
-	int x_ = 1, y_ = E.cy + 1;
-	if( !x )
-	{
-		x = &x_;
-	}
-	if( !y )
-	{
-		y = &y_;
-	}
-	
-    int j;
-    int filerow = E.rowoff + E.cy;
-    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
-    if( row )
-	{
-        for( j = E.coloff; j < ( E.cx + E.coloff ); j++ )
-		{
-            if( j < row->size && row->chars[ j ] == TAB )
-			{
-				*x += ( MILA_TABSIZE - 1 ) - ( ( *x ) % MILA_TABSIZE );
-			}
-            ( *x )++;
-        }
-    }
-}
-
-    /* Update the cursor position to reflect it's "official" position. Note */
-	/*  that e.g. TABs may cause the on-screen position to be different than */
-	/*  e.g. E.cx */
-void editorUpdateCurPos( struct abuf *ab )
-{
-	int cx = 1, cy = E.cy + 1;
-	
-	editorCalc_CurScreenPos( &cx, &cy );
-	mila_ab_curseek( ab, 2,   cy, cx, "" ); /* Move cursor. */
-}
-
-
-/* TODO: Start using the util* variables. */
-
 /* Draws the status line. Pulled out of editorRefreshScreen() for */
 /*  modularity. */
 	/* ab: the primary buffer, will get drawn to the conventional terminal. */
-	/* util: the utility-zone buffer, will ONLY get drawn to an auxiliary display (such as a character LCD), which might not even exist. */
+	/* util: the utility-zone buffer, will ONLY get drawn to an auxiliary */
+	/*  display (such as a character LCD), which might not even exist. */
 	/* fstatus & fstat_len: storage for info about the file. */
-	/* rstatus & rstat_len: storage for info about... the display, what does 'r' stand for? Row? */
+	/* rstatus & rstat_len: storage for info about... the display, what does */
+	/*  'r' stand for? Row? */
 void editorStatusLine( struct abuf *ab, struct abuf *util,   char *fstatus, int fstat_len,  char *rstatus, int rstat_len )
 {
 	(void)util;
@@ -173,6 +125,10 @@ void editorMessageLine( struct abuf *ab, struct abuf *util )
 
     /* The following code draws the utility area. At the current time it only */
     /*  handles status lines, but I intend to throw other stuff in too. */
+		/* ab: the primary buffer, will get drawn to the conventional */
+		/*  terminal. */
+		/* util: the utility-zone buffer, will ONLY get drawn to an auxiliary */
+		/*  display (such as a character LCD), which might not even exist. */
 void editorUtilityArea( struct abuf *ab, struct abuf *util )
 {
     /* Prepare for the utility area: */
@@ -197,146 +153,4 @@ void editorUtilityArea( struct abuf *ab, struct abuf *util )
 #if MILA_UTILITYLINES != 2
 	#error "MILA_UTILITYLINES doesn't match editorUtilityArea()."
 #endif
-}
-
-
-/* This function writes the whole screen using VT100 escape characters
- * starting from the logical state of the editor in the global state 'E'. */
-void editorRefreshScreen( void )
-{
-    int y;
-    erow *r;
-    struct abuf ab = ABUF_INIT;
-
-    mila_ab_curvis_hide( &ab );
-    mila_ab_curseek_home( &ab );
-    for( y = 0; y < E.screenrows; y++ )
-	{
-        int filerow = E.rowoff + y;
-
-        if( filerow >= E.numrows )
-		{
-            if( E.numrows == 0 && y == E.screenrows / 3 )
-			{
-                char welcome[ 80 ];
-#warning "Move this to a function inside term.c!"
-#define MILA_TERMCODES_9 "\x1b[0K"
-                int welcomelen =
-					snprintf
-					(
-						welcome, sizeof( welcome ),
-                    	
-						"Kilo editor -- verison %s%s\r\n",
-						KILO_VERSION, MILA_TERMCODES_9
-					);
-                int padding = ( E.screencols - welcomelen ) / 2;
-                if( padding )
-				{
-                    abAppend( &ab, "~", 1 );
-                    padding--;
-                }
-                while( padding-- )
-				{
-					abAppend( &ab," ",1 );
-				}
-                abAppend( &ab, welcome, welcomelen );
-				
-            } else {
-                
-				mila_ab_cleartoend( &ab, "\r\n" );
-            }
-            continue;
-        }
-
-        r = &E.row[ filerow ];
-
-        int len = r->rsize - E.coloff;
-        int current_color = -1;
-        if( len > 0 )
-		{
-            if( len > E.screencols )
-			{
-				len = E.screencols;
-			}
-            char *c = r->render + E.coloff;
-            unsigned char *hl = r->hl + E.coloff;
-            int j;
-            for( j = 0; j < len; j++ )
-			{
-                if( hl[ j ] == HL_NONPRINT )
-				{
-                    char sym;
-                    mila_ab_swapFgBg( &ab );
-                    if( c[ j ] <= 26 )
-					{
-                        sym = '@' + c[ j ];
-						
-                    } else {
-                        
-						sym = '?';
-                    }
-					abAppend( &ab, &sym, 1 );
-                    mila_ab_resetAttribs( &ab, "" );
-					
-                } else if( hl[ j ] == HL_NORMAL )
-				{
-                    if( current_color != -1 )
-					{
-                        mila_ab_defaultFg( &ab );
-                        current_color = -1;
-                    }
-                    abAppend( &ab, c + j, 1 );
-					
-                } else {
-                    
-					int color = editorSyntaxToColor( hl[ j ] );
-                    if( color != current_color )
-					{
-                        char buf[ 16 ];
-#warning "Move this to a function inside term.c!"
-#define MILA_TERMCODES_14 "\x1b[%dm"
-                        int clen =
-							snprintf
-							(
-								buf, sizeof( buf ),
-								MILA_TERMCODES_14, color
-							);
-                        current_color = color;
-                        abAppend( &ab, buf, clen );
-                    }
-                    abAppend( &ab, c + j, 1 );
-                }
-            }
-        }
-        mila_ab_defaultFg( &ab );
-        mila_ab_cleartoend( &ab, "\r\n" );
-    }
-	
-	
-	struct abuf util = ABUF_INIT;
-
-		/* Render the utility area. */
-	editorUtilityArea( &ab, &util );
-
-		/* Restore the cursor to it's "official" position. */
-	editorUpdateCurPos( &ab );
-	mila_ab_curvis_show( &ab ); /* Show cursor. */
-	
-    /* Render the display. */
-	write( STDOUT_FILENO, ab.b, ab.len );
-	/* TODO: We need to copy a "window" from util into... wherever in */
-	/*  E that we write it to. */
-    abFree( &util );
-    abFree( &ab );
-}
-
-/* Set an editor status message for the second line of the status, at the
- * end of the screen. */
-void editorSetStatusMessage( const char *fmt, ... )
-{
-    va_list ap;
-    va_start( ap,fmt );
-    vsnprintf( E.statusmsg, sizeof( E.statusmsg ), fmt, ap );
-    va_end( ap );
-    E.statusmsg_time = time( NULL );
 }
