@@ -40,6 +40,104 @@
 
 struct termios orig_termios; /* In order to restore at exit.*/
 
+
+
+void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail )
+{
+	char buf[ 32 ];
+	
+#define MILA_TERMCODES_8 "\x1b[H%s" /* Go home. */
+#define mila_ab_curseek_ONEARG "\x1b[%dH%s"
+#define MILA_TERMCODES_21 "\x1b[%d;%dH%s"
+	
+	if( !tail )
+	{
+		tail = "";
+	}
+	
+	/* Populate the buffer. */
+	if( argn == 0 )
+	{
+		snprintf( buf, sizeof(buf), MILA_TERMCODES_8,  tail );
+		
+	} else if( argn == 1 )
+	{
+		snprintf( buf, sizeof(buf), mila_ab_curseek_ONEARG, x,  tail );
+		
+	} else if( argn == 2 )
+	{
+		snprintf( buf, sizeof(buf), MILA_TERMCODES_21, x, y,  tail );
+	}
+	
+	abAppend( ab, buf, strlen( buf ) );
+}
+void mila_ab_curseek_home( struct abuf *ab )
+{
+	mila_ab_curseek( ab, 0,   0, 0, "" );
+}
+
+void mila_ab_curvis_hide( struct abuf *ab )
+{
+#define MILA_TERMCODES_7 "\x1b[?25l"
+    abAppend( ab, MILA_TERMCODES_7, 6 ); /* Hide cursor. */
+}
+void mila_ab_curvis_show( struct abuf *ab )
+{
+#define MILA_TERMCODES_22 "\x1b[?25h"
+    abAppend( ab, MILA_TERMCODES_22, 6 ); /* Show cursor. */
+}
+
+void mila_ab_clearall( struct abuf *ab )
+{
+#define mila_ab_clearall_TERMCODE "\x1b[2K\r\n"
+	abAppend( ab, mila_ab_clearall_TERMCODE, 7 );
+}
+void mila_ab_cleartostart( struct abuf *ab )
+{
+#define mila_ab_cleartostart_TERMCODE "\x1b[1K\r\n"
+	abAppend( ab, mila_ab_cleartostart_TERMCODE, 7 );
+}
+void mila_ab_cleartoend( struct abuf *ab, char *tail )
+{
+	char buf[ 32 ];
+	
+	if( !tail )
+	{
+		tail = "";
+	}
+	
+#define mila_ab_cleartoend_TERMCODE "\x1b[0K%s"
+	snprintf( buf, sizeof( buf ), mila_ab_cleartoend_TERMCODE,  tail );
+	
+	abAppend( ab, buf, strlen( buf ) );
+}
+
+void mila_ab_defaultFg( struct abuf *ab )
+{
+#define MILA_TERMCODES_13 "\x1b[39m"
+	abAppend( ab, MILA_TERMCODES_13, 5 );
+}
+void mila_ab_swapFgBg( struct abuf *ab )
+{
+	abAppend( ab, MILA_TERMCODES_11, 4 );
+}
+void mila_ab_resetAttribs( struct abuf *ab, char *tail )
+{
+	char buf[ 32 ];
+	
+	if( !tail )
+	{
+		tail = "";
+	}
+	
+#define MILA_TERMCODES_12 "\x1b[0m%s"
+	snprintf( buf, sizeof( buf ), MILA_TERMCODES_12,  tail );
+	
+	abAppend( ab, buf, strlen( buf ) );
+}
+
+
+
 void mila_term_cursseek_setpos( int alter, int ofile, int row, int col )
 {
 	char seq[32];
