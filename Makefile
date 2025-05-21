@@ -1,11 +1,17 @@
+# THis should currently be compatible with both GNU's and Microsoft's make.
+
+EDHEADERS= thoutext/edrows.h thoutext/edtools.h
+EDSRC= thoutext/edrows.c thoutext/edtools.c
+
+ROOTHEADERS= kilo.h appenbuf.h term.h syntax.h edfind.h edevents.h
+ROOTSRC= kilo.c appenbuf.c term.c syntax.c edfind.c edevents.c
+
 all: kilo
 
-.PHONY: all kilo clean
-
-headers: kilo.h appenbuf.h term.h syntax.h edrows.h edfind.h edevents.h thoutext/edtools.h
-sources: kilo.c appenbuf.c term.c syntax.c edrows.c edfind.c edevents.c thoutext/edtools.c
+headers: $(ROOTHEADERS) $(EDHEADERS)
+sources: $(ROOTSRC) $(EDSRC)
 kilo: headers sources Makefile
-	$(CC) -o kilo kilo.c appenbuf.c term.c syntax.c edrows.c edfind.c edevents.c thoutext/edtools.c -Wall -W -pedantic -std=c99
+	$(CC) -o kilo $(ROOTSRC) $(EDSRC) -Wall -W -pedantic -std=c99
 
 clean:
 	rm kilo
