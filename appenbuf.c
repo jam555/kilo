@@ -64,7 +64,13 @@ void abFree( struct abuf *ab )
 	/* fstatus & fstat_len: storage for info about the file. */
 	/* rstatus & rstat_len: storage for info about... the display, what does */
 	/*  'r' stand for? Row? */
-void editorStatusLine( struct abuf *ab, struct abuf *util,   char *fstatus, int fstat_len,  char *rstatus, int rstat_len )
+void abStatusLine
+(
+	struct abuf *ab, struct abuf *util,
+	
+	char *fstatus, int fstat_len,
+	char *rstatus, int rstat_len
+)
 {
 	(void)util;
 	
@@ -103,9 +109,26 @@ void editorStatusLine( struct abuf *ab, struct abuf *util,   char *fstatus, int 
 		}
 	}
 }
+void editorStatusLine
+(
+	struct abuf *ab, struct abuf *util,
+	
+	char *fstatus, int fstat_len,
+	char *rstatus, int rstat_len
+)
+{
+	abStatusLine
+	(
+		ab, util,
+		
+		fstatus, fstat_len,
+		rstatus, rstat_len
+	);
+}
+
 	/* Renders the message line. The message will eventually move to the status line, and be replaced with a CLI area. */
 	/* See editorStatusLine() for argument info. */
-void editorMessageLine( struct abuf *ab, struct abuf *util )
+void abMessageLine( struct abuf *ab, struct abuf *util )
 {
 	(void)util;
 	
@@ -122,6 +145,10 @@ void editorMessageLine( struct abuf *ab, struct abuf *util )
 		abAppend( util, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
 	}
 }
+void editorMessageLine( struct abuf *ab, struct abuf *util )
+{
+	abMessageLine( ab, util );
+}
 
     /* The following code draws the utility area. At the current time it only */
     /*  handles status lines, but I intend to throw other stuff in too. */
@@ -129,7 +156,7 @@ void editorMessageLine( struct abuf *ab, struct abuf *util )
 		/*  terminal. */
 		/* util: the utility-zone buffer, will ONLY get drawn to an auxiliary */
 		/*  display (such as a character LCD), which might not even exist. */
-void editorUtilityArea( struct abuf *ab, struct abuf *util )
+void abUtilityArea( struct abuf *ab, struct abuf *util )
 {
     /* Prepare for the utility area: */
     char status[ 80 ], rstatus[ 80 ];
@@ -153,4 +180,8 @@ void editorUtilityArea( struct abuf *ab, struct abuf *util )
 #if MILA_UTILITYLINES != 2
 	#error "MILA_UTILITYLINES doesn't match editorUtilityArea()."
 #endif
+}
+void editorUtilityArea( struct abuf *ab, struct abuf *util )
+{
+	abUtilityArea( ab, util );
 }
