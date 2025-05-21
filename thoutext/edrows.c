@@ -34,7 +34,8 @@
  */
 
 
-#include "kilo.h"
+#include "../kilo.h"
+#include "edrows.h"
 
 
 /* ======================= Editor rows implementation ======================= */
