@@ -50,7 +50,8 @@
 
 
 #if GCC
-	/* THis is actually a length defined by the linker, but this is how it appears. */
+	/* This is actually a length defined by the linker, but this is how it */
+	/*  appears. */
 extern void *__STACK_SIZE;
 #elif 0
 /* MSVC++ stuff: what's the C version? Might need to just wrap it. */
@@ -69,7 +70,8 @@ uintptr_t get_defaultstacksize()
 
 
 
-	/* This represents the layout of a minimal stack frame. Though I don't think it's really minimal. */
+	/* This represents the layout of a minimal stack frame. Though I don't */
+	/*  think it's really minimal. */
 struct dummyframe
 {
 	/* For at least MSVC targeting Win64, this layout should be correct. */
@@ -110,9 +112,11 @@ struct corohead
 {
 	void *exit_retaddr_MSVC;
 	
-	corohead *this; /* TODO: rename this variable. */
+	corohead *here;
 	corobody *lastbyte_a;
-	int (*conclude)( uintptr_t );
+		/* Marked volatile for the sake of the destruction code: conclude() */
+		/*  should null itself out upon completion of it's task. */
+	volatile int (*conclude)( corohead*, uintptr_t );
 	
 	void *exit_retaddr_SysV;
 	corobody *lastbyte_b;
@@ -121,7 +125,35 @@ struct corohead
 	
 	volatile jmp_buf state;
 };
-volatile thread corohead main_fiber = { 0 }, *current_fiber = 0;
+extern thread corohead main_fiber;
+
+static int co_conclude( corohead *ign1, uintptr_t ign2 )
+{
+	/* THis SHOULD literally never run. SHOULD... */
+	
+	(void)ign1;
+	(void)ign2;
+	
+	exit( 1 );
+}
+thread corohead main_fiber =
+{
+		/* It shouldn't be possible for this to get used. */
+	(void*)&exit,
+	
+	&main_fiber,
+	0,
+	&co_conclude,
+	
+	&exit,
+	0,
+	
+	0,
+	
+	{ 0 }
+};
+static volatile thread corohead *current_fiber = &main_fiber;
+static volatile corohead *dead_fiber = 0;
 
 	/* Note that the stack frame for this SHOULD perfectly overlap this */
 	/*  argument list with the correspondingly typed members of corohead{}. */
@@ -131,7 +163,13 @@ volatile thread corohead main_fiber = { 0 }, *current_fiber = 0;
 	/*  allocated to FALLING addresses, but in the REVERSE of of the order */
 	/*  that they are encountered, negative * negative == positive, thus the */
 	/*  direction is the same despite sorta being the opposite. */
-void cocollapse( corohead *head, corobody *body, int (*conclude)( uintptr_t ) );
+void cocollapse
+(
+	corohead *head,
+	corobody *body,
+	int (*conclude)( corohead*, uintptr_t )
+);
+void coclean();
 uintptr_t coro_getaux()
 {
 	if( current_fiber )
@@ -177,12 +215,27 @@ Stuff to still build:
 
 
 /* TODO: See what else needs to use this. */
-enum { BADARGS = -1, INVALID = 0, WORKING=1, DONE };
+enum { BADSTATE = -2, BADARGS = -1, INVALID = 0, WORKING=1, DONE };
+
+	/* Not needed here, but maybe on other platforms? */
+int cocontext( void *data, int (func*)( void* ) )
+{
+	return( func( data ) );
+}
 
 int coyield( corohead *dest )
 {
+	if( !current_fiber )
+	{
+		exit( 1 );
+	}
 	if( dest )
 	{
+		if( !( dest->conclude ) )
+		{
+			return( BADSTATE );
+		}
+		
 		int res = setjmp( current_fiber->state );
 		if( !res )
 		{
@@ -195,15 +248,24 @@ int coyield( corohead *dest )
 }
 
 
+
 /* These two functions actually build and initialize coroutines. */
 #if 1
-static void coro_boot( corohead *head,  void *coro_data, void (*coro_main)( corohead*, void* ) )
+static void coro_boot
+(
+	corohead *head,
+	
+	void *coro_data,
+	void (*coro_main)( corohead*, void* )
+)
 {
 		/* ONLY jumps back into cobuild(). */
 	longjmp( current_fiber->state, 1 );
 	
 	coro_main( head, coro_data );
 }
+#else
+	#error "Only GCC & Clang can reliably be supported without extension."
 #endif
 int cobuild
 (
@@ -211,9 +273,13 @@ int cobuild
 	
 	void *coro_data,
 	void (*coro_main)( corohead*, void* ),
+		/* This is optional, as coro_main() can always just set corohead-> */
+		/*  ->auxiliary manually. */
 	uintptr_t coro_auxiliarydata,
 	
-	int (*conclude)( uintptr_t ),
+		/* This gets used as a flag during destruction, so it CANNOT be null. */
+		/* conclude() is the deinitializer for the coroutine. */
+	int (*conclude)( corohead*, uintptr_t ),
 	
 	
 	corohead **ret
@@ -221,17 +287,24 @@ int cobuild
 {
 	if( sizeof( void* ) > 8 )
 	{
-		/* We know nothing about this void* format, thus we know nothing about the target! */
+		/* We know nothing about this void* format, thus we know nothing */
+		/*  about the target! */
 		return( -2 );
 	}
 	
-	if( stacksize > sizeof( dummyframe ) * 2 && ret && current_fiber )
+	if
+	(
+		stacksize > sizeof( dummyframe ) * 2 &&
+		ret && current_fiber && conclude
+	)
 	{
 		stacksize +=
 			sizeof( corohead ) * 2 +
 			sizeof( dummyframe ) * 2 +
 			sizeof( corobody ) +
-			128; /* x86-64 red-zone, used in Linux apps as a safe zone for temporaries by funcs. */
+				/* x86-64 red-zone, used in Linux apps as a safe zone for */
+				/*  temporaries by funcs. */
+			128;
 		
 		void **alloc = (void**)malloc( stacksize );
 		if( !alloc )
@@ -270,13 +343,13 @@ int cobuild
 			
 			head = (corohead*)head_;
 			/* Basic header initialization. */
-				/* If this EVER gets called, something went VERY wrong. Note that */
-				/*  depending on the size of int, exit MIGHT receive ->lastbyte */
-				/*  as an argument. */
+				/* If this EVER gets called, something went VERY wrong. Note */
+				/*  that depending on the size of int, exit MIGHT receive */
+				/*  ->lastbyte as an argument. */
 			head->exit_retaddr_MSVC = &exit;
 			head->exit_retaddr_SysV = &exit;
-			/* For cocollapse(), these are actually meant to act as it's args. */
-			head->this = head;
+			/* For cocollapse(), these are meant to act as it's args. */
+			head->here = head;
 			head->lastbyte_a = (corobody*)alloc;
 			head->lastbyte_b = (corobody*)alloc;
 			head->conclude = conclude;
@@ -347,13 +420,58 @@ int cobuild
 	return( -1 );
 }
 
-void cocollapse( corohead *head, corobody *body, int (*conclude)( uintptr_t ) )
+void cocollapse
+(
+	corohead *head,
+	corobody *body,
+	int (*conclude)( corohead*, uintptr_t )
+)
 {
-	if( !conclude || !( conclude( head ) ) )
+	coclean();
+	
+	if( !( head->conclude ) || !conclude || head == &main_fiber )
+	{
+		/* Use ->conclude as a marker for "already running this elsewhere". */
+		
+		return;
+	}
+	
+		/* We actually want this test & null to be an atomic cmp-and-swap, */
+		/*  even for signals. */
+	if( conclude != current_fiber->conclude )
+	{
+		exit( 1 );
+	}
+	current_fiber->conclude = 0;
+	
+	/* Test result. */
+	if( !( conclude( head, current_fiber->auxiliary ) ) )
 	{
 		exit( 1 );
 	}
 	
-	/* Call into the coroutine code that switches to main & deallocates a coroutine: we're ready. */
-	??? ( body );
+	if( head == current_fiber )
+	{
+		/* DON'T delete the fiber while we're using it as our stack, stick it */
+		/*  in a cleanup stack instead. We really want to use atomics here. */
+		
+		head->here = dead_fiber;
+		dead_fiber = head;
+		
+	} else {
+		
+		free( head->lastbyte_b );
+	}
+}
+void coclean()
+{
+	/* We really want to use atomics with dead_fiber. */
+	
+	corohead *tmp = dead_fiber;
+	while( dead_fiber )
+	{
+		dead_fiber = tmp->here;
+		tmp->here = 0;
+		free( tmp );
+	}
 }
