@@ -33,29 +33,24 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdlib.h>
+#include "coro.h"
 
 
+__thread corohead main_fiber = { 0 };
+
+static volatile __thread corohead *current_fiber = 0;
+static volatile corohead *dead_fiber = 0;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-#if GCC
+#ifdef __GNUC__
 	/* This is actually a length defined by the linker, but this is how it */
 	/*  appears. */
 extern void *__STACK_SIZE;
-#elif 0
-/* MSVC++ stuff: what's the C version? Might need to just wrap it. */
-property int StackReserveSize { int get(); void set(int value); };
+#else
+#error "coro.c encountereed an unsupported compiler!\n"
+	/* MSVC++ stuff: what's the C version? Might need to just wrap it. */
+/* property int StackReserveSize { int get(); void set(int value); }; */
 #endif
 
 	/* This only works for CC & similar. */
@@ -65,68 +60,9 @@ uintptr_t get_defaultstacksize()
 }
 
 
-
-
-
-
-
-	/* This represents the layout of a minimal stack frame. Though I don't */
-	/*  think it's really minimal. */
-struct dummyframe
-{
-	/* For at least MSVC targeting Win64, this layout should be correct. */
-	
-	void *ret;
-		/* Just some rando number of slots. */
-		/* Note: for MSWin x64, this must be AT LEAST 4, while on LInux & co. */
-		/*  this is only used for args past the first 6, so we go with the MS */
-		/*  approach. */
-	void *reg[ 4 ];
-};
-	/* Slightly less minimal, assumes a base-pointer. */
-struct dummyframe_bp
-{
-	/* For at least MSVC targeting Win64, this layout should be correct. */
-	
-	void *bp;
-	void *ret;
-		/* Just some rando number of slots. */
-		/* Note: for MSWin x64, this must be AT LEAST 4, while on LInux & co. */
-		/*  this is only used for args past the first 6, so we go with the MS */
-		/*  approach. */
-	void *reg[ 4 ];
-};
-
-
-typedef struct corohead corohead;
-
-	/* Pointers to this mark the lowest address of a coroutine stack. */
-typedef struct corobody
-{
-	char corostack[];
-	
-} corobody;
-
-	/* Normally the highest-addressed occupant of an individual stack. */
-struct corohead
-{
-	void *exit_retaddr_MSVC;
-	
-	corohead *here;
-	corobody *lastbyte_a;
-		/* Marked volatile for the sake of the destruction code: conclude() */
-		/*  should null itself out upon completion of it's task. */
-	volatile int (*conclude)( corohead*, uintptr_t );
-	
-	void *exit_retaddr_SysV;
-	corobody *lastbyte_b;
-	
-	uintptr_t auxiliary;
-	
-	volatile jmp_buf state;
-};
-extern thread corohead main_fiber;
-
+	/* This exists to be used on the main-coroutine as it's conclude, purely */
+	/*  because that should NEVER run, and thus any time it runs is a major */
+	/*  error. */
 static int co_conclude( corohead *ign1, uintptr_t ign2 )
 {
 	/* THis SHOULD literally never run. SHOULD... */
@@ -136,118 +72,32 @@ static int co_conclude( corohead *ign1, uintptr_t ign2 )
 	
 	exit( 1 );
 }
-thread corohead main_fiber =
-{
-		/* It shouldn't be possible for this to get used. */
-	(void*)&exit,
-	
-	&main_fiber,
-	0,
-	&co_conclude,
-	
-	&exit,
-	0,
-	
-	0,
-	
-	{ 0 }
-};
-static volatile thread corohead *current_fiber = &main_fiber;
-static volatile corohead *dead_fiber = 0;
-
-	/* Note that the stack frame for this SHOULD perfectly overlap this */
-	/*  argument list with the correspondingly typed members of corohead{}. */
-	/*  This may seem odd, but stack elements are allocated to growing */
-	/*  addresses as encountered, while arguments are ALSO allocated to */
-	/*  growing addresses as encountered... but the other way around, they're */
-	/*  allocated to FALLING addresses, but in the REVERSE of of the order */
-	/*  that they are encountered, negative * negative == positive, thus the */
-	/*  direction is the same despite sorta being the opposite. */
-void cocollapse
-(
-	corohead *head,
-	corobody *body,
-	int (*conclude)( corohead*, uintptr_t )
-);
-void coclean();
-uintptr_t coro_getaux()
-{
-	if( current_fiber )
-	{
-		return( current_fiber->auxiliary );
-	}
-	
-	return( 0 );
-}
-
-
-
-
-/*
-Stuff to still build:
-	cocollapse()
-	A "build main_fiber" function:
-		Note that this should ACTUALLY involve using cobuild() to build a "dummy target"
-		for the jmp_buf.
-		Also, do-nothing funcs to initialize it to.
-	A "free coroutine" function (or more likely, function-complex), to deallocate the coroutine allocations cleanly.
-	;
-*/
-
-
-
-
-
-#define get_sp(p) \
-  asm volatile("movq %%rsp, %0" : "=r"(p))
-#define get_fp(p) \
-  asm volatile("movq %%rbp, %0" : "=r"(p))
-#define set_sp(p) \
-  asm volatile("movq %0, %%rsp" : : "r"(p))
-#define set_fp(p) \
-  asm volatile("movq %0, %%rbp" : : "r"(p))
-#define copy_sp2fp() \
-	asm volatile("movq %%rsp,  %%rfp")
-#define jump_to(p) \
-	asm volatile("jmp %0" : : "r"(p))
-
-
-
-
-/* TODO: See what else needs to use this. */
-enum { BADSTATE = -2, BADARGS = -1, INVALID = 0, WORKING=1, DONE };
 
 	/* Not needed here, but maybe on other platforms? */
-int cocontext( void *data, int (func*)( void* ) )
+int cocontext( void *data, int (*func)( void* ) )
 {
+		/* Required by GCC. */
+	current_fiber = &main_fiber;
+	main_fiber =
+	(corohead)
+	{
+			/* It shouldn't be possible for this to get used. */
+		(void*)&exit,
+		
+		&main_fiber,
+		0,
+		&co_conclude,
+		
+		&exit,
+		0,
+		
+		0,
+		
+		{ 0 }
+	};
+	
 	return( func( data ) );
 }
-
-int coyield( corohead *dest )
-{
-	if( !current_fiber )
-	{
-		exit( 1 );
-	}
-	if( dest )
-	{
-		if( !( dest->conclude ) )
-		{
-			return( BADSTATE );
-		}
-		
-		int res = setjmp( current_fiber->state );
-		if( !res )
-		{
-			current_fiber = dest;
-			longjmp( dest->state, WORKING );
-		}
-		return( res );
-	}
-	return( BADARGS );
-}
-
-
 
 /* These two functions actually build and initialize coroutines. */
 #if 1
@@ -260,10 +110,12 @@ static void coro_boot
 )
 {
 		/* ONLY jumps back into cobuild(). */
-	longjmp( current_fiber->state, 1 );
+	longjmp( ( (corohead*)current_fiber )->state, 1 );
 	
 	coro_main( head, coro_data );
 }
+#define set_sp(p) \
+  asm volatile( "movq %0, %%rsp" : : "r"(p) )
 #else
 	#error "Only GCC & Clang can reliably be supported without extension."
 #endif
@@ -369,7 +221,7 @@ int cobuild
 		/* alloc should now be aligned again. This simplifies later math. */
 		
 			/* ONLY jumped to by coro_boot(). */
-		if( !setjmp( current_fiber->state ) )
+		if( !setjmp( ( (corohead*)current_fiber )->state ) )
 		{
 			set_sp( alloc );
 			/* The setjmp() should be enough to undo the low-level */
@@ -379,30 +231,34 @@ int cobuild
 				/*  an assembly file.  */
 			asm volatile
 			(
+				/* Note that despite some online samples implying otherwise, */
+				/*  registers DO require TWO leading percent signs, NOT just */
+				/*  one! */
+				
 				/* Override the previous frame pointer, essentially to hide */
 				/*  it. */
-				"mov $rsp,  %rfp\n"
+				"mov $rsp,  %%rbp\n"
 				
 				/* Load the arguments: this isn't needed elsewhere. */
-				"popq %rcx\n" /* head */
-				"popq %rdx\n" /* coro_data */
-				"popq %r8\n" /* coro_main */
+				"popq %%rcx\n" /* head */
+				"popq %%rdx\n" /* coro_data */
+				"popq %%r8\n" /* coro_main */
 				
 				/* Restore alignment. */
-				"pushq %rcx\n"
+				"pushq %%rcx\n"
 				
 				/* Call coro_main, the args are already ready. */
-				"call %0\n"
+				"call *(%0)\n"
 				
 				/* Pop align pad, & MSVC ret addr. */
-				"add $16,  %rsp\n"
+				"add $16,  %%rsp\n"
 				
 				/* Note that for an MSVC version, the add above would be */
 				/*  just 8, and these would be "movq"s, but wouldn't be in */
 				/*  a C file. */
-				"pop %rcx\n" /* ch / rcx */
-				"pop %rdx\n" /* cb / rdx */
-				"pop %r8\n" /* conclude / r8 */
+				"pop %%rcx\n" /* ch / rcx */
+				"pop %%rdx\n" /* cb / rdx */
+				"pop %%r8\n" /* conclude / r8 */
 				
 				/* Tail-call into cocollapse(). Could technically be the */
 				/*  wrong name. */
@@ -418,6 +274,44 @@ int cobuild
 	}
 	
 	return( -1 );
+}
+
+uintptr_t coro_getaux()
+{
+	if( current_fiber )
+	{
+		return( current_fiber->auxiliary );
+	}
+	
+	return( 0 );
+}
+
+int coyield( corohead *dest )
+{
+	if( !current_fiber )
+	{
+		exit( 1 );
+	}
+	if( dest )
+	{
+		if( !( dest->conclude ) )
+		{
+			return( CORO_DONE );
+		}
+		
+		int res = setjmp( ( (corohead*)current_fiber )->state );
+		if( !res )
+		{
+			current_fiber = dest;
+			longjmp( dest->state, CORO_WORKING );
+		}
+		
+			/* Let's take advantage to get rid of any accumulated debris. */
+		coclean();
+		
+		return( res );
+	}
+	return( CORO_BADARGS );
 }
 
 void cocollapse
@@ -455,8 +349,14 @@ void cocollapse
 		/* DON'T delete the fiber while we're using it as our stack, stick it */
 		/*  in a cleanup stack instead. We really want to use atomics here. */
 		
-		head->here = dead_fiber;
+		head->here = (corohead*)dead_fiber;
 		dead_fiber = head;
+		if( coyield( &main_fiber ) )
+		{
+			/* Welp, this is bad, we weren't supposed to see that return. */
+			
+			exit( 1 );
+		}
 		
 	} else {
 		
@@ -467,7 +367,7 @@ void coclean()
 {
 	/* We really want to use atomics with dead_fiber. */
 	
-	corohead *tmp = dead_fiber;
+	corohead *tmp = (corohead*)dead_fiber;
 	while( dead_fiber )
 	{
 		dead_fiber = tmp->here;
