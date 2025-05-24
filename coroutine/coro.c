@@ -43,10 +43,20 @@ static volatile __thread corohead *current_fiber = 0;
 static volatile corohead *dead_fiber = 0;
 
 
+static void debug_marker()
+{
+	/* Do nothing. */
+	return;
+}
+
+
 #ifdef __GNUC__
 	/* This is actually a length defined by the linker, but this is how it */
 	/*  appears. */
-extern void *__STACK_SIZE;
+/* extern void *__stack_size; */
+/*
+	__size_of_stack_reserve__
+*/
 #else
 #error "coro.c encountereed an unsupported compiler!\n"
 	/* MSVC++ stuff: what's the C version? Might need to just wrap it. */
@@ -56,7 +66,9 @@ extern void *__STACK_SIZE;
 	/* This only works for CC & similar. */
 uintptr_t get_defaultstacksize()
 {
-	return( (uintptr_t)__STACK_SIZE );
+		/* Just blindly allocate 1 meg. */
+	return( 1024 * 1024 );
+	/* return( (uintptr_t)__stack_size ); */
 }
 
 
@@ -109,13 +121,65 @@ static void coro_boot
 	void (*coro_main)( corohead*, void* )
 )
 {
-		/* ONLY jumps back into cobuild(). */
-	longjmp( ( (corohead*)current_fiber )->state, 1 );
-	
-	coro_main( head, coro_data );
+	if( setjmp( head->state ) )
+	{
+		coro_main( head, coro_data );
+		
+	} else {
+		
+			/* ONLY jumps back into cobuild(). */
+		longjmp( ( (corohead*)current_fiber )->state, 1 );
+	}
 }
 #define set_sp(p) \
-  asm volatile( "movq %0, %%rsp" : : "r"(p) )
+  asm volatile( "mov %0, %%rsp" : : "r"(p) )
+static void coro_bootcaller( void **alloc )
+{
+	/* SysV (including Linux) version. The 64-bit MSVC must be in */
+	/*  an assembly file.  */
+	
+	set_sp( alloc );
+	/* The setjmp() should be enough to undo the low-level */
+	/*  modifications above. */
+	
+		/* Note that despite some online samples implying otherwise, */
+		/*  registers DO require TWO leading percent signs, NOT just */
+		/*  one! */
+		/* ... WHY DOES THE EXTENDED SYNTAX CALL FOR DIFFERENT NUMBERS */
+		/*  OF PERCENT SIGNS?!? */
+		/* Override the previous frame pointer, essentially to hide */
+		/*  it. */
+	asm volatile ( "movq %rsp,  %rbp\n" );
+	asm volatile
+	(
+		/* Load the arguments: this isn't needed elsewhere. */
+		"popq %rcx\n" /* head */
+		"popq %rdx\n" /* coro_data */
+		"popq %r8\n" /* coro_main */
+	);
+		/* Restore alignment. */
+	/* asm volatile ( "pushq %rcx\n" ); */
+		/* Call coro_main, the args are already ready. DO NOT WRAP */
+		/*  rsp IN PARENS! THAT CAUSES AN ERROR (presumably due to */
+		/*  excessive indirections)! Asterick seems fine. */
+	asm volatile ( "call *%0\n" : : "r"(&coro_boot) );
+		/* Pop both align padding, & MSVC ret addr. */
+	asm volatile ( "add $16,  %rsp\n" );
+	asm volatile
+	(
+		/* Note that for an MSVC version, the add above would be */
+		/*  just 8, and these would be "movq"s, but wouldn't be in */
+		/*  a C file. */
+		"pop %%rcx\n" /* ch / rcx */
+		"pop %%rdx\n" /* cb / rdx */
+		"pop %%r8\n" /* conclude / r8 */
+		
+		/* Tail-call into cocollapse(). Could technically be the */
+		/*  wrong name. */
+		"jmp *(%0)\n"
+		: : "r"(&cocollapse)
+	);
+}
 #else
 	#error "Only GCC & Clang can reliably be supported without extension."
 #endif
@@ -168,7 +232,7 @@ int cobuild
 		corohead *head;
 		{
 			/* Move above the stack, since we grow downwards. */
-			uintptr_t head_ = (uintptr_t)alloc;
+			uintptr_t head_ = (uintptr_t)alloc, mask;
 			head_ += stacksize;
 			
 			/* Calculate the location of the header. */
@@ -187,8 +251,15 @@ int cobuild
 					7, 7, 7, 7
 #endif
 				};
+			debug_marker();
+			/* This code was broken into pieces to track down an alignment */
+			/*  bug, it can be returned to normal now. */
+			mask = sizeof( void* );
+			mask -= 1; /* Shift fdrom index to offset mode. */
+			mask = (uintptr_t)masks[ mask ];
+			mask = ~( mask );
 				/* Adjust into alignment. */
-			head_ &= ~( (uintptr_t)masks[ sizeof( void* ) ] );
+			head_ &= mask;
 				/* Adjust downwards for ->exit_retaddr, because that's meant */
 				/*  to be 8 bytes OUT of 16-byte alignment.  */
 			head_ -= sizeof( void* );
@@ -223,48 +294,7 @@ int cobuild
 			/* ONLY jumped to by coro_boot(). */
 		if( !setjmp( ( (corohead*)current_fiber )->state ) )
 		{
-			set_sp( alloc );
-			/* The setjmp() should be enough to undo the low-level */
-			/*  modifications above. */
-			
-				/* SysV (including Linux) version. The 64-bit MSVC must be in */
-				/*  an assembly file.  */
-			asm volatile
-			(
-				/* Note that despite some online samples implying otherwise, */
-				/*  registers DO require TWO leading percent signs, NOT just */
-				/*  one! */
-				
-				/* Override the previous frame pointer, essentially to hide */
-				/*  it. */
-				"mov $rsp,  %%rbp\n"
-				
-				/* Load the arguments: this isn't needed elsewhere. */
-				"popq %%rcx\n" /* head */
-				"popq %%rdx\n" /* coro_data */
-				"popq %%r8\n" /* coro_main */
-				
-				/* Restore alignment. */
-				"pushq %%rcx\n"
-				
-				/* Call coro_main, the args are already ready. */
-				"call *(%0)\n"
-				
-				/* Pop align pad, & MSVC ret addr. */
-				"add $16,  %%rsp\n"
-				
-				/* Note that for an MSVC version, the add above would be */
-				/*  just 8, and these would be "movq"s, but wouldn't be in */
-				/*  a C file. */
-				"pop %%rcx\n" /* ch / rcx */
-				"pop %%rdx\n" /* cb / rdx */
-				"pop %%r8\n" /* conclude / r8 */
-				
-				/* Tail-call into cocollapse(). Could technically be the */
-				/*  wrong name. */
-				"jmp _cocollapse\n"
-				: : "r"(&coro_boot)
-			);
+			coro_bootcaller( alloc );
 		}
 		
 		/* We are done spawning the coroutine/fiber, return it. */
