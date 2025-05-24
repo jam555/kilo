@@ -33,6 +33,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include "coro.h"
 
@@ -135,9 +136,6 @@ int bulk( void* )
 	return( 1 );
 }
 
-	/* The initial-coroutine itself. This is provided so that it can act as a */
-	/*  target for coyield(). */
-extern thread corohead main_fiber;
 void altmain( corohead *ch, void *v )
 {
 	(void)ch;
