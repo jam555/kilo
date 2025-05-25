@@ -42,7 +42,7 @@ void altmain( corohead*, void* );
 int altconclude( corohead*, uintptr_t );
 corohead *altfiber;
 
-const char *linepadding = "  ";
+const char *linepadding = ": \0";
 
 
 
@@ -54,7 +54,7 @@ void cotest_print( int depth, int val )
 {
 	while( depth )
 	{
-		puts( linepadding );
+		printf( linepadding );
 		--depth;
 	}
 	printf( "%d\n",  val );
@@ -71,6 +71,8 @@ int main( int argn, char *args[] )
 	cocontext( (void*)0, &bulk );
 	
 	printf( "%sCoroutine testing exiting.\n", linepadding );
+	
+	fflush( stdout );
 	return( 1 );
 }
 
@@ -78,57 +80,66 @@ int main( int argn, char *args[] )
 
 int bulk( void* )
 {
+	int tmp;
+	
 	printf( "%s%sAllocating alternate coroutine.\n", linepadding,linepadding );
-	if
-	(
-		cobuild
+	tmp = cobuild
 		(
 			1024 /* 1k */ * 1024 /* 1M */,
 			(void*)0, &altmain, 0,
 			&altconclude,
 			
 			&altfiber
-		)
-	)
+		);
+	if( !tmp )
 	{
-		exit( 1 );
+		printf( "%s%scobuild() == %d\n", linepadding,linepadding,  tmp );
+		exit( 2 );
 	}
 	
 	cotest_print( 4, 1 );
 	cotest_print( 4, 3 );
 	altfiber->auxiliary = 1;
+	printf( "%s%sbulk(): yielding( %p ) (1).\n", linepadding,linepadding,  altfiber );
 	if( !coyield( altfiber ) )
 	{
 		printf( "%s%sYield to alternate coroutine failed (1).\n", linepadding,linepadding );
-		exit( 1 );
+		exit( 3 );
 	}
+	printf( "%s%sbulk():yield returned (1).\n", linepadding,linepadding );
 	
 	cotest_print( 4, 5 );
 	cotest_print( 4, 7 );
 	altfiber->auxiliary= 2;
+	printf( "%s%sbulk(): yielding( %p ) (2).\n", linepadding,linepadding,  altfiber );
 	if( !coyield( altfiber ) )
 	{
 		printf( "%s%sYield to alternate coroutine failed (1).\n", linepadding,linepadding );
-		exit( 1 );
+		exit( 4 );
 	}
+	printf( "%s%sbulk():yield returned (2).\n", linepadding,linepadding );
 	
 	cotest_print( 4, 9 );
 	cotest_print( 4, 11 );
 	altfiber->auxiliary= 3;
+	printf( "%s%sbulk(): yielding( %p ) (3).\n", linepadding,linepadding,  altfiber );
 	if( !coyield( altfiber ) )
 	{
 		printf( "%s%sYield to alternate coroutine failed (1).\n", linepadding,linepadding );
-		exit( 1 );
+		exit( 5 );
 	}
+	printf( "%s%sbulk():yield returned (3).\n", linepadding,linepadding );
 	
 	cotest_print( 4, 13 );
 	cotest_print( 4, 15 );
 	altfiber->auxiliary= 4;
+	printf( "%s%sbulk(): yielding( %p ) (4).\n", linepadding,linepadding,  altfiber );
 	if( !coyield( altfiber ) )
 	{
 		printf( "%s%sYield to alternate coroutine failed (1).\n", linepadding,linepadding );
-		exit( 1 );
+		exit( 6 );
 	}
+	printf( "%s%sbulk():yield returned (4).\n", linepadding,linepadding );
 	
 	cotest_print( 4, 17 );
 	cotest_print( 4, 19 );
@@ -145,31 +156,37 @@ void altmain( corohead *ch, void *v )
 	cotest_printaux();
 	cotest_print( 4, 2 );
 	cotest_print( 4, 4 );
+	printf( "%s%saltmain(): yielding (1).\n", linepadding,linepadding );
 	if( !coyield( &main_fiber ) )
 	{
 		printf( "%s%sYield to main coroutine failed (1).\n", linepadding,linepadding );
-		exit( 1 );
+		exit( 7 );
 	}
+	printf( "%s%saltmain():yield returned (1).\n", linepadding,linepadding );
 	
 	printf( "%s%saltmain() entered (2).\n" );
 	cotest_printaux();
 	cotest_print( 4, 6 );
 	cotest_print( 4, 8 );
+	printf( "%s%saltmain(): yielding (2).\n", linepadding,linepadding );
 	if( !coyield( &main_fiber ) )
 	{
 		printf( "%s%sYield to main coroutine failed (2).\n", linepadding,linepadding );
-		exit( 1 );
+		exit( 8 );
 	}
+	printf( "%s%saltmain():yield returned (2).\n", linepadding,linepadding );
 	
 	printf( "%s%saltmain() entered (3).\n" );
 	cotest_printaux();
 	cotest_print( 4, 10 );
 	cotest_print( 4, 12 );
+	printf( "%s%saltmain(): yielding (3).\n", linepadding,linepadding );
 	if( !coyield( &main_fiber ) )
 	{
 		printf( "%s%sYield to main coroutine failed (3).\n", linepadding,linepadding );
-		exit( 1 );
+		exit( 9 );
 	}
+	printf( "%s%saltmain():yield returned (3).\n", linepadding,linepadding );
 	
 	printf( "%s%saltmain() entered (4).\n" );
 	cotest_printaux();
@@ -186,7 +203,7 @@ void altmain( corohead *ch, void *v )
 	if( !coyield( &main_fiber ) )
 	{
 		printf( "%s%sYield to main coroutine failed (4).\n", linepadding,linepadding );
-		exit( 1 );
+		exit( 10 );
 	}
 }
 

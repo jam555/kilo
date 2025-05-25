@@ -249,3 +249,4 @@ int cocontext( void *data, int (*func)( void* ) );
 	/* The initial-coroutine itself. This is provided so that it can act as a */
 	/*  target for coyield(). */
 extern __thread corohead main_fiber;
+extern volatile char *coro_errmsg;

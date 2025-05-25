@@ -42,6 +42,8 @@ __thread corohead main_fiber = { 0 };
 static volatile __thread corohead *current_fiber = 0;
 static volatile corohead *dead_fiber = 0;
 
+volatile char *coro_errmsg = 0;
+
 
 static void debug_marker()
 {
@@ -82,6 +84,7 @@ static int co_conclude( corohead *ign1, uintptr_t ign2 )
 	(void)ign1;
 	(void)ign2;
 	
+	coro_errmsg = "\n    co_conclude() was reached: that should NEVER happen.\n";
 	exit( 1 );
 }
 
@@ -121,6 +124,7 @@ static void coro_boot
 	void (*coro_main)( corohead*, void* )
 )
 {
+	printf( "\ncoro_boot(): setjmp( %p ->state )\n", (void*)head );
 	if( setjmp( head->state ) )
 	{
 		coro_main( head, coro_data );
@@ -128,6 +132,7 @@ static void coro_boot
 	} else {
 		
 			/* ONLY jumps back into cobuild(). */
+		printf( "\nlongjmp( %p ->state )\n", (void*)current_fiber );
 		longjmp( ( (corohead*)current_fiber )->state, 1 );
 	}
 }
@@ -291,7 +296,10 @@ int cobuild
 		*( --alloc ) = head;
 		/* alloc should now be aligned again. This simplifies later math. */
 		
+		printf( "\ncobuild(): allocated head: %p\n", (void*)head );
+		
 			/* ONLY jumped to by coro_boot(). */
+		printf( "\ncobuild(): setjmp( %p ->state )\n", (void*)current_fiber );
 		if( !setjmp( ( (corohead*)current_fiber )->state ) )
 		{
 			coro_bootcaller( alloc );
@@ -318,8 +326,13 @@ uintptr_t coro_getaux()
 
 int coyield( corohead *dest )
 {
+	printf( "\ncoyield( %p ) entered.\n", (void*)dest );
+	printf( "        main: %p\n", (void*)( &main_fiber ) );
+	printf( "        cur: %p\n", (void*)( current_fiber ) );
+	
 	if( !current_fiber )
 	{
+		coro_errmsg = "\n    coyield() was called while *current_fiber wasn't set.\n";
 		exit( 1 );
 	}
 	if( dest )
@@ -329,9 +342,11 @@ int coyield( corohead *dest )
 			return( CORO_DONE );
 		}
 		
+		printf( "\ncoyield(): setjmp( %p ->state )\n", (void*)current_fiber );
 		int res = setjmp( ( (corohead*)current_fiber )->state );
 		if( !res )
 		{
+			printf( "\n  coyield(): calling longjmp( %p ->state ).\n", (void*)dest );
 			current_fiber = dest;
 			longjmp( dest->state, CORO_WORKING );
 		}
@@ -364,6 +379,7 @@ void cocollapse
 		/*  even for signals. */
 	if( conclude != current_fiber->conclude )
 	{
+		coro_errmsg = "\n    cocollapse() was handed a conclude() that didn't match that inside *current_fiber.\n";
 		exit( 1 );
 	}
 	current_fiber->conclude = 0;
@@ -371,6 +387,7 @@ void cocollapse
 	/* Test result. */
 	if( !( conclude( head, current_fiber->auxiliary ) ) )
 	{
+		coro_errmsg = "\n    cocollapse() received a non-positive return from it's conclude() pointer.\n";
 		exit( 1 );
 	}
 	
@@ -385,6 +402,7 @@ void cocollapse
 		{
 			/* Welp, this is bad, we weren't supposed to see that return. */
 			
+			coro_errmsg = "\n    cocollapse() resumed from it's coyield() call: this should never happen.\n";
 			exit( 1 );
 		}
 		
