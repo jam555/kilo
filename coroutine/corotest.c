@@ -195,6 +195,8 @@ void altmain( corohead *ch, void *v )
 	cotest_print( 4, 14 );
 	
 	printf( "\n%s%saltmain(): running cocollapse() on self.", linepadding,linepadding );
+		/* The following printf()s exist to track down the seg-fault in cocollapse(). */
+	/*
 		printf
 		(
 			"\n%s%s%s head: %p, body(a): %p, body(b): %p, conclude(): %p",
@@ -217,6 +219,7 @@ void altmain( corohead *ch, void *v )
 				(int)stackspec,
 				(void*)( ( (uintptr_t)ch ) - stackspec )
 		);
+	*/
 	cocollapse( ch, ch->lastbyte_b,  ch->conclude );
 	
 	/* This SHOULDN'T get executed. */
