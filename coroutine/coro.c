@@ -45,11 +45,13 @@ static volatile corohead *dead_fiber = 0;
 volatile char *coro_errmsg = 0;
 
 
+/*
 static void debug_marker()
 {
-	/* Do nothing. */
+	/* Do nothing. *//*
 	return;
 }
+*/
 
 
 #ifdef __GNUC__
@@ -124,7 +126,27 @@ static void coro_boot
 	void (*coro_main)( corohead*, void* )
 )
 {
-	printf( "\ncoro_boot(): setjmp( %p ->state )\n", (void*)head );
+	/* printf( "\ncoro_boot(\n" );
+		printf
+		(
+			"    &head == %p; head == %p,\n",
+				(void*)&head,
+				(void*)head
+		);
+		printf
+		(
+			"    &coro_data = %p; coro_data == %p,\n",
+				(void*)&coro_data,
+				(void*)coro_data
+		);
+		printf
+		(
+			"    &coro_main = %p; coro_main == %p)\n",
+				(void*)&coro_main,
+				(void*)coro_main
+		); */
+	
+	/* printf( "\ncoro_boot(): setjmp( %p ->state )\n", (void*)head ); */
 	if( setjmp( head->state ) )
 	{
 		coro_main( head, coro_data );
@@ -132,7 +154,7 @@ static void coro_boot
 	} else {
 		
 			/* ONLY jumps back into cobuild(). */
-		printf( "\nlongjmp( %p ->state )\n", (void*)current_fiber );
+		/* printf( "\nlongjmp( %p ->state )\n", (void*)current_fiber ); */
 		longjmp( ( (corohead*)current_fiber )->state, 1 );
 	}
 }
@@ -143,6 +165,7 @@ static void coro_bootcaller( void **alloc )
 	/* SysV (including Linux) version. The 64-bit MSVC must be in */
 	/*  an assembly file.  */
 	
+	/* printf( "\ncoro_bootcaller( %p ) : %p\n", (void*)alloc, (void*)( *alloc ) ); */
 	set_sp( alloc );
 	/* The setjmp() should be enough to undo the low-level */
 	/*  modifications above. */
@@ -152,26 +175,30 @@ static void coro_bootcaller( void **alloc )
 		/*  one! */
 		/* ... WHY DOES THE EXTENDED SYNTAX CALL FOR DIFFERENT NUMBERS */
 		/*  OF PERCENT SIGNS?!? */
-		/* Override the previous frame pointer, essentially to hide */
-		/*  it. */
-	asm volatile ( "movq %rsp,  %rbp\n" );
 	asm volatile
 	(
 		/* Load the arguments: this isn't needed elsewhere. */
-		"popq %rcx\n" /* head */
-		"popq %rdx\n" /* coro_data */
-		"popq %r8\n" /* coro_main */
-	);
+		"popq %%rdi\n" /* head; rcx on Win64. */
+		"popq %%rsi\n" /* coro_data. rdx on Win64. */
+		"popq %%rdx\n" /* coro_main; r8 on Win64. */
+		
+		/* Override the previous frame pointer, essentially to hide */
+		/*  it. */
+		"movq %%rsp,  %%rbp\n"
+		
 		/* Restore alignment. */
-	/* asm volatile ( "pushq %rcx\n" ); */
+		/* "pushq %rcx\n" */
+		
 		/* Call coro_main, the args are already ready. DO NOT WRAP */
 		/*  rsp IN PARENS! THAT CAUSES AN ERROR (presumably due to */
 		/*  excessive indirections)! Asterick seems fine. */
-	asm volatile ( "call *%0\n" : : "r"(&coro_boot) );
-		/* Pop both align padding, & MSVC ret addr. */
-	asm volatile ( "add $16,  %rsp\n" );
+		"call *%0\n" : : "r"(&coro_boot)
+	);
 	asm volatile
 	(
+		/* Pop both align padding, & MSVC ret addr. */
+		"add $16,  %%rsp\n"
+		
 		/* Note that for an MSVC version, the add above would be */
 		/*  just 8, and these would be "movq"s, but wouldn't be in */
 		/*  a C file. */
@@ -256,7 +283,7 @@ int cobuild
 					7, 7, 7, 7
 #endif
 				};
-			debug_marker();
+			/* debug_marker(); */
 			/* This code was broken into pieces to track down an alignment */
 			/*  bug, it can be returned to normal now. */
 			mask = sizeof( void* );
@@ -290,18 +317,44 @@ int cobuild
 			/*  it's actually SUPPOSED to be like that. */
 		}
 		
+		/*
+		printf( "cobuild(): pre-initializing stack:\n" );
+			printf( "   head == %p\n", (void*)head );
+			printf( "   alloc == %p\n", (void*)alloc );
+		*/
+		
 		/* Pack the args for coro_boot(). */
+		/*
+			static void coro_boot
+			(
+				corohead *head,
+				
+				void *coro_data,
+				void (*coro_main)( corohead*, void* )
+			)
+		*/
 		*( --alloc ) = coro_main;
+			/* printf( "   &coro_main == %p\n", (void*)alloc ); */
 		*( --alloc ) = coro_data;
+			/* printf( "   &coro_data == %p\n", (void*)alloc ); */
 		*( --alloc ) = head;
+			/* printf( "   &head == %p; *(&head) == %p\n", (void*)alloc, (void*)( *alloc ) ); */
 		/* alloc should now be aligned again. This simplifies later math. */
 		
-		printf( "\ncobuild(): allocated head: %p\n", (void*)head );
+		/* printf( "\ncobuild(): allocated head: %p\n", (void*)head ); */
 		
 			/* ONLY jumped to by coro_boot(). */
-		printf( "\ncobuild(): setjmp( %p ->state )\n", (void*)current_fiber );
+		/* printf( "\ncobuild(): setjmp( %p ->state )\n", (void*)current_fiber ); */
 		if( !setjmp( ( (corohead*)current_fiber )->state ) )
 		{
+			/*
+			printf( "cobuild(): calling coro_bootcaller().\n" );
+				printf( "   cobuild(): coro_main == %p\n", (void*)coro_main );
+				printf( "   cobuild(): coro_data == %p\n", (void*)coro_data );
+				printf( "   cobuild(): head == %p\n", (void*)head );
+				printf( "   cobuild(): alloc == %p\n", (void*)alloc );
+			*/
+			
 			coro_bootcaller( alloc );
 		}
 		
@@ -326,9 +379,11 @@ uintptr_t coro_getaux()
 
 int coyield( corohead *dest )
 {
+	/*
 	printf( "\ncoyield( %p ) entered.\n", (void*)dest );
 	printf( "        main: %p\n", (void*)( &main_fiber ) );
 	printf( "        cur: %p\n", (void*)( current_fiber ) );
+	*/
 	
 	if( !current_fiber )
 	{
@@ -342,11 +397,11 @@ int coyield( corohead *dest )
 			return( CORO_DONE );
 		}
 		
-		printf( "\ncoyield(): setjmp( %p ->state )\n", (void*)current_fiber );
+		/* printf( "\ncoyield(): setjmp( %p ->state )\n", (void*)current_fiber ); */
 		int res = setjmp( ( (corohead*)current_fiber )->state );
 		if( !res )
 		{
-			printf( "\n  coyield(): calling longjmp( %p ->state ).\n", (void*)dest );
+			/* printf( "\n  coyield(): calling longjmp( %p ->state ).\n", (void*)dest ); */
 			current_fiber = dest;
 			longjmp( dest->state, CORO_WORKING );
 		}

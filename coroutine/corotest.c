@@ -42,7 +42,7 @@ void altmain( corohead*, void* );
 int altconclude( corohead*, uintptr_t );
 corohead *altfiber;
 
-const char *linepadding = ": \0";
+const char *linepadding = "  \0";
 
 
 
@@ -67,10 +67,13 @@ void cotest_printaux()
 int main( int argn, char *args[] )
 {
 	printf( "\nCoroutine testing beginning.\n" );
+		printf( "%sbulk() prints odd numbers, and increments the auxiliary value for altmain().\n",  linepadding );
+			printf( "%s%sWhen yielding, bulk() includes the address of it's yield target in the print.\n",  linepadding,linepadding );
+		printf( "%saltmain() prints it's aux value, then prints even numbers.\n",  linepadding );
 	
 	cocontext( (void*)0, &bulk );
 	
-	printf( "%sCoroutine testing exiting.\n", linepadding );
+	printf( "\n%sCoroutine testing exiting.\n", linepadding );
 	
 	fflush( stdout );
 	return( 1 );
@@ -82,7 +85,7 @@ int bulk( void* )
 {
 	int tmp;
 	
-	printf( "%s%sAllocating alternate coroutine.\n", linepadding,linepadding );
+	printf( "\n%sbulk() allocating alternate coroutine.\n", linepadding,linepadding );
 	tmp = cobuild
 		(
 			1024 /* 1k */ * 1024 /* 1M */,
@@ -106,8 +109,8 @@ int bulk( void* )
 		printf( "%s%sYield to alternate coroutine failed (1).\n", linepadding,linepadding );
 		exit( 3 );
 	}
-	printf( "%s%sbulk():yield returned (1).\n", linepadding,linepadding );
 	
+	printf( "\n%s%sbulk():yield returned (1->2).\n", linepadding,linepadding );
 	cotest_print( 4, 5 );
 	cotest_print( 4, 7 );
 	altfiber->auxiliary= 2;
@@ -117,8 +120,8 @@ int bulk( void* )
 		printf( "%s%sYield to alternate coroutine failed (1).\n", linepadding,linepadding );
 		exit( 4 );
 	}
-	printf( "%s%sbulk():yield returned (2).\n", linepadding,linepadding );
 	
+	printf( "\n%s%sbulk():yield returned (2->3).\n", linepadding,linepadding );
 	cotest_print( 4, 9 );
 	cotest_print( 4, 11 );
 	altfiber->auxiliary= 3;
@@ -128,8 +131,8 @@ int bulk( void* )
 		printf( "%s%sYield to alternate coroutine failed (1).\n", linepadding,linepadding );
 		exit( 5 );
 	}
-	printf( "%s%sbulk():yield returned (3).\n", linepadding,linepadding );
 	
+	printf( "\n%s%sbulk():yield returned (3->4).\n", linepadding,linepadding );
 	cotest_print( 4, 13 );
 	cotest_print( 4, 15 );
 	altfiber->auxiliary= 4;
@@ -139,7 +142,7 @@ int bulk( void* )
 		printf( "%s%sYield to alternate coroutine failed (1).\n", linepadding,linepadding );
 		exit( 6 );
 	}
-	printf( "%s%sbulk():yield returned (4).\n", linepadding,linepadding );
+	printf( "\n%s%sbulk():yield returned (4).\n", linepadding,linepadding );
 	
 	cotest_print( 4, 17 );
 	cotest_print( 4, 19 );
@@ -152,7 +155,7 @@ void altmain( corohead *ch, void *v )
 	(void)ch;
 	(void)v;
 	
-	printf( "%s%saltmain() entered (1).\n" );
+	printf( "\n%saltmain() entered (1).\n", linepadding );
 	cotest_printaux();
 	cotest_print( 4, 2 );
 	cotest_print( 4, 4 );
@@ -162,9 +165,8 @@ void altmain( corohead *ch, void *v )
 		printf( "%s%sYield to main coroutine failed (1).\n", linepadding,linepadding );
 		exit( 7 );
 	}
-	printf( "%s%saltmain():yield returned (1).\n", linepadding,linepadding );
 	
-	printf( "%s%saltmain() entered (2).\n" );
+	printf( "\n%s%saltmain():yield returned (1->2).\n", linepadding,linepadding );
 	cotest_printaux();
 	cotest_print( 4, 6 );
 	cotest_print( 4, 8 );
@@ -174,9 +176,8 @@ void altmain( corohead *ch, void *v )
 		printf( "%s%sYield to main coroutine failed (2).\n", linepadding,linepadding );
 		exit( 8 );
 	}
-	printf( "%s%saltmain():yield returned (2).\n", linepadding,linepadding );
 	
-	printf( "%s%saltmain() entered (3).\n" );
+	printf( "\n%s%saltmain():yield returned (2->3).\n", linepadding,linepadding );
 	cotest_printaux();
 	cotest_print( 4, 10 );
 	cotest_print( 4, 12 );
@@ -186,9 +187,8 @@ void altmain( corohead *ch, void *v )
 		printf( "%s%sYield to main coroutine failed (3).\n", linepadding,linepadding );
 		exit( 9 );
 	}
-	printf( "%s%saltmain():yield returned (3).\n", linepadding,linepadding );
 	
-	printf( "%s%saltmain() entered (4).\n" );
+	printf( "\n%s%saltmain():yield returned (3->4).\n", linepadding,linepadding );
 	cotest_printaux();
 	cotest_print( 4, 14 );
 		void cocollapse
