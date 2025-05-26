@@ -33,6 +33,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include "coro.h"
 
@@ -255,6 +256,8 @@ int cobuild
 			128;
 		
 		void **alloc = (void**)malloc( stacksize );
+		printf( "\n%p = malloc();\n",  (void*)alloc );
+		/* free( alloc ); exit( 29 ); */
 		if( !alloc )
 		{
 			return( -2 );
@@ -446,8 +449,11 @@ void cocollapse
 		exit( 1 );
 	}
 	
+	printf( "\ncocollapse() called on %p from %p\n", head, current_fiber );
 	if( head == current_fiber )
 	{
+		printf( "\ncocollapse() queueing %p for free().\n",  (void*)head );
+		
 		/* DON'T delete the fiber while we're using it as our stack, stick it */
 		/*  in a cleanup stack instead. We really want to use atomics here. */
 		
@@ -463,6 +469,12 @@ void cocollapse
 		
 	} else {
 		
+		printf
+		(
+			"\ncocollapse() called free( %p ) from %p\n",
+				(void*)( head->lastbyte_b ),
+				(void*)current_fiber
+		);
 		free( head->lastbyte_b );
 	}
 }
@@ -470,11 +482,26 @@ void coclean()
 {
 	/* We really want to use atomics with dead_fiber. */
 	
+	printf( "\ncoclean() entered." );
+	
 	corohead *tmp = (corohead*)dead_fiber;
-	while( dead_fiber )
+	while( tmp )
 	{
+		printf( "\n  free( %p ) via %p",  (void*)( tmp->lastbyte_b ), (void*)tmp );
+		fflush( stdout );
+		
 		dead_fiber = tmp->here;
+		if( dead_fiber == tmp )
+		{
+			printf( "    -: loop error, recursion detected." );
+		}
 		tmp->here = 0;
-		free( tmp );
+		free( tmp->lastbyte_b );
+		tmp = (corohead*)dead_fiber;
+		
+		printf( "    -: loop done, tmp == %p.",  tmp );
+		fflush( stdout );
 	}
+	
+	printf( "\n" );
 }

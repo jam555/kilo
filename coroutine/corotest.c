@@ -34,6 +34,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include "coro.h"
 
@@ -41,6 +42,7 @@
 void altmain( corohead*, void* );
 int altconclude( corohead*, uintptr_t );
 corohead *altfiber;
+size_t stackspec = 1024 /* 1k */ * 1024 /* 1M */;
 
 const char *linepadding = "  \0";
 
@@ -88,7 +90,7 @@ int bulk( void* )
 	printf( "\n%sbulk() allocating alternate coroutine.\n", linepadding,linepadding );
 	tmp = cobuild
 		(
-			1024 /* 1k */ * 1024 /* 1M */,
+			stackspec,
 			(void*)0, &altmain, 0,
 			&altconclude,
 			
@@ -155,7 +157,7 @@ void altmain( corohead *ch, void *v )
 	(void)ch;
 	(void)v;
 	
-	printf( "\n%saltmain() entered (1).\n", linepadding );
+	printf( "\n%saltmain( %p, %p ) entered (1).\n", linepadding,  (void*)ch, v );
 	cotest_printaux();
 	cotest_print( 4, 2 );
 	cotest_print( 4, 4 );
@@ -191,12 +193,32 @@ void altmain( corohead *ch, void *v )
 	printf( "\n%s%saltmain():yield returned (3->4).\n", linepadding,linepadding );
 	cotest_printaux();
 	cotest_print( 4, 14 );
-		void cocollapse
+	
+	printf( "\n%s%saltmain(): running cocollapse() on self.", linepadding,linepadding );
+		printf
 		(
-			corohead *head,
-			corobody *body,
-			int (*conclude)( corohead*, uintptr_t )
+			"\n%s%s%s head: %p, body(a): %p, body(b): %p, conclude(): %p",
+				linepadding,linepadding,linepadding,
+				(void*)ch,
+				(void*)( ch->lastbyte_a ), (void*)( ch->lastbyte_b ),
+				(void*)( ch->conclude )
 		);
+		printf
+		(
+			"\n%s%s%s stack supplement: %x, stackspec: %x, head - stackspec: %p\n",
+				linepadding,linepadding,linepadding,
+				(int)
+				(
+					sizeof( corohead ) * 2 +
+					sizeof( dummyframe ) * 2 +
+					sizeof( corobody ) +
+					128
+				),
+				(int)stackspec,
+				(void*)( ( (uintptr_t)ch ) - stackspec )
+		);
+	cocollapse( ch, ch->lastbyte_b,  ch->conclude );
+	
 	/* This SHOULDN'T get executed. */
 	cotest_print( 4, 16 );
 	printf( "%s%scotest_print() after cocollapse() somehow ran!.\n", linepadding,linepadding );
