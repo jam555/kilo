@@ -141,6 +141,20 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 			1
 	)
 	{
+		/*
+			statview_view sv = { 0 };
+			
+				/ * Where do we get stats* from? The 'E' global? Is there a source? * /
+			if( !statview_fetchmsg( statstate *stats, E.screencols,  &sv ) )
+			{
+				exit( 1 );
+			}
+			
+			abAppend( ab, sv.start, sv.len );
+			abAppend( util, sv.start, sv.len );
+		*/
+		
+		
 		abAppend( ab, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
 		abAppend( util, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
 	}

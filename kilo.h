@@ -57,6 +57,8 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#include "statview.h"
+
 /* TODO: Find all of the "warning" directives, and fix them. */
 
  /* TODO: Move these into a header and wrap in ifdef()s for */
@@ -69,6 +71,8 @@
 #define MILA_UTILITYLINES 2
 	/* Whether the utility-area messages should timeout or not. */
 #define MILA_MESSAGETIMEOUTS ( 1 )
+	/* In deci-seconds. The time to scroll by one character. */
+#define MILA_MESSAGESLOTH ( 30 )
 
 /* Syntax highlight types */
 #define HL_NORMAL 0
@@ -146,6 +150,12 @@ struct editorConfig {
     int externx, externy;
 	int externrows; /* Number of rows that we can show */
     int externcols; /* Number of cols that we can show */
+	
+		/* This is where our progress-target currently lies. We need to move the appenbuf.c */
+		/*  stuff to using this instead of accessing the status directly. In particular, it */
+		/*  should implement ticker-tape behavior, when the status-message is larger than the */
+		/*  allocated space! */
+	statstate *statusinterface;
 };
 
 enum KEY_ACTION{
