@@ -38,6 +38,13 @@
 #include <setjmp.h>
 
 
+/* This code is based upon: */
+	/* https://yosefk.com/blog/coroutines-in-one-page-of-c.html */
+/*  No, it's not identical, but even Yosef mentioned in the article that */
+/*  "start" (in this case, the static coro_bootcaller() ) should probably be */
+/*  written from scratch in assembly. */
+
+
 /* This file, and coro.c, implement a coroutine (also called a fiber (akin to */
 /*  "thread" from multi-threading), a go-routine (from the programming */
 /*  language Go), a green-thread, a user-level thread, a protothread (though */
@@ -46,7 +53,7 @@
 /*  only, but it should be practical to port it to e.g. 64-bit Windows and */
 /*  various 32-bit platforms with few changes to the existing files. This */
 /*  system was originally written for the Kilo-derived Mila or Thou text */
-/*  editor, but should be generally useful. */
+/*  editor (whichever name I settle on), but should be generally useful. */
 /* The system is divided into a few values, types, and functions. Of these, */
 /*  the various dummyframe{} structures are only intended to be useful for */
 /*  other low-level manipulations, and the other structure types are meant to */

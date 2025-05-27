@@ -434,15 +434,15 @@ void cocollapse
 	
 		/* We actually want this test & null to be an atomic cmp-and-swap, */
 		/*  even for signals. */
-	if( conclude != current_fiber->conclude )
+	if( conclude != head->conclude )
 	{
 		coro_errmsg = "\n    cocollapse() was handed a conclude() that didn't match that inside *current_fiber.\n";
 		exit( 1 );
 	}
-	current_fiber->conclude = 0;
+	head->conclude = 0;
 	
 	/* Test result. */
-	if( !( conclude( head, current_fiber->auxiliary ) ) )
+	if( !( conclude( head, head->auxiliary ) ) )
 	{
 		coro_errmsg = "\n    cocollapse() received a non-positive return from it's conclude() pointer.\n";
 		exit( 1 );
