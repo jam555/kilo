@@ -1,0 +1,127 @@
+This is the explanation file foR coro.h/.c
+
+	A coroutine is, in essence, part of every thread in a multithreading (and
+single threading...) system (note that likewise, each process innately has at
+least one thread). Coroutines, when explicitly supported, allow cooperative
+multi-tasking behavior, which is usually what they're considered desirable for.
+Moreover, that multi-tasking can be obtained with relative simplicity: in the
+case of this coroutine system, the only MANDATORY functions are cocontext(),
+cobuild(), and coyield(), though coconclude(), coclean(), and coro_getaux() are
+provided for extended functionality. The particular approach used in this system
+is the setjmp()/longjmp() version, as I concluded that t offered the most
+flexibility.
+
+	To use this coroutine system reliably, you must restrict your use of all
+other coroutine functions to threads that have called cocontext(), but haven't
+returned from it yet. BEWARE, the use of things like Shadow Stacks and other
+stack-protection mechanisms can interfere with the usage of coroutines if a
+coroutine library doesn't integrate with them, and this system doesn't currently
+make ANY attempts to integrate with such systems: beware, using this system on
+computers using those systems can easily lead to unpredictable behavior.
+	cocontext() initializes a per-thread coroutine structure that CANNOT be
+reliably accessed by other threads: don't resist this, just leave it to it's
+initial thread, if you really want to toss coroutines from one thread to another
+then you can (and should) just use "secondary coroutines" for that instead. A
+notable difference from other coroutines is that these thread-tied coroutines
+ARE NOT guaranteed to be part of their stacks, while the secondary coroutines
+ARE allocated on their associated stack. cocontext() takes a void pointer, and a
+function pointer that returns an int (which in turn will be returned by
+cocontext() ) and takes the same void pointer provided to cocontext().
+	cobuild() builds & initializes "secondary coroutines", before returning
+those coroutines. In order to do anything meaningful with the other coroutine
+functions, you MUST obtain a secondary coroutine from cobuild(), so that they'll
+have at least two coroutines to interact with. cobuild() returns an int, and
+takes:
+	1) a desired-size for the stack (note that the ACTUAL size WILL BE LARGER,
+		as it will include padding for alignment AND data elements that are
+		required for the implementation: you as the user are expected to
+		consider your own needs, but are not expected to consider this system's
+		needs);
+	2) a void pointer;
+	3) a function pointer that returns a void, and takes a pointer to the
+		new coroutine's "header" and the void pointer provided to cobuild, which
+		will be your "main fuunction" for the coroutine;
+	4) a uintptr_t that will be stored in the coroutine "header", and will be
+		accessible via coro_getaux() whenever the coroutine is your thread's
+		active-coroutine;
+	5) a function pointer that returns an int, and takes a pointer to the new
+		coroutine's "header" and the uintptr_t stored inside of it, which will
+		be expected to be your coroutin's "cleanup" function, since a coroutine
+		CAN be destroyed without returning to it's "coroutine-main"; and
+	6) a pointer TO A POINTER to a coroutine-header, so that it can be used by
+		cobuild() to return the new coroutine's header address to the caller.
+The initialization of the new coroutine's stack & associated data is performed
+by cobuild() and it's "static" support functions, so the you don't have to worry
+about doing that yourself: you mostly have to worry about whether you need the
+conclude-function to do anything, so if you find some case where it would be
+worth doing then try to turn that into some sort of library.
+	coyield() switches the current thread between coroutines. It returns an int,
+and takes a single pointer to a coroutine-pointer that will be used as the new
+coroutine for the current thread. Note that it VERY MUCH depends on cocontext()
+having been run, as static variables that it uses might not have otherwise been
+initialized. It is expected that you will generally WRAP coyield() in other
+functions, so that those functions can perform additional tasks (such as making
+arguments available to the destination coroutine).
+
+	There are also the auxiliary coconclude(), coclean(), and coro_getaux()
+functions, of which all but coro_getaux() are actually used in this system for
+standard behaviors.
+	coclean() returns a void and takes no arguments. It's used to free the
+memory that cobuild() DIRECTLY allocates for a secondary-coroutine after a call
+to coconclude(), and is automatically triggered by coconclude()'s usage of
+coyield() when invoked from the same coroutine as is being deallocated, but can
+be harmlessly invoked in other cases if for some reason that is desired.
+	coro_getaux() returns the uintptr_t associated with the current thread's
+active-coroutine, and takes no arguments. It's intended for user-specified
+purposes only, and isn't used by the coroutine system.
+	cocollapse() is the singularly most important of the auxiliary coroutine
+functions. It returns a void, and takes a pointer to a coroutine-head, a pointer
+to a coroutine-body (an address that can be obtained from the header's
+->lastbyte_a or ->lastbyte_a members), and a pointer to a conclude function (as
+described in context with cobuild() ) which MUST match the value in the header's
+->conclude member: note that some future version of this coroutine system will
+likely entirely eliminate the second & third arguments, as they can be entirely
+(and correctly) derived from the first argument. cocollapse() oversees the
+invocation of the provided coroutine-header's ->conclude function, and then sees
+to it that the coroutine's memory is deallocated, invoking a coyield() to the
+thread's initial-coroutine if the provided header is the header for the
+currently active coroutine. cocollapse() will decline to do anything to the
+current thread's initial-coroutine, BUT BEWARE that some execution environments
+MAY make the thread-specific data of multiple threads visible to each other, in
+which case cocollapse() will NOT know that the continuation in question isn't
+available for deallocation: this can result in bugs, so you should be careful
+about explicitly calling cocollapse() at all.
+
+
+
+Uses:
+	A fairly common use-case for coroutines is to wrap non-blocking IO with
+blocking-style interfaces by using a yield inside the interface(s), thus
+allowing you to replace spin-locks & similar with actually useful work. Beware
+that you must understand if a single function might be called from multiple
+other coroutines, before you can adequately determine how it should use yield.
+	The Actor-model can be built on top of coroutines, particularly by using the
+coro_getaux() function to obtain the address of a per-instance structured-data
+instance. Note that in this case, it's best to use a pointer to a data element
+allocated on the coroutine's own stack as the "handle" instead of the coroutine-
+-header's address, to make use of what little type-safet that C provides.
+	A limited form of Functional-style functions and OOP-style objects can be
+created in a similar style to the Actor model.
+	Note that you cannot PROPERLY create continuations without a bit more effort
+than is implemented here: particularly, there's some need for at least some
+stack-copying behavior.
+	"Full" Blueprint-style OO can be created by using a coroutine to hold the
+Blueprint elements, thereby allowing e.g. TCC to be used to add new types, and
+simply differentiating Blueprint instances from other instances of the 
+"fundamental" data structure by having each instance point to the shared
+Blueprint instance, and if that matches the instance's own address then
+following the Blueprint path instead of the normal one.
+	Widgets ala widget-platforms can be built on top of the Actor, Functional/
+/OOP, or Blueprint applications.
+	Forth-style DOES> (or, I suppose, ;CODE) routines can be approximated with
+this system, particularly with additional assembly-code or a switch-based
+bytecode-interpretter.
+	A fairly full FORTH system can be built by using a closure-trampoline-style
+loop-function with the setup described for Actors instead of bare-metal
+programming.
+	If you can implement FORTH on top, you can implement e.g. BASIC on top.
