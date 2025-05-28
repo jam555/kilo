@@ -33,56 +33,61 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stddef.h>
-
-
-/* All functions including "mila" in their name were added for Mila. */
-
-/* We define a very simple "append buffer" structure, that is an heap
- * allocated string where we can append to. This is useful in order to
- * write all the escape sequences in a buffer and flush them to the standard
- * output in a single call, to avoid flickering effects. */
-struct abuf {
-    char *b;
-    size_t len;
-};
-
-#define ABUF_INIT {NULL,0}
-
-void abAppend( struct abuf *ab, const char *s, int len );
-
-void abFree( struct abuf *ab );
-
-
-/* These "mila" functions are actually found in term.c */
-
-void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail );
-void mila_ab_curseek_home( struct abuf *ab );
-
-void mila_ab_curvis_hide( struct abuf *ab );
-void mila_ab_curvis_show( struct abuf *ab );
-
-void mila_ab_clearall( struct abuf *ab );
-void mila_ab_cleartostart( struct abuf *ab );
-void mila_ab_cleartoend( struct abuf *ab, char *tail );
-
-void mila_ab_defaultFg( struct abuf *ab );
-void mila_ab_swapFgBg( struct abuf *ab );
-void mila_ab_resetAttribs( struct abuf *ab, char *tail );
-
-
-
-void abStatusLine
-(
-	struct abuf *ab, struct abuf *util,
+#ifndef APPENBUF_H
+# define APPENBUF_H
 	
-	char *fstatus, int fstat_len,
-	char *rstatus, int rstat_len
-);
-void abMessageLine( struct abuf *ab, struct abuf *util );
-void abUtilityArea( struct abuf *ab, struct abuf *util );
-
-
-/* This function writes the whole screen using VT100 escape characters
- * starting from the logical state of the editor in the global state 'E'. */
-void editorRefreshScreen(void);
+	#include <stddef.h>
+	
+	
+	/* All functions including "mila" in their name were added for Mila. */
+	
+	/* We define a very simple "append buffer" structure, that is an heap
+	 * allocated string where we can append to. This is useful in order to
+	 * write all the escape sequences in a buffer and flush them to the standard
+	 * output in a single call, to avoid flickering effects. */
+	struct abuf {
+	    char *b;
+	    size_t len;
+	};
+	
+	#define ABUF_INIT {NULL,0}
+	
+	void abAppend( struct abuf *ab, const char *s, int len );
+	
+	void abFree( struct abuf *ab );
+	
+	
+	/* These "mila" functions are actually found in term.c */
+	
+	void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail );
+	void mila_ab_curseek_home( struct abuf *ab );
+	
+	void mila_ab_curvis_hide( struct abuf *ab );
+	void mila_ab_curvis_show( struct abuf *ab );
+	
+	void mila_ab_clearall( struct abuf *ab );
+	void mila_ab_cleartostart( struct abuf *ab );
+	void mila_ab_cleartoend( struct abuf *ab, char *tail );
+	
+	void mila_ab_defaultFg( struct abuf *ab );
+	void mila_ab_swapFgBg( struct abuf *ab );
+	void mila_ab_resetAttribs( struct abuf *ab, char *tail );
+	
+	
+	
+	void abStatusLine
+	(
+		struct abuf *ab, struct abuf *util,
+		
+		char *fstatus, int fstat_len,
+		char *rstatus, int rstat_len
+	);
+	void abMessageLine( struct abuf *ab, struct abuf *util );
+	void abUtilityArea( struct abuf *ab, struct abuf *util );
+	
+	
+	/* This function writes the whole screen using VT100 escape characters
+	 * starting from the logical state of the editor in the global state 'E'. */
+	void editorRefreshScreen(void);
+	
+#endif
