@@ -97,7 +97,7 @@ int cocontext( void *data, int (*func)( void* ) )
 	current_fiber = &main_fiber;
 #pragma GCC diagnostic push
 	/* Silence the jmp_buf initialization complaints. */
-# pragma GCC diagnostic warning "-Wno-missing-field-initializers"
+# pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 	main_fiber =
 		(corohead)
 		{
@@ -339,7 +339,11 @@ int cobuild
 				void (*coro_main)( corohead*, void* )
 			)
 		*/
+#pragma GCC diagnostic push
+	/* This is what we're doing, silence the complaint. */
+# pragma GCC diagnostic ignored "-Wpedantic"
 		*( --alloc ) = (void*)coro_main;
+#pragma GCC diagnostic pop
 			/* printf( "   &coro_main == %p\n", (void*)alloc ); */
 		*( --alloc ) = coro_data;
 			/* printf( "   &coro_data == %p\n", (void*)alloc ); */
