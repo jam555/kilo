@@ -33,6 +33,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stddef.h>
+
+
 /* All functions including "mila" in their name were added for Mila. */
 
 /* We define a very simple "append buffer" structure, that is an heap
@@ -41,7 +44,7 @@
  * output in a single call, to avoid flickering effects. */
 struct abuf {
     char *b;
-    int len;
+    size_t len;
 };
 
 #define ABUF_INIT {NULL,0}

@@ -46,7 +46,7 @@ void editorCalc_CurScreenPos( int *x, int *y )
 {
 	/* TODO: Alter this to take VTAB into account for *y */
 	
-	int x_ = 1, y_ = E.cy + 1;
+	int x_ = 1, y_ = (int)E.cy + 1;
 	if( !x )
 	{
 		x = &x_;
@@ -56,8 +56,8 @@ void editorCalc_CurScreenPos( int *x, int *y )
 		y = &y_;
 	}
 	
-    int j;
-    int filerow = E.rowoff + E.cy;
+    size_t j;
+    size_t filerow = E.rowoff + E.cy;
     erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
     if( row )
 	{
@@ -77,10 +77,11 @@ void editorCalc_CurScreenPos( int *x, int *y )
 	/*  e.g. E.cx */
 void editorUpdateCurPos( struct abuf *ab )
 {
-	int cx = 1, cy = E.cy + 1;
+	int cx = 1, cy = (int)E.cy + 1;
 	
 	editorCalc_CurScreenPos( &cx, &cy );
-	mila_ab_curseek( ab, 2,   cy, cx, "" ); /* Move cursor. */
+#warning "Alter this code for consistency!"
+	mila_ab_curseek( ab, 2,   (size_t)cy, (size_t)cx, "" ); /* Move cursor. */
 }
 
 
@@ -94,7 +95,7 @@ void editorUpdateCurPos( struct abuf *ab )
  * starting from the logical state of the editor in the global state 'E'. */
 void editorRefreshScreen( void )
 {
-    int y;
+    size_t y;
     erow *r;
     struct abuf ab = ABUF_INIT;
 
@@ -102,7 +103,7 @@ void editorRefreshScreen( void )
     mila_ab_curseek_home( &ab );
     for( y = 0; y < E.screenrows; y++ )
 	{
-        int filerow = E.rowoff + y;
+        size_t filerow = E.rowoff + y;
 
         if( filerow >= E.numrows )
 		{
@@ -119,7 +120,16 @@ void editorRefreshScreen( void )
 						"Kilo editor -- verison %s%s\r\n",
 						KILO_VERSION, MILA_TERMCODES_9
 					);
-                int padding = ( E.screencols - welcomelen ) / 2;
+				size_t padding;
+                if( welcomelen < 0 )
+				{
+#warning "This needs some sort of error reporting."
+					exit( 1 );
+					
+				} else {
+					
+					padding = ( E.screencols - (size_t)welcomelen ) / 2;
+				}
                 if( padding )
 				{
                     abAppend( &ab, "~", 1 );
@@ -140,7 +150,7 @@ void editorRefreshScreen( void )
 
         r = &E.row[ filerow ];
 
-        int len = r->rsize - E.coloff;
+        size_t len = r->rsize - E.coloff;
         int current_color = -1;
         if( len > 0 )
 		{
@@ -150,7 +160,7 @@ void editorRefreshScreen( void )
 			}
             char *c = r->render + E.coloff;
             unsigned char *hl = r->hl + E.coloff;
-            int j;
+            size_t j;
             for( j = 0; j < len; j++ )
 			{
                 if( hl[ j ] == HL_NONPRINT )

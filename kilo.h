@@ -56,6 +56,7 @@
 #include <stdarg.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stddef.h>
 
 #include "statview.h"
 
@@ -99,9 +100,9 @@ struct editorSyntax {
 
 /* This structure represents a single line of the file we are editing. */
 typedef struct erow {
-    int idx;            /* Row index in the file, zero-based. */
-    int size;           /* Size of the row, excluding the null term. */
-    int rsize;          /* Size of the rendered row. */
+    size_t idx;            /* Row index in the file, zero-based. */
+    size_t size;           /* Size of the row, excluding the null term. */
+    size_t rsize;          /* Size of the rendered row. */
     char *chars;        /* Row content. */
     char *render;       /* Row content "rendered" for screen (for TABs). */
     unsigned char *hl;  /* Syntax highlight type for each character in render.*/
@@ -118,12 +119,12 @@ typedef struct hlcolor {
 struct editorConfig {
     int no_altscr;  /* Forbid usage of the alternate-screen. */
 
-    int cx,cy;  /* Cursor x and y position in characters */
-    int rowoff;     /* Offset of row displayed. */
-    int coloff;     /* Offset of column displayed. */
-    int screenrows; /* Number of rows that we can show */
-    int screencols; /* Number of cols that we can show */
-    int numrows;    /* Number of rows */
+    size_t cx,cy;  /* Cursor x and y position in characters */
+    size_t rowoff;     /* Offset of row displayed. */
+    size_t coloff;     /* Offset of column displayed. */
+    size_t screenrows; /* Number of rows that we can show */
+    size_t screencols; /* Number of cols that we can show */
+    size_t numrows;    /* Number of rows */
     int rawmode;    /* Is terminal raw mode enabled? */
     int altscr;     /* Is terminal alternate-screen selected? */
     erow *row;      /* Rows */
@@ -147,9 +148,9 @@ struct editorConfig {
 	/* Extern x & y specifically is to allow for screen scrolling: */
 	/*  there's no telling if it'll match the terminal size, so */
 	/*  it's better to prepare for a mismatch. */
-    int externx, externy;
-	int externrows; /* Number of rows that we can show */
-    int externcols; /* Number of cols that we can show */
+    size_t externx, externy;
+	size_t externrows; /* Number of rows that we can show */
+    size_t externcols; /* Number of cols that we can show */
 	
 		/* This is where our progress-target currently lies. We need to move the appenbuf.c */
 		/*  stuff to using this instead of accessing the status directly. In particular, it */
