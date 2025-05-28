@@ -335,6 +335,9 @@ int editorReadKey(int fd) {
                         case '3': return DEL_KEY;
                         case '5': return PAGE_UP;
                         case '6': return PAGE_DOWN;
+						default:
+#warning "This should get some sort of reporting."
+							break;
                         }
                     }
                 } else {
@@ -345,6 +348,9 @@ int editorReadKey(int fd) {
                     case 'D': return ARROW_LEFT;
                     case 'H': return HOME_KEY;
                     case 'F': return END_KEY;
+					default:
+#warning "This should get some sort of reporting."
+						break;
                     }
                 }
             }
@@ -354,6 +360,9 @@ int editorReadKey(int fd) {
                 switch(seq[1]) {
                 case 'H': return HOME_KEY;
                 case 'F': return END_KEY;
+                default:
+#warning "This should get some sort of reporting."
+					break;
                 }
             }
             break;

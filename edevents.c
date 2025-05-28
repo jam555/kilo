@@ -39,11 +39,12 @@
 /* ========================= Editor events handling  ======================== */
 
 /* Handle cursor position change because arrow keys were pressed. */
-void editorMoveCursor(int key) {
+void editorMoveCursor( int key )
+{
     int filerow = E.rowoff + E.cy;
     int filecol = E.coloff + E.cx;
     int rowlen;
-    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
 
     switch( key )
 	{
@@ -62,7 +63,7 @@ void editorMoveCursor(int key) {
 	                    E.cx = E.row[ filerow - 1 ].size;
 	                    if( E.cx > E.screencols - 1 )
 						{
-	                        E.coloff = E.cx-E.screencols + 1;
+	                        E.coloff = E.cx - E.screencols + 1;
 	                        E.cx = E.screencols - 1;
 	                    }
 	                }
@@ -128,7 +129,20 @@ void editorMoveCursor(int key) {
 	            }
 	        }
 	        break;
+	    
+		default:
+#warning "This needs to place a description of the key into the status-message field!"
+			break;
     }
+	
+	
+	/* TODO: THIS is where the cursor position gets modified to fit in the */
+	/*  length of the current line. Add more logic (and members in E) to */
+	/*  seperate the "rear position" from the position displayed on screen, */
+	/*  so that the column gets maintained even if moving through a line */
+	/*  that's too short, BUT still displays no further from the "origin */
+	/*  column" than a character can next be added. */
+	
     /* Fix cx if the current line has not enough chars. */
     filerow = E.rowoff + E.cy;
     filecol = E.coloff + E.cx;
@@ -192,20 +206,20 @@ void editorProcessKeypress( int fd )
 	        break;
 	    case PAGE_UP:
 	    case PAGE_DOWN:
-	        if (c == PAGE_UP && E.cy != 0)
+	        if( c == PAGE_UP && E.cy != 0 )
 			{
 				E.cy = 0;
 				
 	        } else if( c == PAGE_DOWN && E.cy != E.screenrows-1 )
 			{
-				E.cy = E.screenrows-1;
+				E.cy = E.screenrows - 1;
 	        }
 			{
 		        int times = E.screenrows;
 		        while( times-- )
 				{
 		            editorMoveCursor
-						(c == PAGE_UP ? ARROW_UP: ARROW_DOWN);
+						( c == PAGE_UP ? ARROW_UP: ARROW_DOWN );
 		        }
 			}
 	        break;
@@ -283,7 +297,7 @@ void initEditor( void )
     E.filename = NULL;
     E.syntax = NULL;
 	/* Members of E below here aren't currently used. */
-	E.orig_termios ;
+	/* E.orig_termios ; */
 	E.utilrow = 0;
     /* The utility zone currently just holds the status lines. */
 	/*  The "exten" section is for "auxiliary display" options, */
