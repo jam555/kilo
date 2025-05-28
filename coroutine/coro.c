@@ -39,16 +39,16 @@
 
 __thread corohead main_fiber = { 0 };
 
-static volatile __thread corohead *current_fiber = 0;
+static __thread volatile corohead *current_fiber = 0;
 static volatile corohead *dead_fiber = 0;
 
-volatile char *coro_errmsg = 0;
+const char *volatile coro_errmsg = 0;
 
 
 /*
 static void debug_marker()
 {
-	/* Do nothing. *//*
+	*/ /* Do nothing. */ /*
 	return;
 }
 */
@@ -68,7 +68,7 @@ static void debug_marker()
 #endif
 
 	/* This only works for CC & similar. */
-uintptr_t get_defaultstacksize()
+uintptr_t get_defaultstacksize( void )
 {
 		/* Just blindly allocate 1 meg. */
 	return( 1024 * 1024 );
@@ -95,23 +95,27 @@ int cocontext( void *data, int (*func)( void* ) )
 {
 		/* Required by GCC. */
 	current_fiber = &main_fiber;
+#pragma GCC diagnostic push
+	/* Silence the jmp_buf initialization complaints. */
+# pragma GCC diagnostic warning "-Wno-missing-field-initializers"
 	main_fiber =
-	(corohead)
-	{
-			/* It shouldn't be possible for this to get used. */
-		(void*)&exit,
-		
-		&main_fiber,
-		0,
-		&co_conclude,
-		
-		&exit,
-		0,
-		
-		0,
-		
-		{ 0 }
-	};
+		(corohead)
+		{
+				/* It shouldn't be possible for this to get used. */
+			( void (*)( void ) )&exit,	/* void *exit_retaddr_MSVC; */
+			
+			&main_fiber,	/* corohead *here; */
+			0,				/* corobody *lastbyte_a; */
+			&co_conclude,	/* int (*volatile conclude)( corohead*, uintptr_t ); */
+			
+			( void (*)( void ) )&exit,	/* void *exit_retaddr_SysV; */
+			0,				/* corobody *lastbyte_b; */
+			
+			0,				/* uintptr_t auxiliary; */
+			
+			{{{0}}}			/* jmp_buf state; */
+		};
+#pragma GCC diagnostic pop
 	
 	return( func( data ) );
 }
@@ -159,7 +163,7 @@ static void coro_boot
 	}
 }
 #define set_sp(p) \
-  asm volatile( "mov %0, %%rsp" : : "r"(p) )
+  __asm__ volatile( "mov %0, %%rsp" : : "r"(p) )
 static void coro_bootcaller( void **alloc )
 {
 	/* SysV (including Linux) version. The 64-bit MSVC must be in */
@@ -175,7 +179,7 @@ static void coro_bootcaller( void **alloc )
 		/*  one! */
 		/* ... WHY DOES THE EXTENDED SYNTAX CALL FOR DIFFERENT NUMBERS */
 		/*  OF PERCENT SIGNS?!? */
-	asm volatile
+	__asm__ volatile
 	(
 		/* Load the arguments: this isn't needed elsewhere. */
 		"popq %%rdi\n" /* head; rcx on Win64. */
@@ -194,7 +198,7 @@ static void coro_bootcaller( void **alloc )
 		/*  excessive indirections)! Asterick seems fine. */
 		"call *%0\n" : : "r"(&coro_boot)
 	);
-	asm volatile
+	__asm__ volatile
 	(
 		/* Pop both align padding, & MSVC ret addr. */
 		"add $16,  %%rsp\n"
@@ -303,8 +307,8 @@ int cobuild
 				/* If this EVER gets called, something went VERY wrong. Note */
 				/*  that depending on the size of int, exit MIGHT receive */
 				/*  ->lastbyte as an argument. */
-			head->exit_retaddr_MSVC = &exit;
-			head->exit_retaddr_SysV = &exit;
+			head->exit_retaddr_MSVC = ( void (*)( void ) )&exit;
+			head->exit_retaddr_SysV = ( void (*)( void ) )&exit;
 			/* For cocollapse(), these are meant to act as it's args. */
 			head->here = head;
 			head->lastbyte_a = (corobody*)alloc;
@@ -335,7 +339,7 @@ int cobuild
 				void (*coro_main)( corohead*, void* )
 			)
 		*/
-		*( --alloc ) = coro_main;
+		*( --alloc ) = (void*)coro_main;
 			/* printf( "   &coro_main == %p\n", (void*)alloc ); */
 		*( --alloc ) = coro_data;
 			/* printf( "   &coro_data == %p\n", (void*)alloc ); */
@@ -369,7 +373,7 @@ int cobuild
 	return( -1 );
 }
 
-uintptr_t coro_getaux()
+uintptr_t coro_getaux( void )
 {
 	if( current_fiber )
 	{
@@ -423,6 +427,8 @@ void cocollapse
 	int (*conclude)( corohead*, uintptr_t )
 )
 {
+	(void)body;
+	
 	coclean();
 	
 	if( !( head->conclude ) || !conclude || head == &main_fiber )

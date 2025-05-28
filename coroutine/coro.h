@@ -132,7 +132,7 @@
 		SOMETHING, but haven't spent the time to nail it down.
 */
 
-uintptr_t get_defaultstacksize();
+uintptr_t get_defaultstacksize( void );
 
 
 	/* Not immediately sure how many of these are used. */
@@ -200,15 +200,16 @@ typedef struct corobody
 	/* Normally the highest-addressed occupant of an individual stack. */
 struct corohead
 {
-	void *exit_retaddr_MSVC;
+	void (*exit_retaddr_MSVC)( void );
 	
 	corohead *here;
 	corobody *lastbyte_a;
 		/* Marked volatile for the sake of the destruction code: conclude() */
 		/*  should null itself out upon completion of it's task. */
-	volatile int (*conclude)( corohead*, uintptr_t );
+		/* See: https://barrgroup.com/blog/how-use-cs-volatile-keyword */
+	int (*volatile conclude)( corohead*, uintptr_t );
 	
-	void *exit_retaddr_SysV;
+	void (*exit_retaddr_SysV)( void );
 	corobody *lastbyte_b;
 	
 	uintptr_t auxiliary;
@@ -248,12 +249,13 @@ int cocontext( void *data, int (*func)( void* ) );
 		
 		corohead **ret
 	);
-		uintptr_t coro_getaux();
+		uintptr_t coro_getaux( void );
 		int coyield( corohead *dest );
-	void coclean();
+	void coclean( void );
 
 
 	/* The initial-coroutine itself. This is provided so that it can act as a */
 	/*  target for coyield(). */
 extern __thread corohead main_fiber;
-extern volatile char *coro_errmsg;
+	/* See: https://barrgroup.com/blog/how-use-cs-volatile-keyword */
+extern const char *volatile coro_errmsg;
