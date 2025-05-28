@@ -136,6 +136,58 @@ void mila_ab_resetAttribs( struct abuf *ab, char *tail )
 	abAppend( ab, buf, strlen( buf ) );
 }
 
+void mila_term_printWelcomeMessage( struct abuf *ab,  char *buf, size_t buflen )
+{
+	/* buf == welcome, buflen == sizeof( welcome ) */
+#define MILA_TERMCODES_9 "\x1b[0K"
+	int welcomelen =
+		snprintf
+		(
+			buf, buflen,
+			
+			"Kilo editor -- verison %s%s\r\n",
+			KILO_VERSION, MILA_TERMCODES_9
+		);
+	size_t padding;
+	if( welcomelen < 0 )
+	{
+#warning "This needs some sort of error reporting."
+		exit( 1 );
+		
+	} else {
+		
+		padding = ( E.screencols - (size_t)welcomelen ) / 2;
+	}
+	if( padding )
+	{
+		abAppend( ab, "~", 1 );
+		padding--;
+	}
+	while( padding-- )
+	{
+		abAppend( ab," ",1 );
+	}
+	abAppend( ab, buf, welcomelen );
+}
+void mila_term_setcolor
+(
+	struct abuf *ab,
+	char *buf, size_t buflen,
+	
+	int color, int *curcolor
+)
+{
+#define MILA_TERMCODES_14 "\x1b[%dm"
+	int clen =
+		snprintf
+		(
+			buf, buflen,
+			MILA_TERMCODES_14, color
+		);
+	*curcolor = color;
+	abAppend( ab, buf, clen );
+}
+
 
 
 void mila_term_cursseek_setpos( int alter, int ofile, int row, int col )

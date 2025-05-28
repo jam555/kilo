@@ -110,36 +110,8 @@ void editorRefreshScreen( void )
             if( E.numrows == 0 && y == E.screenrows / 3 )
 			{
                 char welcome[ 80 ];
-#warning "Move this to a function inside term.c!"
-#define MILA_TERMCODES_9 "\x1b[0K"
-                int welcomelen =
-					snprintf
-					(
-						welcome, sizeof( welcome ),
-                    	
-						"Kilo editor -- verison %s%s\r\n",
-						KILO_VERSION, MILA_TERMCODES_9
-					);
-				size_t padding;
-                if( welcomelen < 0 )
-				{
-#warning "This needs some sort of error reporting."
-					exit( 1 );
-					
-				} else {
-					
-					padding = ( E.screencols - (size_t)welcomelen ) / 2;
-				}
-                if( padding )
-				{
-                    abAppend( &ab, "~", 1 );
-                    padding--;
-                }
-                while( padding-- )
-				{
-					abAppend( &ab," ",1 );
-				}
-                abAppend( &ab, welcome, welcomelen );
+				mila_term_printWelcomeMessage
+					( &ab,  welcome, sizeof( welcome ) );
 				
             } else {
                 
@@ -192,17 +164,12 @@ void editorRefreshScreen( void )
 					int color = editorSyntaxToColor( hl[ j ] );
                     if( color != current_color )
 					{
-                        char buf[ 16 ];
-#warning "Move this to a function inside term.c!"
-#define MILA_TERMCODES_14 "\x1b[%dm"
-                        int clen =
-							snprintf
-							(
-								buf, sizeof( buf ),
-								MILA_TERMCODES_14, color
-							);
-                        current_color = color;
-                        abAppend( &ab, buf, clen );
+						char buf[ 16 ];
+                        mila_term_setcolor
+						(
+							&ab,  buf, sizeof( buf ),
+							color, &current_color
+						);
                     }
                     abAppend( &ab, c + j, 1 );
                 }

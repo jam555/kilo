@@ -59,6 +59,8 @@
 #include <stddef.h>
 
 #include "statview.h"
+#include "appenbuf.h"
+
 
 /* TODO: Find all of the "warning" directives, and fix them. */
 
@@ -266,28 +268,41 @@ extern struct termios orig_termios; /* In order to restore at exit.*/
 void mila_term_cursseek_setpos( int alter, int ofile, int row, int col );
 int mila_term_cursseek_finalchar( int alter );
 
-void disableRawMode(int fd);
+void disableRawMode( int fd );
 void mila_term_altscreen_disable( void );
 
 /* Called at exit to avoid remaining in raw mode. */
-void editorAtExit(void);
+void editorAtExit( void );
 
 /* Raw mode: 1960 magic shit. */
-int enableRawMode(int fd);
+int enableRawMode( int fd );
+
+void mila_term_printWelcomeMessage
+(
+	struct abuf *ab,
+	char *buf, size_t buflen
+);
+void mila_term_setcolor
+(
+	struct abuf *ab,
+	char *buf, size_t buflen,
+	
+	int color, int *curcolor
+);
 
 /* Read a key from the terminal put in raw mode, trying to handle
  * escape sequences. */
-int editorReadKey(int fd);
+int editorReadKey( int fd );
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor is stored at *rows and *cols and 0 is returned. */
-int getCursorPosition(int ifd, int ofd, int *rows, int *cols);
+int getCursorPosition( int ifd, int ofd, int *rows, int *cols );
 
 /* Try to get the number of columns in the current terminal. If the ioctl()
  * call fails the function will try to query the terminal itself.
  * Returns 0 on success, -1 on error. */
-int getWindowSize(int ifd, int ofd, int *rows, int *cols);
+int getWindowSize( int ifd, int ofd, int *rows, int *cols );
 
 /* ====================== Syntax highlight color scheme  ==================== */
 
