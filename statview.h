@@ -46,4 +46,4 @@ typedef struct statview_view
 } statview_view;
 
 int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data );
-statstate* statview_build();
+statstate* statview_build( void );

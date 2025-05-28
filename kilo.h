@@ -190,11 +190,6 @@ enum KEY_ACTION{
 #warning "All uses of this need to be moved to a function in term.c!"
 #define MILA_TERMCODES_11 "\x1b[7m"
 
-void mila_term_cursseek_setpos( int alter, int ofile, int row, int col );
-int mila_term_cursseek_finalchar( int alter );
-
-void mila_term_altscreen_disable( void );
-
 
 
 
@@ -365,10 +360,6 @@ int editorSave(void);
 /* ============================= Terminal update ============================ */
 
 #include "appenbuf.h"
-
-/* This function writes the whole screen using VT100 escape characters
- * starting from the logical state of the editor in the global state 'E'. */
-void editorRefreshScreen(void);
 
 /* Set an editor status message for the second line of the status, at the
  * end of the screen. */

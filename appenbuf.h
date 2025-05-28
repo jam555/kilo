@@ -68,6 +68,18 @@ void mila_ab_swapFgBg( struct abuf *ab );
 void mila_ab_resetAttribs( struct abuf *ab, char *tail );
 
 
+
+void abStatusLine
+(
+	struct abuf *ab, struct abuf *util,
+	
+	char *fstatus, int fstat_len,
+	char *rstatus, int rstat_len
+);
+void abMessageLine( struct abuf *ab, struct abuf *util );
+void abUtilityArea( struct abuf *ab, struct abuf *util );
+
+
 /* This function writes the whole screen using VT100 escape characters
  * starting from the logical state of the editor in the global state 'E'. */
 void editorRefreshScreen(void);
