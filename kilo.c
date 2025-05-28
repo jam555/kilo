@@ -33,6 +33,7 @@
  */
 
 #include "kilo.h"
+#include "coroutine/coro.h"
 
 
 
@@ -97,21 +98,37 @@ size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 
 
-int main(int argc, char **argv)
+int main_coro( void *ign );
+int argn;
+char **args;
+int main( int argn_, char **args_ )
 {
-    const char noaltscr_opt[] = "--no-alt-screen";
-    if( argc < 2 || argc > 3 )
+	argn = argn_;
+	args = args_;
+	
+		/* Wrap, and continue with main(). */
+		/* NOte that the void pointer will probably need to be non-null */
+		/*  at some point in the future. */
+	argn_ = cocontext( (void*)0, &main_coro );
+	/* Let's just trash the return for now. */
+}
+int main_coro( void *ign )
+{
+    (void)ign;
+	
+	const char noaltscr_opt[] = "--no-alt-screen";
+    if( argn < 2 || argn > 3 )
 	{
         fprintf( stderr, "Usage: kilo <filename> [%s]\n", noaltscr_opt );
         exit( 1 );
     }
 
-    if( argc == 3 ) {
+    if( argn == 3 ) {
         /* Surpress usage of the alternate screen: useful if you */
         /*  want to keep info displayed on exit. */
-        if( strcmp( noaltscr_opt, argv[ 2 ] ) != 0 ) {
+        if( strcmp( noaltscr_opt, args[ 2 ] ) != 0 ) {
             perror( "Unfamiliar command-line option:" );
-            fprintf( stderr, "  %s", argv[ 2 ] );
+            fprintf( stderr, "  %s", args[ 2 ] );
             exit( 1 );
         }
         E.no_altscr = 1;
@@ -122,8 +139,8 @@ int main(int argc, char **argv)
     }
 
     initEditor();
-    editorSelectSyntaxHighlight( argv[ 1 ] );
-    editorOpen( argv[ 1 ] );
+    editorSelectSyntaxHighlight( args[ 1 ] );
+    editorOpen( args[ 1 ] );
     enableRawMode( STDIN_FILENO );
 		/* TODO: This message needs to be displayed by default! */
 		/* Note that the max length for a line is currentlt UINT32_MAX stored characters (NOT displayed characters). */

@@ -197,10 +197,6 @@ void mila_term_altscreen_disable( void );
 
 
 
-void editorSetStatusMessage(const char *fmt, ...);
-
-
-
 
 
 extern struct editorConfig E;
