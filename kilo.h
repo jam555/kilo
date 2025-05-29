@@ -331,30 +331,30 @@ void editorUpdateRow(erow *row);
 
 /* Insert a row at the specified position, shifting the other rows on the bottom
  * if required. */
-void editorInsertRow(int at, char *s, size_t len);
+void editorInsertRow( size_t at, char *s, size_t len );
 
 /* Free row's heap allocated stuff. */
-void editorFreeRow(erow *row);
+void editorFreeRow( erow *row );
 
 /* Remove the row at the specified position, shifting the remainign on the
  * top. */
-void editorDelRow(int at);
+void editorDelRow( size_t at );
 
 /* Turn the editor rows into a single heap-allocated string.
  * Returns the pointer to the heap-allocated string and populate the
  * integer pointed by 'buflen' with the size of the string, escluding
  * the final nulterm. */
-char *editorRowsToString(int *buflen);
+char *editorRowsToString( int *buflen );
 
 /* Insert a character at the specified position in a row, moving the remaining
  * chars on the right if needed. */
-void editorRowInsertChar(erow *row, int at, int c);
+void editorRowInsertChar(erow *row, size_t at, int c);
 
 /* Append the string 's' at the end of a row */
 void editorRowAppendString(erow *row, char *s, size_t len);
 
 /* Delete the character at offset 'at' from the specified row. */
-void editorRowDelChar(erow *row, int at);
+void editorRowDelChar(erow *row, size_t at);
 
 /* Insert the specified char at the current prompt position. */
 void editorInsertChar(int c);
