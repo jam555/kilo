@@ -68,9 +68,11 @@ static void debug_marker()
 #endif
 
 	/* This only works for CC & similar. */
+	/* ... What? Did I mean "GCC & similar"? */
 uintptr_t get_defaultstacksize( void )
 {
 		/* Just blindly allocate 1 meg. */
+		/* Note that the MUSL C library by default allocates 128k per thread. */
 	return( 1024 * 1024 );
 	/* return( (uintptr_t)__stack_size ); */
 }
