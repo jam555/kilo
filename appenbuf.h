@@ -59,7 +59,6 @@
 	
 	/* These "mila" functions are actually found in term.c */
 	
-	void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail );
 	void mila_ab_curseek_home( struct abuf *ab );
 	
 	void mila_ab_curvis_hide( struct abuf *ab );

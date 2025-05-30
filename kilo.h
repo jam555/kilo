@@ -60,6 +60,7 @@
 
 #include "statview.h"
 #include "appenbuf.h"
+#include "term.h"
 
 
 /* TODO: Find all of the "warning" directives, and fix them. */
@@ -190,8 +191,7 @@ enum KEY_ACTION{
 
 
 
-#warning "All uses of this need to be moved to a function in term.c!"
-#define MILA_TERMCODES_11 "\x1b[7m"
+/* MILA_TERMCODES_11 was defined here.*/
 
 
 
@@ -406,7 +406,7 @@ void initEditor(void);
 
 
 
-void editorCalc_CurScreenPos( int *x, int *y );
+void editorCalc_CurScreenPos( size_t *x, size_t *y );
 void editorUpdateCurPos( struct abuf *ab );
 
 

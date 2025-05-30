@@ -36,13 +36,18 @@
 #include "kilo.h"
 
 
+
+#warning "MILA_TERMCODES_11 was formerly defined in kilo.h"
+#define MILA_TERMCODES_11 "\x1b[7m"
+
+
 /* ======================= Low level terminal handling ====================== */
 
 struct termios orig_termios; /* In order to restore at exit.*/
 
 
 
-void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail )
+void mila_ab_curseek( struct abuf *ab, int argn,   size_t x, size_t y, char *tail )
 {
 	char buf[ 32 ];
 	
@@ -62,11 +67,12 @@ void mila_ab_curseek( struct abuf *ab, int argn,   int x, int y, char *tail )
 		
 	} else if( argn == 1 )
 	{
-		snprintf( buf, sizeof(buf), mila_ab_curseek_ONEARG, x,  tail );
+#warning "Alter this and the following snprintf() to properly use size_t."
+		snprintf( buf, sizeof(buf), mila_ab_curseek_ONEARG, (int)x,  tail );
 		
 	} else if( argn == 2 )
 	{
-		snprintf( buf, sizeof(buf), MILA_TERMCODES_21, x, y,  tail );
+		snprintf( buf, sizeof(buf), MILA_TERMCODES_21, (int)x, (int)y,  tail );
 	}
 	
 	abAppend( ab, buf, strlen( buf ) );

@@ -42,11 +42,11 @@
 	/*  the value stored in those ints WILL alter the final result. ALSO, the */
 	/*  ONLY protection against null-pointers is that if the int pointers are */
 	/*  null, then they'll be redirected to an internal int. */
-void editorCalc_CurScreenPos( int *x, int *y )
+void editorCalc_CurScreenPos( size_t *x, size_t *y )
 {
 	/* TODO: Alter this to take VTAB into account for *y */
 	
-	int x_ = 1, y_ = (int)E.cy + 1;
+	size_t x_ = 1, y_ = E.cy + 1;
 	if( !x )
 	{
 		x = &x_;
@@ -77,11 +77,10 @@ void editorCalc_CurScreenPos( int *x, int *y )
 	/*  e.g. E.cx */
 void editorUpdateCurPos( struct abuf *ab )
 {
-	int cx = 1, cy = (int)E.cy + 1;
+	size_t cx = 1, cy = E.cy + 1;
 	
 	editorCalc_CurScreenPos( &cx, &cy );
-#warning "Alter this code for consistency!"
-	mila_ab_curseek( ab, 2,   (size_t)cy, (size_t)cx, "" ); /* Move cursor. */
+	mila_ab_curseek( ab, 2,   cy, cx, "" ); /* Move cursor. */
 }
 
 

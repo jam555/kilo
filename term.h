@@ -33,3 +33,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#ifndef TERM_H
+# define TERM_H
+	void mila_ab_curseek( struct abuf *ab, int argn,   size_t x, size_t y, char *tail );
+	
+#endif
