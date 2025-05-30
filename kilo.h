@@ -302,7 +302,7 @@ int getCursorPosition( int ifd, int ofd, int *rows, int *cols );
 /* Try to get the number of columns in the current terminal. If the ioctl()
  * call fails the function will try to query the terminal itself.
  * Returns 0 on success, -1 on error. */
-int getWindowSize( int ifd, int ofd, int *rows, int *cols );
+int getWindowSize( int ifd, int ofd, size_t *rows, size_t *cols );
 
 /* ====================== Syntax highlight color scheme  ==================== */
 
@@ -344,7 +344,7 @@ void editorDelRow( size_t at );
  * Returns the pointer to the heap-allocated string and populate the
  * integer pointed by 'buflen' with the size of the string, escluding
  * the final nulterm. */
-char *editorRowsToString( int *buflen );
+char *editorRowsToString( size_t *buflen );
 
 /* Insert a character at the specified position in a row, moving the remaining
  * chars on the right if needed. */

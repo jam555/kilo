@@ -41,9 +41,8 @@
 /* Handle cursor position change because arrow keys were pressed. */
 void editorMoveCursor( int key )
 {
-    int filerow = E.rowoff + E.cy;
-    int filecol = E.coloff + E.cx;
-    int rowlen;
+	size_t filerow = E.rowoff + E.cy;
+    size_t filecol = E.coloff + E.cx;
     erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
 
     switch( key )
@@ -53,12 +52,13 @@ void editorMoveCursor( int key )
 			{
 	            if( E.coloff )
 				{
-	                E.coloff--;
+	                E.coloff--; /* Changes displayed column. */
 					
 	            } else {
 	                
 					if( filerow > 0 )
 					{
+#warning "Verify that this properly handles vertical movement."
 	                    E.cy--;
 	                    E.cx = E.row[ filerow - 1 ].size;
 	                    if( E.cx > E.screencols - 1 )
@@ -119,7 +119,7 @@ void editorMoveCursor( int key )
 	    case ARROW_DOWN:
 	        if( filerow < E.numrows )
 			{
-	            if( E.cy == E.screenrows-1 )
+	            if( E.cy == E.screenrows - 1 )
 				{
 	                E.rowoff++;
 					
@@ -147,8 +147,10 @@ void editorMoveCursor( int key )
     filerow = E.rowoff + E.cy;
     filecol = E.coloff + E.cx;
     row =
-		( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
-    rowlen = row ? row->size : 0;
+		( filerow < E.numrows ) ?
+			&E.row[ filerow ] :
+			NULL;
+    size_t rowlen = ( row ? row->size : 0 );
     if( filecol > rowlen )
 	{
         E.cx -= ( filecol - rowlen );
@@ -156,7 +158,9 @@ void editorMoveCursor( int key )
 		{
             E.coloff += E.cx;
             E.cx = 0;
+			
         }
+		
     }
 }
 
@@ -215,7 +219,7 @@ void editorProcessKeypress( int fd )
 				E.cy = E.screenrows - 1;
 	        }
 			{
-		        int times = E.screenrows;
+		        size_t times = E.screenrows;
 		        while( times-- )
 				{
 		            editorMoveCursor
@@ -326,12 +330,15 @@ void initEditor( void )
 #warning "Move this to a function in term.c!"
 #define MILA_TERMCODES_23 "\x1b[?1049h\n"
             const char altscren[] = MILA_TERMCODES_23;
-            const int altscren_len = sizeof( altscren );
-            if( write( STDOUT_FILENO, altscren, altscren_len ) != altscren_len )
+            const size_t altscren_len = sizeof( altscren );
 			{
-                perror( "Unable to select the alternate screen display buffer" );
-                exit( 1 );
-            }
+				ssize_t res = write( STDOUT_FILENO, altscren, altscren_len );
+	            if( res < 0 || (size_t)res != altscren_len )
+				{
+	                perror( "Unable to select the alternate screen display buffer" );
+	                exit( 1 );
+	            }
+			}
             E.altscr = 1;
         }
     }
@@ -365,20 +372,19 @@ int editorOpen( char *filename )
     char *line = NULL;
     size_t linecap = 0;
     ssize_t linelen;
-    while( ( linelen = getline( &line, &linecap, fp ) ) != -1 )
+    while( ( linelen = getline( &line, &linecap, fp ) ) > -1 )
 	{
         if
 		(
-			linelen &&
-			(
-				line[ linelen - 1 ] == '\n' ||
-				line[ linelen - 1 ] == '\r'
-			)
+			line[ linelen - 1 ] == '\n' ||
+			line[ linelen - 1 ] == '\r'
 		)
 		{
             line[ --linelen ] = '\0';
         }
-		editorInsertRow( E.numrows, line, linelen );
+			/* We've already verified the range of linelen, */
+			/*  so we can safely cast. */
+		editorInsertRow( E.numrows, line, (size_t)linelen );
     }
     free( line );
     fclose( fp );
@@ -389,15 +395,32 @@ int editorOpen( char *filename )
 /* Save the current file on disk. Return 0 on success, 1 on error. */
 int editorSave( void )
 {
-    int len;
+    size_t len;
     char *buf = editorRowsToString( &len );
     int fd = open( E.filename, O_RDWR | O_CREAT, 0644 );
-    if( fd == -1 ) goto writeerr;
+    if( fd == -1 )
+	{
+		goto writeerr;
+	}
 
     /* Use truncate + a single write(2) call in order to make saving
      * a bit safer, under the limits of what we can do in a small editor. */
-    if( ftruncate( fd, len ) == -1 ) goto writeerr;
-    if( write( fd, buf, len ) != len ) goto writeerr;
+	{
+		off_t tmp = (off_t)len;
+	/* Maybe https://stackoverflow.com/questions/4514572/c-question-off-t-and-other-signed-integer-types-minimum-and-maximum-values ? */
+#warning "Find a better approach to limits than this."
+		if( (size_t)tmp < len || ftruncate( fd, (off_t)len ) == -1 )
+		{
+			goto writeerr;
+		}
+	}
+	{
+		ssize_t res = write( fd, buf, len );
+	    if( res < 0 || (size_t)res != len )
+		{
+			goto writeerr;
+		}
+	}
 
     close( fd );
     free( buf );

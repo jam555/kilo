@@ -145,7 +145,7 @@ void editorDelRow( size_t at )
  * Returns the pointer to the heap-allocated string and populate the
  * integer pointed by 'buflen' with the size of the string, escluding
  * the final nulterm. */
-char *editorRowsToString( int *buflen )
+char *editorRowsToString( size_t *buflen )
 {
     char *buf = NULL, *p;
     size_t totlen = 0;
@@ -160,7 +160,7 @@ char *editorRowsToString( int *buflen )
 	{
 		exit( 1 );
 	}
-	*buflen = (int)totlen;
+	*buflen = totlen;
     totlen++; /* Also make space for nulterm */
 
     p = buf = malloc( totlen );

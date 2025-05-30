@@ -452,7 +452,7 @@ int getCursorPosition(int ifd, int ofd, int *rows, int *cols) {
 /* Try to get the number of columns in the current terminal. If the ioctl()
  * call fails the function will try to query the terminal itself.
  * Returns 0 on success, -1 on error. */
-int getWindowSize(int ifd, int ofd, int *rows, int *cols) {
+int getWindowSize(int ifd, int ofd, size_t *rows, size_t *cols) {
     struct winsize ws;
 
     if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
