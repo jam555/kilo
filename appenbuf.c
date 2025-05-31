@@ -37,12 +37,12 @@
 
 
 
-void abAppend( struct abuf *ab, const char *s, int len )
+void abAppend( struct abuf *ab, const char *s, size_t len )
 {
-    char *new = realloc( ab->b, ab->len+len );
+    char *new = realloc( ab->b, ab->len + len );
 
     if( new == NULL ) return;
-    memcpy( new + ab->len,s,len );
+    memcpy( new + ab->len, s, len );
     ab->b = new;
     ab->len += len;
 }
