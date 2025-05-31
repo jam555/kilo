@@ -378,7 +378,8 @@ int editorSave(void);
 #include "appenbuf.h"
 
 /* Set an editor status message for the second line of the status, at the
- * end of the screen. */
+ * end of the screen. Note that this will build the "full" message INTO the
+ * E.statusmsg[] member: it SHOULD be properly length-restricted. */
 void editorSetStatusMessage(const char *fmt, ...);
 
 /* =============================== Find mode ================================ */

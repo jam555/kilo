@@ -131,7 +131,7 @@ void editorMoveCursor( int key )
 	        break;
 	    
 		default:
-#warning "This needs to place a description of the key into the status-message field!"
+			editorSetStatusMessage( "Unknown key in editorMoveCursor( %d )",  key );
 			break;
     }
 	
