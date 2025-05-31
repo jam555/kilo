@@ -323,24 +323,11 @@ void initEditor( void )
 	
     if( !E.altscr && !E.no_altscr )
     {
-        char *termstr = getenv( "TERM" );
-        if( termstr && strstr( termstr, "xterm" ) )
-        {
-            /* Activate alternate screen. To disable, use 'l' instead of 'h'. */
-#warning "Move this to a function in term.c!"
-#define MILA_TERMCODES_23 "\x1b[?1049h\n"
-            const char altscren[] = MILA_TERMCODES_23;
-            const size_t altscren_len = sizeof( altscren );
-			{
-				ssize_t res = write( STDOUT_FILENO, altscren, altscren_len );
-	            if( res < 0 || (size_t)res != altscren_len )
-				{
-	                perror( "Unable to select the alternate screen display buffer" );
-	                exit( 1 );
-	            }
-			}
-            E.altscr = 1;
-        }
+        if( !mila_initterm_xterm() )
+		{
+			perror( "XTerm initialization failed. If alt-screen in enabled, use ESC [?1049l.\n" );
+			exit( 1 );
+		}
     }
     updateWindowSize();
     signal( SIGWINCH, handleSigWinCh );
