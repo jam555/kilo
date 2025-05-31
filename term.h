@@ -38,4 +38,6 @@
 # define TERM_H
 	void mila_ab_curseek( struct abuf *ab, int argn,   size_t x, size_t y, char *tail );
 	
+	int mila_initterm_xterm( void );
+	
 #endif

@@ -47,13 +47,38 @@ struct termios orig_termios; /* In order to restore at exit.*/
 
 
 
+int mila_initterm_xterm()
+{
+    char *termstr = getenv( "TERM" );
+    if( termstr && strstr( termstr, "xterm" ) )
+    {
+        /* Activate alternate screen. To disable, use 'l' instead of 'h'. */
+		
+#define MILA_TERMCODES_23 "\x1b[?1049h\n"
+		
+		const char altscren[] = MILA_TERMCODES_23;
+		const size_t altscren_len = sizeof( altscren );
+		ssize_t res = write( STDOUT_FILENO, altscren, altscren_len );
+		if( res < 0 || (size_t)res != altscren_len )
+		{
+#warning "This should be expanded to handle incomplete writes."
+			perror( "Unable to select the alternate screen display buffer" );
+			exit( 1 );
+		}
+		E.altscr = 1;
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
 void mila_ab_curseek( struct abuf *ab, int argn,   size_t x, size_t y, char *tail )
 {
 	char buf[ 32 ];
 	
 #define MILA_TERMCODES_8 "\x1b[H%s" /* Go home. */
-#define mila_ab_curseek_ONEARG "\x1b[%dH%s"
-#define MILA_TERMCODES_21 "\x1b[%d;%dH%s"
+#define mila_ab_curseek_ONEARG "\x1b[%zuH%s"
+#define MILA_TERMCODES_21 "\x1b[%zu;%zuH%s"
 	
 	if( !tail )
 	{
@@ -67,12 +92,11 @@ void mila_ab_curseek( struct abuf *ab, int argn,   size_t x, size_t y, char *tai
 		
 	} else if( argn == 1 )
 	{
-#warning "Alter this and the following snprintf() to properly use size_t."
-		snprintf( buf, sizeof(buf), mila_ab_curseek_ONEARG, (int)x,  tail );
+		snprintf( buf, sizeof(buf), mila_ab_curseek_ONEARG, x,  tail );
 		
 	} else if( argn == 2 )
 	{
-		snprintf( buf, sizeof(buf), MILA_TERMCODES_21, (int)x, (int)y,  tail );
+		snprintf( buf, sizeof(buf), MILA_TERMCODES_21, x, y,  tail );
 	}
 	
 	abAppend( ab, buf, strlen( buf ) );
@@ -171,9 +195,9 @@ void mila_term_printWelcomeMessage( struct abuf *ab,  char *buf, size_t buflen )
 	}
 	while( padding-- )
 	{
-		abAppend( ab," ",1 );
+		abAppend( ab, " ", 1 );
 	}
-	abAppend( ab, buf, welcomelen );
+	abAppend( ab, buf, (size_t)welcomelen );
 }
 void mila_term_setcolor
 (
@@ -190,17 +214,21 @@ void mila_term_setcolor
 			buf, buflen,
 			MILA_TERMCODES_14, color
 		);
+	if( clen < 0 )
+	{
+		exit ( 1 );
+	}
 	*curcolor = color;
-	abAppend( ab, buf, clen );
+	abAppend( ab, buf, (size_t)clen );
 }
 
 
 
-void mila_term_cursseek_setpos( int alter, int ofile, int row, int col )
+void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 {
-	char seq[32];
+	char seq[ 32 ];
 	
-#warning "Numeric results haven't been verified."
+#warning "Numeric results haven't been verified: note the \"row < 0\" and \"col < 0 \" cases."
 		/* Normalize coordinate. */
 	if( row < 0 )
 	{
@@ -215,9 +243,10 @@ void mila_term_cursseek_setpos( int alter, int ofile, int row, int col )
 	{
 		/* Restore position. */
 		
-#define MILA_TERMCODES_6 "\x1b[%d;%dH"
-		snprintf(seq,32,MILA_TERMCODES_6,row,col);
-		if (write(ofile,seq,strlen(seq)) == -1) {
+#define MILA_TERMCODES_6 "\x1b[%zu;%zuH"
+		snprintf( seq, 32, MILA_TERMCODES_6, row, col );
+		if( write( ofile, seq, strlen( seq ) ) == -1 )
+		{
 			/* Can't recover... */
 		}
 		
@@ -231,30 +260,34 @@ void mila_term_cursseek_setpos( int alter, int ofile, int row, int col )
 		if( row < 0 )
 		{
 			row = -row;
-			snprintf(seq,32,"\x1b[%dA",row);
-			if (write(ofile,seq,strlen(seq)) == -1) {
+			snprintf( seq, 32, "\x1b[%zuA", row );
+			if( write( ofile, seq, strlen( seq ) ) == -1 )
+			{
 				/* Can't recover... */
 			}
 			
 		} else if( row > 0 )
 		{
-			snprintf(seq,32,"\x1b[%dB",row);
-			if (write(ofile,seq,strlen(seq)) == -1) {
+			snprintf( seq, 32, "\x1b[%zuB", row );
+			if( write( ofile, seq, strlen(seq ) ) == -1 )
+			{
 				/* Can't recover... */
 			}
 		}
 		if( col < 0 )
 		{
 			col = -col;
-			snprintf(seq,32,"\x1b[%dD",col);
-			if (write(ofile,seq,strlen(seq)) == -1) {
+			snprintf( seq, 32, "\x1b[%zuD", col );
+			if( write( ofile, seq, strlen( seq ) ) == -1 )
+			{
 				/* Can't recover... */
 			}
 			
 		} else if( col > 0 )
 		{
-			snprintf(seq,32,"\x1b[%dC",col);
-			if (write(ofile,seq,strlen(seq)) == -1) {
+			snprintf( seq, 32, "\x1b[%zuC", col );
+			if( write( ofile, seq, strlen( seq ) ) == -1 )
+			{
 				/* Can't recover... */
 			}
 		}
@@ -271,7 +304,13 @@ int mila_term_cursseek_finalchar( int alter )
 	{
 		/* (+1,+1) because the screen size is described with C indexing on our */
 		/*  side, but 1-based indexing on the terminal side. */
-		mila_term_cursseek_setpos( alter, STDOUT_FILENO, E.screenrows+1, E.screencols+1 );
+		mila_term_cursseek_setpos
+		(
+			alter,
+			STDOUT_FILENO,
+			E.screenrows + 1,
+			E.screencols + 1
+		);
 		return( 1 );
 		
 	} else if( alter == -1 )
@@ -285,10 +324,12 @@ int mila_term_cursseek_finalchar( int alter )
 	return( -1 );
 }
 
-void disableRawMode(int fd) {
+void disableRawMode( int fd )
+{
     /* Don't even check the return value as it's too late. */
-    if (E.rawmode) {
-        tcsetattr(fd,TCSAFLUSH,&orig_termios);
+    if( E.rawmode )
+	{
+        tcsetattr( fd, TCSAFLUSH, &orig_termios );
         E.rawmode = 0;
     }
 }
@@ -303,63 +344,70 @@ void mila_term_altscreen_disable( void )
             /*  initEditor() does the enabling already. */
 #define MILA_TERMCODES_1 "\x1b[?1049l"
         const char altscren[] = MILA_TERMCODES_1;
-        const int altscren_len = sizeof( altscren );
-        if (write(STDOUT_FILENO, altscren, altscren_len) != altscren_len) {
-            perror("Unable to deselect the alternate screen display buffer");
-            perror("please type" );
+        const size_t altscren_len = sizeof( altscren );
+		ssize_t res = write( STDOUT_FILENO, altscren, altscren_len );
+        if( res && (size_t)res != altscren_len )
+		{
+            perror( "Unable to deselect the alternate screen display buffer" );
+            perror( "please type" );
 #define MILA_TERMCODES_2 "\"\\e[?1049l\""
-            fprintf(stderr,"  echo -e %s",MILA_TERMCODES_2);
-            perror("and then hit your enter key" );
-            exit(1);
+            fprintf( stderr, "  echo -e %s", MILA_TERMCODES_2 );
+            perror( "and then hit your enter key" );
+            exit( 1 );
         }
         E.altscr = 0;
 	}
 }
 
 /* Called at exit to avoid remaining in raw mode. */
-void editorAtExit(void) {
-    disableRawMode(STDIN_FILENO);
+void editorAtExit( void )
+{
+    disableRawMode( STDIN_FILENO );
 
-    if( E.altscr ) {
+    if( E.altscr )
+	{
        /* Disable alternate screen. */
        mila_term_altscreen_disable();
-    } else if( E.no_altscr ) {
+	   
+    } else if( E.no_altscr )
+	{
         /* If we aren't using the alternate-screen, move the cursor to the */
         /*  end of the screen and force a line-advance instead, to prepare */
         /*  for the return to the CLI. */
         mila_term_cursseek_finalchar( 0 );
-		printf("\n\n");
+		printf( "\n\n" );
     }
 }
 
 /* Raw mode: 1960 magic shit. */
-int enableRawMode(int fd) {
+int enableRawMode( int fd )
+{
     struct termios raw;
 
-    if (E.rawmode) return 0; /* Already enabled. */
-    if (!isatty(STDIN_FILENO)) goto fatal;
-    atexit(editorAtExit);
-    if (tcgetattr(fd,&orig_termios) == -1) goto fatal;
+    if( E.rawmode ) return 0; /* Already enabled. */
+    if( !isatty( STDIN_FILENO ) ) goto fatal;
+    atexit( editorAtExit );
+    if( tcgetattr( fd, &orig_termios ) == -1 ) goto fatal;
 		/* To support the move to multi-doc capabilities. */
 	E.orig_termios = orig_termios;
 
     raw = orig_termios;  /* modify the original mode */
     /* input modes: no break, no CR to NL, no parity check, no strip char,
      * no start/stop output control. */
-    raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+    raw.c_iflag &= ~( (tcflag_t)( BRKINT | ICRNL | INPCK | ISTRIP | IXON ) );
     /* output modes - disable post processing */
-    raw.c_oflag &= ~(OPOST);
+    raw.c_oflag &= ~( (tcflag_t)( OPOST ) );
     /* control modes - set 8 bit chars */
-    raw.c_cflag |= (CS8);
+    raw.c_cflag |= ( CS8 );
     /* local modes - choing off, canonical off, no extended functions,
      * no signal chars (^Z,^C) */
-    raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+    raw.c_lflag &= ~( (tcflag_t)( ECHO | ICANON | IEXTEN | ISIG ) );
     /* control chars - set return condition: min number of bytes and timer. */
-    raw.c_cc[VMIN] = 0; /* Return each byte, or zero for timeout. */
-    raw.c_cc[VTIME] = 1; /* 100 ms timeout (unit is tens of second). */
+    raw.c_cc[ VMIN ] = 0; /* Return each byte, or zero for timeout. */
+    raw.c_cc[ VTIME ] = 1; /* 100 ms timeout (unit is tens of second). */
 
     /* put terminal in raw mode after flushing */
-    if (tcsetattr(fd,TCSAFLUSH,&raw) < 0) goto fatal;
+    if( tcsetattr( fd, TCSAFLUSH, &raw ) < 0 ) goto fatal;
     E.rawmode = 1;
     return 0;
 
@@ -370,62 +418,83 @@ fatal:
 
 /* Read a key from the terminal put in raw mode, trying to handle
  * escape sequences. */
-int editorReadKey(int fd) {
-    int nread;
-    char c, seq[3];
-    while ((nread = read(fd,&c,1)) == 0);
-    if (nread == -1) exit(1);
+int editorReadKey( int fd )
+{
+    ssize_t nread;
+    char c, seq[ 3 ];
+#warning "This is a prime candidate for a yield-based IO routine."
+    while
+	(
+		(
+			nread = read( fd, &c, 1 )
+		) == 0
+	)
+	{
+		;
+	}
+    if( nread == -1 ) exit( 1 );
 
-    while(1) {
-        switch(c) {
-        case ESC:    /* escape sequence */
-            /* If this is just an ESC, we'll timeout here. */
-            if (read(fd,seq,1) == 0) return ESC;
-            if (read(fd,seq+1,1) == 0) return ESC;
-
-            /* ESC [ sequences. */
-            if (seq[0] == '[') {
-                if (seq[1] >= '0' && seq[1] <= '9') {
-                    /* Extended escape, read additional byte. */
-                    if (read(fd,seq+2,1) == 0) return ESC;
-                    if (seq[2] == '~') {
-                        switch(seq[1]) {
-                        case '3': return DEL_KEY;
-                        case '5': return PAGE_UP;
-                        case '6': return PAGE_DOWN;
-						default:
+    while( 1 )
+	{
+        switch( c )
+		{
+	        case ESC:    /* escape sequence */
+	            /* If this is just an ESC, we'll timeout here. */
+	            if( read( fd, seq, 1 ) == 0 ) return ESC;
+	            if( read( fd, seq + 1, 1 ) == 0 ) return ESC;
+	
+	            /* ESC [ sequences. */
+	            if( seq[ 0 ] == '[' )
+				{
+	                if( seq[ 1 ] >= '0' && seq[ 1 ] <= '9' )
+					{
+	                    /* Extended escape, read additional byte. */
+	                    if( read( fd, seq + 2, 1 ) == 0 ) return ESC;
+	                    if( seq[ 2 ] == '~')
+						{
+	                        switch( seq[ 1 ] )
+							{
+		                        case '3': return DEL_KEY;
+		                        case '5': return PAGE_UP;
+		                        case '6': return PAGE_DOWN;
+								default:
+#warning "This should get some sort of reporting."
+									break;
+	                        }
+	                    }
+						
+	                } else {
+	                    
+						switch( seq[ 1 ] )
+						{
+		                    case 'A': return ARROW_UP;
+		                    case 'B': return ARROW_DOWN;
+		                    case 'C': return ARROW_RIGHT;
+		                    case 'D': return ARROW_LEFT;
+		                    case 'H': return HOME_KEY;
+		                    case 'F': return END_KEY;
+							default:
+#warning "This should get some sort of reporting."
+								break;
+	                    }
+	                }
+	            }
+	
+	            /* ESC O sequences. */
+	            else if( seq[ 0 ] == 'O' )
+				{
+	                switch( seq[ 1 ] )
+					{
+		                case 'H': return HOME_KEY;
+		                case 'F': return END_KEY;
+		                default:
 #warning "This should get some sort of reporting."
 							break;
-                        }
-                    }
-                } else {
-                    switch(seq[1]) {
-                    case 'A': return ARROW_UP;
-                    case 'B': return ARROW_DOWN;
-                    case 'C': return ARROW_RIGHT;
-                    case 'D': return ARROW_LEFT;
-                    case 'H': return HOME_KEY;
-                    case 'F': return END_KEY;
-					default:
-#warning "This should get some sort of reporting."
-						break;
-                    }
-                }
-            }
-
-            /* ESC O sequences. */
-            else if (seq[0] == 'O') {
-                switch(seq[1]) {
-                case 'H': return HOME_KEY;
-                case 'F': return END_KEY;
-                default:
-#warning "This should get some sort of reporting."
-					break;
-                }
-            }
-            break;
-        default:
-            return c;
+	                }
+	            }
+	            break;
+	        default:
+	            return c;
         }
     }
 }
@@ -433,56 +502,63 @@ int editorReadKey(int fd) {
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor is stored at *rows and *cols and 0 is returned. */
-int getCursorPosition(int ifd, int ofd, int *rows, int *cols) {
-    char buf[32];
+int getCursorPosition( int ifd, int ofd, size_t *rows, size_t *cols )
+{
+    char buf[ 32 ];
     unsigned int i = 0;
 
     /* Report cursor location */
 #define MILA_TERMCODES_4 "\x1b[6n"
-    if (write(ofd, MILA_TERMCODES_4, 4) != 4) return -1;
+    if( write( ofd, MILA_TERMCODES_4, 4 ) != 4 ) return -1;
 
     /* Read the response: ESC [ rows ; cols R */
-    while (i < sizeof(buf)-1) {
-        if (read(ifd,buf+i,1) != 1) break;
-        if (buf[i] == 'R') break;
+    while( i < sizeof( buf ) - 1 )
+	{
+        if( read( ifd, buf + i, 1 ) != 1 ) break;
+        if( buf[ i ] == 'R') break;
         i++;
     }
-    buf[i] = '\0';
+    buf[ i ] = '\0';
 
     /* Parse it. */
-    if (buf[0] != ESC || buf[1] != '[') return -1;
-    if (sscanf(buf+2,"%d;%d",rows,cols) != 2) return -1;
+    if( buf[ 0 ] != ESC || buf[ 1 ] != '[' ) return -1;
+    if( sscanf( buf + 2, "%zu;%zu", rows, cols ) != 2 ) return -1;
     return 0;
 }
 
 /* Try to get the number of columns in the current terminal. If the ioctl()
  * call fails the function will try to query the terminal itself.
  * Returns 0 on success, -1 on error. */
-int getWindowSize(int ifd, int ofd, size_t *rows, size_t *cols) {
+int getWindowSize( int ifd, int ofd, size_t *rows, size_t *cols )
+{
     struct winsize ws;
 
-    if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
+    if( ioctl( 1, TIOCGWINSZ, &ws ) == -1 || ws.ws_col == 0 )
+	{
         /* ioctl() failed. Try to query the terminal itself. */
-        int orig_row, orig_col, retval;
+        size_t orig_row, orig_col;
+		int retval;
 
         /* Get the initial position so we can restore it later. */
-        retval = getCursorPosition(ifd,ofd,&orig_row,&orig_col);
-        if (retval == -1) goto failed;
+        retval = getCursorPosition( ifd, ofd, &orig_row, &orig_col );
+        if( retval == -1 ) goto failed;
 
         /* Go to right/bottom margin and get position. */
 		if( !mila_term_cursseek_finalchar( -1 ) ) goto failed;
-        retval = getCursorPosition(ifd,ofd,rows,cols);
-        if (retval == -1) goto failed;
+        retval = getCursorPosition( ifd, ofd, rows, cols );
+        if( retval == -1 ) goto failed;
 
         /* Restore position. */
-        mila_term_cursseek_setpos( 0, ofd, orig_row,orig_col );
+        mila_term_cursseek_setpos( 0, ofd, orig_row, orig_col );
         return 0;
+		
     } else {
-        *cols = ws.ws_col;
+        
+		*cols = ws.ws_col;
         *rows = ws.ws_row;
         return 0;
     }
-
+	
 failed:
     return -1;
 }

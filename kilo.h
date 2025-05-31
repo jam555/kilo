@@ -265,7 +265,7 @@ extern size_t HLBD_entrycount;
 
 extern struct termios orig_termios; /* In order to restore at exit.*/
 
-void mila_term_cursseek_setpos( int alter, int ofile, int row, int col );
+void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col );
 int mila_term_cursseek_finalchar( int alter );
 
 void disableRawMode( int fd );
@@ -297,7 +297,7 @@ int editorReadKey( int fd );
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor is stored at *rows and *cols and 0 is returned. */
-int getCursorPosition( int ifd, int ofd, int *rows, int *cols );
+int getCursorPosition( int ifd, int ofd, size_t *rows, size_t *cols );
 
 /* Try to get the number of columns in the current terminal. If the ioctl()
  * call fails the function will try to query the terminal itself.
