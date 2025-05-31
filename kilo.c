@@ -97,6 +97,9 @@ struct editorSyntax HLDB[] =
 size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 
+#warning "Move error-exit messages to something that an atexit() handler will print."
+
+
 
 int main_coro( void *ign );
 int argn;
