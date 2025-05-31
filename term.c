@@ -37,7 +37,6 @@
 
 
 
-#warning "MILA_TERMCODES_11 was formerly defined in kilo.h"
 #define MILA_TERMCODES_11 "\x1b[7m"
 
 
@@ -181,7 +180,12 @@ void mila_term_printWelcomeMessage( struct abuf *ab,  char *buf, size_t buflen )
 	size_t padding;
 	if( welcomelen < 0 )
 	{
-#warning "This needs some sort of error reporting."
+		fprintf
+		(
+			stderr,
+				"welcomelen in mila_term_printWelcomeMessage() had a strange value: %d\n",
+				welcomelen
+		);
 		exit( 1 );
 		
 	} else {
@@ -230,11 +234,11 @@ void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 	
 #warning "Numeric results haven't been verified: note the \"row < 0\" and \"col < 0 \" cases."
 		/* Normalize coordinate. */
-	if( row < 0 )
+	if( (int)row < 0 )
 	{
 		row = E.screenrows - row;
 	}
-	if( col < 0 )
+	if( (int)col < 0 )
 	{
 		col = E.screencols - col;
 	}
@@ -257,7 +261,8 @@ void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 		
 		CU_jumptarget: ;
 		
-		if( row < 0 )
+#warning "This set of if()s should be modified to allow all cases to be used."
+		if( (int)row < 0 )
 		{
 			row = -row;
 			snprintf( seq, 32, "\x1b[%zuA", row );
@@ -266,7 +271,7 @@ void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 				/* Can't recover... */
 			}
 			
-		} else if( row > 0 )
+		} else if( (int)row > 0 )
 		{
 			snprintf( seq, 32, "\x1b[%zuB", row );
 			if( write( ofile, seq, strlen(seq ) ) == -1 )
@@ -274,7 +279,7 @@ void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 				/* Can't recover... */
 			}
 		}
-		if( col < 0 )
+		if( (int)col < 0 )
 		{
 			col = -col;
 			snprintf( seq, 32, "\x1b[%zuD", col );
@@ -283,7 +288,7 @@ void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 				/* Can't recover... */
 			}
 			
-		} else if( col > 0 )
+		} else if( (int)col > 0 )
 		{
 			snprintf( seq, 32, "\x1b[%zuC", col );
 			if( write( ofile, seq, strlen( seq ) ) == -1 )
@@ -458,8 +463,9 @@ int editorReadKey( int fd )
 		                        case '5': return PAGE_UP;
 		                        case '6': return PAGE_DOWN;
 								default:
-#warning "This should get some sort of reporting."
-									break;
+									perror( "Numeric \"ESC [\" in editorReadKey() had a strange value: " );
+									fputc( seq[ 1 ], stderr );
+									exit( 1 );
 	                        }
 	                    }
 						
@@ -474,8 +480,9 @@ int editorReadKey( int fd )
 		                    case 'H': return HOME_KEY;
 		                    case 'F': return END_KEY;
 							default:
-#warning "This should get some sort of reporting."
-								break;
+								perror( "Non-numeric \"ESC [\" in editorReadKey() had a strange value: " );
+								fputc( seq[ 1 ], stderr );
+								exit( 1 );
 	                    }
 	                }
 	            }
@@ -488,8 +495,9 @@ int editorReadKey( int fd )
 		                case 'H': return HOME_KEY;
 		                case 'F': return END_KEY;
 		                default:
-#warning "This should get some sort of reporting."
-							break;
+							perror( "\"ESC O\" in editorReadKey() had a strange value: " );
+							fputc( seq[ 1 ], stderr );
+							exit( 1 );
 	                }
 	            }
 	            break;
