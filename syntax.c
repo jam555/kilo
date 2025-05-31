@@ -38,8 +38,14 @@
 
 /* ====================== Syntax highlight color scheme  ==================== */
 
-int is_separator(int c) {
-    return c == '\0' || isspace(c) || strchr(",.()+-/*=~%[];",c) != NULL;
+int is_separator( int c )
+{
+    return
+	(
+		c == '\0' ||
+		isspace(c) ||
+		strchr(",.()+-/*=~%[];",c) != NULL
+	);
 }
 
 /* Return true if the specified row last char is part of a multi line comment
@@ -54,13 +60,18 @@ int editorRowHasOpenComment(erow *row) {
 
 /* Set every byte of row->hl (that corresponds to every character in the line)
  * to the right syntax highlight type (HL_* defines). */
-void editorUpdateSyntax(erow *row) {
-    row->hl = realloc(row->hl,row->rsize);
-    memset(row->hl,HL_NORMAL,row->rsize);
+void editorUpdateSyntax( erow *row )
+{
+    row->hl = realloc( row->hl, row->rsize );
+    memset( row->hl, HL_NORMAL, row->rsize );
 
-    if (E.syntax == NULL) return; /* No syntax, everything is HL_NORMAL. */
+    if( E.syntax == NULL )
+	{
+		return; /* No syntax, everything is HL_NORMAL. */
+	}
 
-    int i, prev_sep, in_string, in_comment;
+    int  prev_sep, in_string;
+	size_t i, in_comment;
     char *p;
     char **keywords = E.syntax->keywords;
     char *scs = E.syntax->singleline_comment_start;
@@ -70,7 +81,8 @@ void editorUpdateSyntax(erow *row) {
     /* Point to the first non-space char. */
     p = row->render;
     i = 0; /* Current char offset */
-    while(*p && isspace(*p)) {
+    while( *p && isspace( *p ) )
+	{
         p++;
         i++;
     }
@@ -80,142 +92,198 @@ void editorUpdateSyntax(erow *row) {
 
     /* If the previous line has an open comment, this line starts
      * with an open comment state. */
-    if (row->idx > 0 && editorRowHasOpenComment(&E.row[row->idx-1]))
+    if( row->idx > 0 && editorRowHasOpenComment( &E.row[ row->idx - 1 ] ) )
+	{
         in_comment = 1;
+	}
 
-    while(*p) {
+    while( *p )
+	{
         /* Handle // comments. */
-        if (prev_sep && *p == scs[0] && *(p+1) == scs[1]) {
+        if( prev_sep && *p == scs[ 0 ] && *( p + 1 ) == scs[ 1 ] )
+		{
             /* From here to end is a comment */
-            memset(row->hl+i,HL_COMMENT,row->size-i);
+            memset( row->hl + i, HL_COMMENT, row->size - i );
             return;
         }
 
         /* Handle multi line comments. */
-        if (in_comment) {
-            row->hl[i] = HL_MLCOMMENT;
-            if (*p == mce[0] && *(p+1) == mce[1]) {
-                row->hl[i+1] = HL_MLCOMMENT;
-                p += 2; i += 2;
+        if( in_comment )
+		{
+            row->hl[ i ] = HL_MLCOMMENT;
+            if( *p == mce[ 0 ] && *( p + 1 ) == mce[ 1 ] )
+			{
+                row->hl[ i + 1 ] = HL_MLCOMMENT;
+                p += 2;
+				i += 2;
                 in_comment = 0;
                 prev_sep = 1;
                 continue;
+				
             } else {
-                prev_sep = 0;
-                p++; i++;
+                
+				prev_sep = 0;
+                p++;
+				i++;
                 continue;
             }
-        } else if (*p == mcs[0] && *(p+1) == mcs[1]) {
-            row->hl[i] = HL_MLCOMMENT;
-            row->hl[i+1] = HL_MLCOMMENT;
-            p += 2; i += 2;
+        } else if( *p == mcs[ 0 ] && *( p + 1 ) == mcs[ 1 ] )
+		{
+            row->hl[ i ] = HL_MLCOMMENT;
+            row->hl[ i + 1 ] = HL_MLCOMMENT;
+            p += 2;
+			i += 2;
             in_comment = 1;
             prev_sep = 0;
             continue;
         }
 
         /* Handle "" and '' */
-        if (in_string) {
-            row->hl[i] = HL_STRING;
-            if (*p == '\\') {
-                row->hl[i+1] = HL_STRING;
-                p += 2; i += 2;
+        if( in_string )
+		{
+            row->hl[ i ] = HL_STRING;
+            if( *p == '\\' )
+			{
+                row->hl[ i + 1 ] = HL_STRING;
+                p += 2;
+				i += 2;
                 prev_sep = 0;
                 continue;
             }
-            if (*p == in_string) in_string = 0;
-            p++; i++;
+            if( *p == in_string )
+			{
+				in_string = 0;
+			}
+            p++;
+			i++;
             continue;
+			
         } else {
-            if (*p == '"' || *p == '\'') {
+            
+			if( *p == '"' || *p == '\'' )
+			{
                 in_string = *p;
-                row->hl[i] = HL_STRING;
-                p++; i++;
+                row->hl[ i ] = HL_STRING;
+                p++;
+				i++;
                 prev_sep = 0;
                 continue;
             }
         }
 
         /* Handle non printable chars. */
-        if (!isprint(*p)) {
-            row->hl[i] = HL_NONPRINT;
-            p++; i++;
+        if( !isprint( *p ) )
+		{
+            row->hl[ i ] = HL_NONPRINT;
+            p++;
+			i++;
             prev_sep = 0;
             continue;
         }
 
         /* Handle numbers */
-        if ((isdigit(*p) && (prev_sep || row->hl[i-1] == HL_NUMBER)) ||
-            (*p == '.' && i >0 && row->hl[i-1] == HL_NUMBER)) {
-            row->hl[i] = HL_NUMBER;
-            p++; i++;
+        if
+		(
+			( isdigit( *p ) && ( prev_sep || row->hl[ i - 1 ] == HL_NUMBER ) ) ||
+            ( *p == '.' && i > 0 && row->hl[ i - 1 ] == HL_NUMBER )
+		)
+		{
+            row->hl[ i ] = HL_NUMBER;
+            p++;
+			i++;
             prev_sep = 0;
             continue;
         }
 
         /* Handle keywords and lib calls */
-        if (prev_sep) {
+        if( prev_sep )
+		{
             int j;
-            for (j = 0; keywords[j]; j++) {
-                int klen = strlen(keywords[j]);
-                int kw2 = keywords[j][klen-1] == '|';
-                if (kw2) klen--;
+            for( j = 0; keywords[ j ]; j++ )
+			{
+                size_t klen = strlen( keywords[ j ] );
+                int kw2 = keywords[ j ][ klen - 1 ] == '|';
+                if( kw2 )
+				{
+					klen--;
+				}
 
-                if (!memcmp(p,keywords[j],klen) &&
-                    is_separator(*(p+klen)))
+                if
+				(
+					!memcmp( p, keywords[ j ], klen ) &&
+					is_separator( *( p + klen ) )
+				)
                 {
                     /* Keyword */
-                    memset(row->hl+i,kw2 ? HL_KEYWORD2 : HL_KEYWORD1,klen);
+                    memset( row->hl + i, kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen );
                     p += klen;
                     i += klen;
                     break;
                 }
             }
-            if (keywords[j] != NULL) {
+            if( keywords[ j ] != NULL )
+			{
                 prev_sep = 0;
                 continue; /* We had a keyword match */
             }
         }
 
         /* Not special chars */
-        prev_sep = is_separator(*p);
-        p++; i++;
+        prev_sep = is_separator( *p );
+        p++;
+		i++;
     }
 
     /* Propagate syntax change to the next row if the open commen
      * state changed. This may recursively affect all the following rows
      * in the file. */
-    int oc = editorRowHasOpenComment(row);
-    if (row->hl_oc != oc && row->idx+1 < E.numrows)
-        editorUpdateSyntax(&E.row[row->idx+1]);
-    row->hl_oc = oc;
+    int oc = editorRowHasOpenComment( row );
+    if( row->hl_oc != oc && row->idx + 1 < E.numrows )
+	{
+        editorUpdateSyntax( &E.row[ row->idx + 1 ] );
+    }
+	row->hl_oc = oc;
 }
 
 /* Maps syntax highlight token types to terminal colors. */
-int editorSyntaxToColor(int hl) {
-    switch(hl) {
-    case HL_COMMENT:
-    case HL_MLCOMMENT: return 36;     /* cyan */
-    case HL_KEYWORD1: return 33;    /* yellow */
-    case HL_KEYWORD2: return 32;    /* green */
-    case HL_STRING: return 35;      /* magenta */
-    case HL_NUMBER: return 31;      /* red */
-    case HL_MATCH: return 34;      /* blu */
-    default: return 37;             /* white */
+int editorSyntaxToColor( int hl )
+{
+    switch( hl )
+	{
+	    case HL_COMMENT:
+	    case HL_MLCOMMENT:
+			return 36;     /* cyan */
+	    case HL_KEYWORD1:
+			return 33;    /* yellow */
+	    case HL_KEYWORD2:
+			return 32;    /* green */
+	    case HL_STRING:
+			return 35;      /* magenta */
+	    case HL_NUMBER:
+			return 31;      /* red */
+	    case HL_MATCH:
+			return 34;      /* blu */
+	    default:
+			return 37;             /* white */
     }
 }
 
 /* Select the syntax highlight scheme depending on the filename,
  * setting it in the global state E.syntax. */
-void editorSelectSyntaxHighlight(char *filename) {
-    for (unsigned int j = 0; j < HLDB_ENTRIES; j++) {
-        struct editorSyntax *s = HLDB+j;
+void editorSelectSyntaxHighlight( char *filename )
+{
+    for( unsigned int j = 0; j < HLDB_ENTRIES; j++ )
+	{
+        struct editorSyntax *s = HLDB + j;
         unsigned int i = 0;
-        while(s->filematch[i]) {
+        while( s->filematch[ i ] )
+		{
             char *p;
-            int patlen = strlen(s->filematch[i]);
-            if ((p = strstr(filename,s->filematch[i])) != NULL) {
-                if (s->filematch[i][0] != '.' || p[patlen] == '\0') {
+            size_t patlen = strlen( s->filematch[ i ] );
+            if( ( p = strstr( filename, s->filematch[ i ] ) ) != NULL )
+			{
+                if( s->filematch[ i ][ 0 ] != '.' || p[ patlen ] == '\0' )
+				{
                     E.syntax = s;
                     return;
                 }
