@@ -126,8 +126,20 @@ void editorFind( int fd )
                 /* Scroll horizontally as needed. */
                 if( E.cx > E.screencols ) {
                     ptrdiff_t diff = (ptrdiff_t)( E.cx - E.screencols );
-                    E.cx -= diff;
-                    E.coloff += diff;
+                    if( diff && E.cx < (size_t)( diff ) )
+					{
+						exit( 1 );
+					}
+                    E.cx -= (size_t)diff;
+                    if( !diff && E.coloff < (size_t)( -diff ) )
+					{
+						exit( 1 );
+					}
+#pragma GCC diagnostic push
+	/* Silence the conversion complaint, we've already verified the range. */
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+					E.coloff += diff;
+#pragma GCC diagnostic pop
                 }
             }
         }
