@@ -426,8 +426,8 @@ void editorStatusLine
 (
 	struct abuf *ab, struct abuf *util,
 	
-	char *fstatus, int fstat_len,
-	char *rstatus, int rstat_len
+	char *fstatus, size_t fstat_len,
+	char *rstatus, size_t rstat_len
 );
 	/* Renders the message line. The message will eventually move to the */
 	/*  status line, and be replaced with a CLI area. */

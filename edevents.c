@@ -287,6 +287,8 @@ void handleSigWinCh( int unused __attribute__((unused)) )
 
 void initEditor( void )
 {
+#warning "initEditor() needs to split into terminal and editor -half sections, "
+#warning "since the editor will be turned into just a mode."
     E.cx = 0;
     E.cy = 0;
     E.rowoff = 0;
@@ -320,6 +322,7 @@ void initEditor( void )
 	E.externy = 0;
 	E.externrows = 0;
 	E.externcols = 0;
+	E.statusinterface = statview_build();
 	
     if( !E.altscr && !E.no_altscr )
     {
@@ -329,6 +332,11 @@ void initEditor( void )
 			exit( 1 );
 		}
     }
+	if( !E.statusinterface )
+	{
+		perror( "statview_build() failed.\n" );
+		exit( 1 );
+	}
     updateWindowSize();
     signal( SIGWINCH, handleSigWinCh );
 }
