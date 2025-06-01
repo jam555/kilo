@@ -68,34 +68,56 @@ void abStatusLine
 (
 	struct abuf *ab, struct abuf *util,
 	
-	char *fstatus, int fstat_len,
-	char *rstatus, int rstat_len
+	char *fstatus, size_t fstat_len,
+	char *rstatus, size_t rstat_len
 )
 {
 	(void)util;
 	
-	fstat_len =
+	int tmp =
 		snprintf
 		(
-			fstatus, fstat_len,
-			"%.20s - %d lines %s",  E.filename, E.numrows, E.dirty ? "(modified)" : ""
+			fstatus, (size_t)fstat_len,
+			"%.20s - %zu lines %s",  E.filename, E.numrows, E.dirty ? "(modified)" : ""
 		);
-	rstat_len =
-		snprintf
+	if( tmp < 0 )
+	{
+		fprintf
 		(
-			rstatus, rstat_len,
-			"%d : %d/%d",  E.cx+1, E.rowoff + E.cy + 1, E.numrows
+			stderr,
+				"First snprintf() in abStatusLine() had a negative return: %d",
+				tmp
 		);
+		exit( 1 );
+	}
+	fstat_len = (size_t)tmp;
 	if( fstat_len > E.screencols )
 	{
 		fstat_len = E.screencols;
 	}
 	
+	tmp =
+		snprintf
+		(
+			rstatus, (size_t)rstat_len,
+			"%zu : %zu/%zu",  E.cx + 1, E.rowoff + E.cy + 1, E.numrows
+		);
+	if( tmp < 0 )
+	{
+		fprintf( stderr, "Second snprintf() in abStatusLine() failed." );
+		exit( 1 );
+	}
+	rstat_len = (size_t)tmp;
+	
 	abAppend( ab, fstatus, fstat_len );
 	abAppend( util, fstatus, fstat_len );
 	while( fstat_len < E.screencols )
 	{
-		if( E.screencols - fstat_len == rstat_len )
+		if
+		(
+			E.screencols >= fstat_len && /* Constraints checking. */
+			E.screencols - fstat_len == rstat_len
+		)
 		{
 			abAppend( ab, rstatus, rstat_len );
 			abAppend( util, rstatus, rstat_len );
@@ -113,8 +135,8 @@ void editorStatusLine
 (
 	struct abuf *ab, struct abuf *util,
 	
-	char *fstatus, int fstat_len,
-	char *rstatus, int rstat_len
+	char *fstatus, size_t fstat_len,
+	char *rstatus, size_t rstat_len
 )
 {
 	abStatusLine
@@ -132,7 +154,7 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 {
 	(void)util;
 	
-	int msglen = strlen( E.statusmsg );
+	size_t msglen = strlen( E.statusmsg );
 	if
 	(
 		msglen &&
@@ -142,21 +164,30 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 	)
 	{
 		/*
-			statview_view sv = { 0 };
-			
-				/ * Where do we get stats* from? The 'E' global? Is there a source? * /
-			if( !statview_fetchmsg( statstate *stats, E.screencols,  &sv ) )
-			{
-				exit( 1 );
-			}
-			
-			abAppend( ab, sv.start, sv.len );
-			abAppend( util, sv.start, sv.len );
+typedef struct statview_view
+{
+	char *start;
+	size_t len;
+	
+} statview_view;
 		*/
 		
+		statview_view sv = { 0 };
 		
+			/* Where do we get stats* from? The 'E' global? Is there a source? */
+		if( !statview_fetchmsg( E.statusinterface, 10,  &sv ) )
+		{
+			exit( 1 );
+		}
+		
+		abAppend( ab, sv.start, sv.len );
+		abAppend( util, sv.start, sv.len );
+		
+		
+		/*
 		abAppend( ab, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
 		abAppend( util, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
+		*/
 	}
 }
 void editorMessageLine( struct abuf *ab, struct abuf *util )

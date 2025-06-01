@@ -78,8 +78,8 @@
 	(
 		struct abuf *ab, struct abuf *util,
 		
-		char *fstatus, int fstat_len,
-		char *rstatus, int rstat_len
+		char *fstatus, size_t fstat_len,
+		char *rstatus, size_t rstat_len
 	);
 	void abMessageLine( struct abuf *ab, struct abuf *util );
 	void abUtilityArea( struct abuf *ab, struct abuf *util );
