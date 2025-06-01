@@ -1,6 +1,6 @@
 # This should currently be compatible with both GNU's and Microsoft's make.
 
-COMPOPTS= -Wall -W -pedantic -std=c99 \
+COMPOPTS= -ggdb -Wall -W -pedantic -std=c99 \
 	-Wmultistatement-macros -Wparentheses -Wswitch-default -Wswitch-enum \
 	-Wunknown-pragmas -Wbidi-chars=any,ucn -Wduplicated-cond -Wcast-align \
 	-Wconversion -Wdangling-else -Wsign-compare \
@@ -35,11 +35,11 @@ COMPOPTS= -Wall -W -pedantic -std=c99 \
 
 EDHEADERS= thoutext/edrows.h thoutext/edtools.h
 UTILHEADERS= coroutine/coro.h
-ROOTHEADERS= kilo.h appenbuf.h term.h syntax.h edfind.h edevents.h
+ROOTHEADERS= kilo.h appenbuf.h term.h syntax.h edfind.h edevents.h statview.h
 
 EDSRC= thoutext/edrows.c thoutext/edtools.c
 UTILSRC= coroutine/coro.c
-ROOTSRC= kilo.c appenbuf.c term.c syntax.c edfind.c edevents.c
+ROOTSRC= kilo.c appenbuf.c term.c syntax.c edfind.c edevents.c statview.c
 
 all: kilo
 
