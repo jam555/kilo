@@ -33,17 +33,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include <stddef.h>
-
-
-typedef struct statstate statstate;
-typedef struct statview_view
-{
-	char *start;
-	size_t len;
+#ifndef STATVIEW_H
+# define STATVIEW_H
+	#include <stddef.h>
 	
-} statview_view;
-
-int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data );
-statstate* statview_build( void );
+	
+	typedef struct statstate statstate;
+	typedef struct statview_view
+	{
+		char *start;
+		size_t len;
+		
+	} statview_view;
+	
+	int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data );
+	statstate* statview_build( void );
+	
+#endif
