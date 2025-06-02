@@ -175,7 +175,7 @@ typedef struct statview_view
 		statview_view sv = { 0 };
 		
 			/* Where do we get stats* from? The 'E' global? Is there a source? */
-		if( !statview_fetchmsg( E.statusinterface, 10,  &sv ) )
+		if( !statview_fetchmsg( E.statusinterface, E.screencols,  &sv ) )
 		{
 			exit( 1 );
 		}
