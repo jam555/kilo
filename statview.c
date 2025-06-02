@@ -55,8 +55,9 @@ struct statstate
 };
 
 
+
 	/* Baring strlen() and time(), this should be MORE than needed. */
-static const size_t allocation = 1024 * 1024;
+static const size_t allocation = 8 * 1024;
 
 
 static void statview_fetchmsg_inner();
