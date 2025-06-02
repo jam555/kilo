@@ -43,6 +43,12 @@
 #include <stdio.h>
 
 
+/*
+	Stop timing out messages.
+	Add a timer-based redraw, for auto-scroll.
+	Speed up the scrolling?
+*/
+
 
 struct statstate
 {
@@ -65,44 +71,44 @@ static void statview_fetchmsg_inner();
 
 static statstate* get_stats( corohead *dest )
 {
-	printf( "\nEntering get_stats()\n" ); fflush( stdout );
+	/* printf( "\nEntering get_stats()\n" ); fflush( stdout ); */
 	
 	if( dest )
 	{
 		statstate *stat = (statstate*)( dest->auxiliary );
 		
-		printf( "\tSuccess return == %p\n", (void*)stat ); fflush( stdout );
+		/* printf( "\tSuccess return == %p\n", (void*)stat ); fflush( stdout ); */
 		return( stat );
 	}
 	
-	printf( "\tFailure return.\n" ); fflush( stdout );
+	/* printf( "\tFailure return.\n" ); fflush( stdout ); */
 	return( 0 );
 }
 static int inneryield( corohead *dest,  void *data, void (*func)() )
 {
-	printf( "\nEntering inneryield" ); fflush( stdout );
-		printf( "( %p,  %p, %p )\n", (void*)dest, data, (void*)func ); fflush( stdout );
+	/* printf( "\nEntering inneryield" ); fflush( stdout );
+		printf( "( %p,  %p, %p )\n", (void*)dest, data, (void*)func ); fflush( stdout );  */
 	
 	if( dest )
 	{
-		printf( "\tget_stats( %p ) == ", (void*)dest ); fflush( stdout );
+		/* printf( "\tget_stats( %p ) == ", (void*)dest ); fflush( stdout ); */
 		statstate *stats = get_stats( dest );
-			printf( "%p\n", (void*)stats ); fflush( stdout );
+			/* printf( "%p\n", (void*)stats ); fflush( stdout ); */
 		if( stats )
 		{
-			printf( "\tdata == %p", data ); fflush( stdout );
+			/* printf( "\tdata == %p", data ); fflush( stdout ); */
 			stats->data = data;
-			printf( ", func == %p\n", (void*)func ); fflush( stdout );
+			/* printf( ", func == %p\n", (void*)func ); fflush( stdout ); */
 			stats->func = func;
 			
 		} else {
 			
-			printf( "\tNo valid initializations.\n" ); fflush( stdout );
+			/* printf( "\tNo valid initializations.\n" ); fflush( stdout ); */
 		}
 		
-			printf( "\tinneryield(): calling coyield().\n" ); fflush( stdout );
+			/* printf( "\tinneryield(): calling coyield().\n" ); fflush( stdout ); */
 		coyield( dest );
-			printf( "\n\tinneryield(): returned from coyield().\n" ); fflush( stdout );
+			/* printf( "\n\tinneryield(): returned from coyield().\n" ); fflush( stdout ); */
 		
 		if
 		(
@@ -123,7 +129,7 @@ static int inneryield( corohead *dest,  void *data, void (*func)() )
 		return( 1 );
 	}
 	
-	printf( "\tbad args. dest == %p, func == %p\n", (void*)dest, (void*)func ); fflush( stdout );
+	/* printf( "\tbad args. dest == %p, func == %p\n", (void*)dest, (void*)func ); fflush( stdout ); */
 	return( -1 );
 }
 
@@ -131,22 +137,22 @@ static int inneryield( corohead *dest,  void *data, void (*func)() )
 static void statview_fetchmsg_inner()
 {
 	/* Runs inside the coro. */
-	printf( "\nstatview_fetchmsg_inner() entered.\n" ); fflush( stdout );
+	/* printf( "\nstatview_fetchmsg_inner() entered.\n" ); fflush( stdout ); */
 	
 	
-	printf( "\tGetting aux:" );
-		fflush( stdout );
+	/* printf( "\tGetting aux:" );
+		fflush( stdout ); */
 	statstate *stats = (statstate*)( coro_getaux() );
-		printf( " %p\n", (void*)stats );
+		/* printf( " %p\n", (void*)stats ); */
 	statview_view *sv = (statview_view*)( stats->data );
-	printf( "\tstatview_view: %p", (void*)sv );
-		fflush( stdout );
+	/* printf( "\tstatview_view: %p", (void*)sv );
+		fflush( stdout ); */
 	size_t usewid = sv->len;
-	printf( "\tusewid: %zu", usewid );
-		fflush( stdout );
+	/* printf( "\tusewid: %zu", usewid );
+		fflush( stdout ); */
 	size_t slen = strlen( E.statusmsg );
-	printf( "\tstring length: %zu", slen );
-		fflush( stdout );
+	/* printf( "\tstring length: %zu", slen );
+		fflush( stdout ); */
 	time_t t = time( (time_t*)0 );
 	
 	double dtime = difftime( t, stats->last_time );
@@ -173,14 +179,14 @@ static void statview_fetchmsg_inner()
 		sv->len = ( slen > usewid ) ? usewid : slen ;
 	}
 	
-	printf( "\tstatview_fetchmsg_inner() returning.\n" );
+	/* printf( "\tstatview_fetchmsg_inner() returning.\n" ); */
 	/* Just fall back to the coro-main() loop, that'll handle the rest. */
 }
 
 
 static void statview_coromain( corohead *head, void *data )
 {
-	printf( "\nEntering statview_coromain" ); fflush( stdout );
+	/* printf( "\nEntering statview_coromain" ); fflush( stdout );
 		printf
 		(
 			"( %p, %p )\n",
@@ -190,20 +196,20 @@ static void statview_coromain( corohead *head, void *data )
 	(
 		"\tCalculated footer: %p\n",
 			(void*)( ( (uintptr_t)head ) - allocation )
-	);
+	); */
 	
 	if( head )
 	{
-		printf( "\tThird printf.\n" );
+		/* printf( "\tThird printf.\n" ); */
 		
 		statstate stats;
 		
-		printf
+		/* printf
 		(
 			"\tstatview_coromain():&stats == %p, head->aux == %d\n",
 				(void*)&stats,
 				(int)( head->auxiliary )
-		);
+		); */
 		
 		stats.head = head;
 		stats.last_time = time( (time_t*)0 );
@@ -212,14 +218,15 @@ static void statview_coromain( corohead *head, void *data )
 		int loop = 1 /*CORO_WORKING*/ ;
 		while( loop == 1 /*CORO_WORKING*/ )
 		{
-			printf( "\tcalling inneryield()\n" ); fflush( stdout );
+			/* printf( "\tcalling inneryield()\n" ); fflush( stdout ); */
 			loop = inneryield( &main_fiber,  (void*)0, (void (*)())0 );
 		}
 	}
+	/* printf( "\tExiting statview_coromain().\n" ); */
 }
 static int statview_conclude( corohead *head, uintptr_t aux )
 {
-	printf( "\nEntering statview_conclude()\n" ); fflush( stdout );
+	/* printf( "\nEntering statview_conclude()\n" ); fflush( stdout ); */
 	
 	if( head )
 	{
@@ -234,6 +241,8 @@ static int statview_conclude( corohead *head, uintptr_t aux )
 	}
 	
 	return( -1 );
+	
+	/* printf( "\nExiting statview_conclude()\n" ); fflush( stdout ); */
 }
 
 
@@ -241,30 +250,30 @@ static int statview_conclude( corohead *head, uintptr_t aux )
 int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
 {
 	/* Runs outside the coro. */
-	printf( "\nEntering statview_fetchmsg()\n" );
+	/* printf( "\nEntering statview_fetchmsg()\n" ); */
 	
 	if( stats && data )
 	{
-		printf( "\tstats && data.\n" );
+		/* printf( "\tstats && data.\n" ); */
 		fflush( stdout );
 		data->len = usable_width;
 		
 		inneryield( stats->head,  (void*)data, &statview_fetchmsg_inner );
 		
-		printf( "\tSuccessful exit.\n" );
+		/* printf( "\tstatview_fetchmsg() successful exit.\n" ); */
 		return( 1 );
 	}
 	
-	printf( "\tError exit.\n" );
+	/* printf( "\tstatview_fetchmsg() error exit.\n" ); */
 	return( -1 );
 }
 statstate* statview_build()
 {
-	printf( "\nEntering statview_build()\n" ); fflush( stdout );
+	/* printf( "\nEntering statview_build()\n" ); fflush( stdout ); */
 	
 	corohead *head = 0;
 	
-	printf
+	/* printf
 	(
 		"\nstatview(): calling cobuild(\n"
 				"\t\t%zu,\n"
@@ -278,7 +287,7 @@ statstate* statview_build()
 			(void*)&statview_conclude,
 			
 			(void*)&head
-	);
+	); */
 	
 	int res =
 		cobuild
@@ -291,24 +300,24 @@ statstate* statview_build()
 		);
 	if( !res )
 	{
-		printf( "\t\t!res == true; returning 0\n" );
+		/* printf( "\t\t!res == true; returning 0\n" ); */
 		return( 0 );
 	}
 	if( !head )
 	{
-		printf( "\t\t!head == true; returning 0\n" );
+		/* printf( "\t\t!head == true; returning 0\n" ); */
 		return( 0 );
 	}
 	
-	printf
+	/* printf
 	(
 		"\t\t&head == %p, head == %p, head->aux == %d;\n\t\tCalling coyield( head ).\n",
 			(void*)&head,
 			(void*)head,
 			(int)( head->auxiliary )
-	);
+	); */
 	coyield( head );
-	printf
+	/* printf
 	(
 		"\t\tstatview_build():coyield() returned.\n"
 	);
@@ -325,6 +334,6 @@ statstate* statview_build()
 				(unsigned)( head->auxiliary )
 		);
 	printf( "\t\tstatview_build() returning.\n" );
-	fflush( stdout );
+	fflush( stdout ); */
 	return( (statstate*)( head->auxiliary ));
 }
