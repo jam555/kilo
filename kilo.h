@@ -74,9 +74,9 @@
 	/* This is the number of lines for the status lines. */
 #define MILA_UTILITYLINES 2
 	/* Whether the utility-area messages should timeout or not. */
-#define MILA_MESSAGETIMEOUTS ( 1 )
+#define MILA_MESSAGETIMEOUTS ( 0 )
 	/* In deci-seconds. The time to scroll by one character. */
-#define MILA_MESSAGESLOTH ( 30 )
+#define MILA_MESSAGESLOTH ( 3 )
 
 /* Syntax highlight types */
 #define HL_NORMAL 0

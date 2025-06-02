@@ -110,7 +110,7 @@ int main( int argn_, char **args_ )
 	args = args_;
 	
 		/* Wrap, and continue with main(). */
-		/* NOte that the void pointer will probably need to be non-null */
+		/* Note that the void pointer will probably need to be non-null */
 		/*  at some point in the future. */
 	argn_ = cocontext( (void*)0, &main_coro );
 	/* Let's just trash the return for now. */
@@ -129,7 +129,8 @@ int main_coro( void *ign )
     if( argn == 3 ) {
         /* Surpress usage of the alternate screen: useful if you */
         /*  want to keep info displayed on exit. */
-        if( strcmp( noaltscr_opt, args[ 2 ] ) != 0 ) {
+        if( strcmp( noaltscr_opt, args[ 2 ] ) != 0 )
+		{
             perror( "Unfamiliar command-line option:" );
             fprintf( stderr, "  %s", args[ 2 ] );
             exit( 1 );
@@ -151,6 +152,7 @@ int main_coro( void *ign )
     while( 1 )
 	{
         editorRefreshScreen();
+#warning "Add a timer-based redraw... somehow. Probably needs coro-IO to stop blocking."
 			/* TODO: Subject this to a mode switch! */
 			/*  If mode != notepad, then run input through CLI mode! */
 			/*  For CLI mode, try to use "linenoise" from the same author. */

@@ -43,12 +43,6 @@
 #include <stdio.h>
 
 
-/*
-	Stop timing out messages.
-	Add a timer-based redraw, for auto-scroll.
-	Speed up the scrolling?
-*/
-
 
 struct statstate
 {
