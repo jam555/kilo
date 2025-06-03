@@ -1,4 +1,4 @@
-This is the explanation file foR coro.h/.c
+This is the explanation file for coro.h/.c
 
 	A coroutine is, in essence, part of every thread in a multithreading (and
 single threading...) system (note that likewise, each process innately has at

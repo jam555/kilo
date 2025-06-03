@@ -5,7 +5,9 @@
  *
  * -----------------------------------------------------------------------
  *
- * Copyright (C) 2016 Salvatore Sanfilippo <antirez at gmail dot com>
+ * coro.h : A coroutine system
+ *
+ * Copyright (C) 2025 Jam555 <3349478+jam555@users.noreply.github.com>
  *
  * All rights reserved.
  *

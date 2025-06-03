@@ -5,7 +5,9 @@
  *
  * -----------------------------------------------------------------------
  *
- * Copyright (C) 2016 Salvatore Sanfilippo <antirez at gmail dot com>
+ * coro.h : A coroutine system
+ *
+ * Copyright (C) 2025 Jam555 <3349478+jam555@users.noreply.github.com>
  *
  * All rights reserved.
  *
@@ -49,6 +51,11 @@
 /*  "thread" from multi-threading), a go-routine (from the programming */
 /*  language Go), a green-thread, a user-level thread, a protothread (though */
 /*  those techincally are a more-limited switch-and-goto based mechanism), or */
+	/*
+		Other names:
+tasklets
+microthreads
+	*/
 /*  stackful coroutines) system, currently targetting 64-bit *nix platforms */
 /*  only, but it should be practical to port it to e.g. 64-bit Windows and */
 /*  various 32-bit platforms with few changes to the existing files. This */
