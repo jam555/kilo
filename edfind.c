@@ -34,6 +34,7 @@
  */
 
 #include "kilo.h"
+#include "msgs.h"
 
 
 /* =============================== Find mode ================================ */
@@ -128,11 +129,13 @@ void editorFind( int fd )
                     ptrdiff_t diff = (ptrdiff_t)( E.cx - E.screencols );
                     if( diff && E.cx < (size_t)( diff ) )
 					{
+						msgs_build_fatal( (msgs**)0,  "\teditorFind() err 1. diff: %d; E.cx: %zu\n", (int)diff, E.cx );
 						exit( 1 );
 					}
                     E.cx -= (size_t)diff;
                     if( !diff && E.coloff < (size_t)( -diff ) )
 					{
+						msgs_build_fatal( (msgs**)0,  "\teditorFind err 2. diff: $d; E.coloff: %zu\n", (int)diff, E.coloff );
 						exit( 1 );
 					}
 #pragma GCC diagnostic push

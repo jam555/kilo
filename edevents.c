@@ -34,6 +34,7 @@
  */
 
 #include "kilo.h"
+#include "msgs.h"
 
 
 /* ========================= Editor events handling  ======================== */
@@ -132,6 +133,8 @@ void editorMoveCursor( int key )
 	    
 		default:
 			editorSetStatusMessage( "Unknown key in editorMoveCursor( %d )",  key );
+				/* Not a proper error, just useful to keep displayed after exit. */
+			msgs_build_fatal( (msgs**)0,  "\tUnknown key in editorMoveCursor( %d )\n", key );
 			break;
     }
 	
@@ -264,7 +267,7 @@ void updateWindowSize( void )
 		) == -1
 	)
 	{
-        perror( "Unable to query the screen for size (columns / rows)" );
+		msgs_build_fatal( (msgs**)0,  "\tupdateWindowSize() was unable to query the screen for size (columns / rows)\n" );
         exit( 1 );
     }
     
@@ -328,13 +331,13 @@ void initEditor( void )
     {
         if( !mila_initterm_xterm() )
 		{
-			perror( "XTerm initialization failed. If alt-screen in enabled, use ESC [?1049l.\n" );
+			msgs_build_fatal( (msgs**)0,  "\tXTerm initialization failed. If alt-screen in enabled, use ESC [?1049l.\n" );
 			exit( 1 );
 		}
     }
 	if( !E.statusinterface )
 	{
-		perror( "statview_build() failed.\n" );
+		msgs_build_fatal( (msgs**)0,  "\tstatview_build() failed in initEditor().\n" );
 		exit( 1 );
 	}
     updateWindowSize();
@@ -427,6 +430,9 @@ int editorSave( void )
 writeerr:
     free( buf );
     if( fd != -1 ) close( fd );
+		/* Just in case strerror() does something janky. */
+	int eerr = errno;
     editorSetStatusMessage( "Can't save! I/O error: %s", strerror( errno ) );
+	msgs_build_fatal( (msgs**)0,  "\teditorSave() couldn't save! I/O error: %s\n", strerror( eerr ) );
     return 1;
 }

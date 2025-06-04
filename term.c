@@ -34,6 +34,7 @@
  */
 
 #include "kilo.h"
+#include "msgs.h"
 
 
 
@@ -61,7 +62,7 @@ int mila_initterm_xterm()
 		if( res < 0 || (size_t)res != altscren_len )
 		{
 #warning "This should be expanded to handle incomplete writes."
-			perror( "Unable to select the alternate screen display buffer" );
+			msgs_build_fatal( (msgs**)0,  "\tUnable to select the alternate screen display buffer.\n" );
 			exit( 1 );
 		}
 		E.altscr = 1;
@@ -180,10 +181,10 @@ void mila_term_printWelcomeMessage( struct abuf *ab,  char *buf, size_t buflen )
 	size_t padding;
 	if( welcomelen < 0 )
 	{
-		fprintf
+		msgs_build_fatal
 		(
-			stderr,
-				"welcomelen in mila_term_printWelcomeMessage() had a strange value: %d\n",
+			(msgs**)0,
+				"\twelcomelen in mila_term_printWelcomeMessage() had a strange value: %d\n",
 				welcomelen
 		);
 		exit( 1 );
@@ -220,6 +221,7 @@ void mila_term_setcolor
 		);
 	if( clen < 0 )
 	{
+		msgs_build_fatal( (msgs**)0,  "\tmila_term_setcolor() failed: %d\n", clen );
 		exit ( 1 );
 	}
 	*curcolor = color;
@@ -230,6 +232,7 @@ void mila_term_setcolor
 
 void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 {
+	int res;
 	char seq[ 32 ];
 	
 #warning "Numeric results haven't been verified: note the \"row < 0\" and \"col < 0 \" cases."
@@ -249,9 +252,16 @@ void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 		
 #define MILA_TERMCODES_6 "\x1b[%zu;%zuH"
 		snprintf( seq, 32, MILA_TERMCODES_6, row, col );
-		if( write( ofile, seq, strlen( seq ) ) == -1 )
+		res = write( ofile, seq, strlen( seq ) );
+		if( res == -1 )
 		{
-			/* Can't recover... */
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					"\tmila_term_cursseek_setpos(): write() failed 1: %d.\n",
+					res
+			);
+			exit( 1 );
 		}
 		
 	} else if( alter == -1 )
@@ -266,34 +276,62 @@ void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 		{
 			row = -row;
 			snprintf( seq, 32, "\x1b[%zuA", row );
-			if( write( ofile, seq, strlen( seq ) ) == -1 )
+			res = write( ofile, seq, strlen( seq ) );
+			if( res == -1 )
 			{
-				/* Can't recover... */
+				msgs_build_fatal
+				(
+					(msgs**)0,
+						"\tmila_term_cursseek_setpos(): write() failed 1: %d.\n",
+						res
+				);
+				exit( 1 );
 			}
 			
 		} else if( (int)row > 0 )
 		{
 			snprintf( seq, 32, "\x1b[%zuB", row );
-			if( write( ofile, seq, strlen(seq ) ) == -1 )
+			res = write( ofile, seq, strlen(seq ) );
+			if( res == -1 )
 			{
-				/* Can't recover... */
+				msgs_build_fatal
+				(
+					(msgs**)0,
+						"\tmila_term_cursseek_setpos(): write() failed 1: %d.\n",
+						res
+				);
+				exit( 1 );
 			}
 		}
 		if( (int)col < 0 )
 		{
 			col = -col;
 			snprintf( seq, 32, "\x1b[%zuD", col );
-			if( write( ofile, seq, strlen( seq ) ) == -1 )
+			res = write( ofile, seq, strlen( seq ) );
+			if( res == -1 )
 			{
-				/* Can't recover... */
+				msgs_build_fatal
+				(
+					(msgs**)0,
+						"\tmila_term_cursseek_setpos(): write() failed 1: %d.\n",
+						res
+				);
+				exit( 1 );
 			}
 			
 		} else if( (int)col > 0 )
 		{
 			snprintf( seq, 32, "\x1b[%zuC", col );
-			if( write( ofile, seq, strlen( seq ) ) == -1 )
+			res = write( ofile, seq, strlen( seq ) );
+			if( res == -1 )
 			{
-				/* Can't recover... */
+				msgs_build_fatal
+				(
+					(msgs**)0,
+						"\tmila_term_cursseek_setpos(): write() failed 1: %d.\n",
+						res
+				);
+				exit( 1 );
 			}
 		}
 		
@@ -353,11 +391,14 @@ void mila_term_altscreen_disable( void )
 		ssize_t res = write( STDOUT_FILENO, altscren, altscren_len );
         if( res && (size_t)res != altscren_len )
 		{
-            perror( "Unable to deselect the alternate screen display buffer" );
-            perror( "please type" );
 #define MILA_TERMCODES_2 "\"\\e[?1049l\""
-            fprintf( stderr, "  echo -e %s", MILA_TERMCODES_2 );
-            perror( "and then hit your enter key" );
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					"\tUnable to deselect the alternate screen display buffer "
+					"please type \"echo -e %s\" and then hit your enter key.\n",
+					MILA_TERMCODES_2
+			);
             exit( 1 );
         }
         E.altscr = 0;
@@ -463,8 +504,12 @@ int editorReadKey( int fd )
 		                        case '5': return PAGE_UP;
 		                        case '6': return PAGE_DOWN;
 								default:
-									perror( "Numeric \"ESC [\" in editorReadKey() had a strange value: " );
-									fputc( seq[ 1 ], stderr );
+									msgs_build_fatal
+									(
+										(msgs**)0,
+											"\tNumeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
+											seq[ 1 ]
+									);
 									exit( 1 );
 	                        }
 	                    }
@@ -480,8 +525,12 @@ int editorReadKey( int fd )
 		                    case 'H': return HOME_KEY;
 		                    case 'F': return END_KEY;
 							default:
-								perror( "Non-numeric \"ESC [\" in editorReadKey() had a strange value: " );
-								fputc( seq[ 1 ], stderr );
+								msgs_build_fatal
+								(
+									(msgs**)0,
+										"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
+										seq[ 1 ]
+								);
 								exit( 1 );
 	                    }
 	                }
@@ -495,8 +544,12 @@ int editorReadKey( int fd )
 		                case 'H': return HOME_KEY;
 		                case 'F': return END_KEY;
 		                default:
-							perror( "\"ESC O\" in editorReadKey() had a strange value: " );
-							fputc( seq[ 1 ], stderr );
+							msgs_build_fatal
+							(
+								(msgs**)0,
+									"\t\"ESC O\" in editorReadKey() had a strange value: %c\n",
+									seq[ 1 ]
+							);
 							exit( 1 );
 	                }
 	            }

@@ -38,6 +38,7 @@
 
 #include "../kilo.h"
 #include "edrows.h"
+#include "../msgs.h"
 
 
 /* ======================= Editor rows implementation ======================= */
@@ -60,8 +61,8 @@ void editorUpdateRow( erow *row )
         (unsigned long long) row->size + tabs * MILA_TABSIZE + nonprint * 9 + 1;
     if( allocsize > UINT32_MAX )
 	{
-        printf( "Some line of the edited file is too long for kilo\n" );
-		/* TODO: Print WHICH row it is. */
+        	/* TODO: Print WHICH row it is. */
+		msgs_build_fatal( (msgs**)0,  "\tSome line of the edited file is too long for kilo\n" );
         exit( 1 );
     }
 
@@ -200,6 +201,12 @@ void editorRowInsertChar( erow *row, size_t at, int c )
     }
     if( CHAR_MIN > c || c < CHAR_MAX )
 	{
+		msgs_build_fatal
+		(
+			(msgs**)0,
+				"\teditorRowInsertChar() encountered an out-of-bounds character: %x\n",
+				(int)c
+		);
 		exit( 1 );
 	}
 	row->chars[ at ] = (char)c;

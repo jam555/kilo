@@ -34,6 +34,7 @@
  */
 
 #include "kilo.h"
+#include "msgs.h"
 
 
 
@@ -82,10 +83,10 @@ void abStatusLine
 		);
 	if( tmp < 0 )
 	{
-		fprintf
+		msgs_build_fatal
 		(
-			stderr,
-				"First snprintf() in abStatusLine() had a negative return: %d",
+			(msgs**)0,
+				"\tFirst snprintf() in abStatusLine() had a negative return: %d\n",
 				tmp
 		);
 		exit( 1 );
@@ -104,7 +105,7 @@ void abStatusLine
 		);
 	if( tmp < 0 )
 	{
-		fprintf( stderr, "Second snprintf() in abStatusLine() failed." );
+		msgs_build_fatal( (msgs**)0, "Second snprintf() in abStatusLine() failed." );
 		exit( 1 );
 	}
 	rstat_len = (size_t)tmp;
@@ -163,20 +164,13 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 			1
 	)
 	{
-		/*
-typedef struct statview_view
-{
-	char *start;
-	size_t len;
-	
-} statview_view;
-		*/
 		
 		statview_view sv = { 0 };
 		
 			/* Where do we get stats* from? The 'E' global? Is there a source? */
 		if( !statview_fetchmsg( E.statusinterface, E.screencols,  &sv ) )
 		{
+			msgs_build_fatal( (msgs**)0,  "\tstatview_fetchmsg() failed in abMessageLine().\n" );
 			exit( 1 );
 		}
 		
