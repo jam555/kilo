@@ -34,6 +34,7 @@
 
 #include "kilo.h"
 #include "coroutine/coro.h"
+#include "msgs.h"
 
 
 
@@ -100,7 +101,13 @@ size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 #warning "Move error-exit messages to something that an atexit() handler will print."
 
 
-
+void main_atexit( void )
+{
+	fflush( stderr );
+	fflush( stdout );
+	fprintf( stdout,  "\nKilo is exiting.\n" );
+	fflush( stdout );
+}
 int main_coro( void *ign );
 int argn;
 char **args;
@@ -108,6 +115,23 @@ int main( int argn_, char **args_ )
 {
 	argn = argn_;
 	args = args_;
+	
+	fprintf( stdout,  "\nKilo is starting.\n" );
+	fflush( stdout );
+	
+	if( atexit( &main_atexit ) != 0 )
+	{
+		fprintf( stderr,  "\tatexit() failed to register main_atexit.\n" );
+		exit( 1 );
+	}
+	if( atexit( &msgs_atexit ) != 0 )
+	{
+		fprintf( stderr,  "\tatexit() failed to register msgs_atexit.\n" );
+		exit( 1 );
+	}
+	
+	msgs_build_fatal( (msgs**)0,  "\tmsgs_build_fatal() test message.\n" );
+	exit( 1 );
 	
 		/* Wrap, and continue with main(). */
 		/* Note that the void pointer will probably need to be non-null */
@@ -126,7 +150,8 @@ int main_coro( void *ign )
         exit( 1 );
     }
 
-    if( argn == 3 ) {
+    if( argn == 3 )
+	{
         /* Surpress usage of the alternate screen: useful if you */
         /*  want to keep info displayed on exit. */
         if( strcmp( noaltscr_opt, args[ 2 ] ) != 0 )
