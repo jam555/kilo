@@ -76,6 +76,7 @@
 		
 	} msgs_queue;
 	
+		/* Note that the e.g. error queue are statically initialized. */
 	int msgs_queue_init( msgs_queue *queue );
 	int msgs_queue_pop( msgs_queue *queue,  msgs **recip );
 	int msgs_queue_append( msgs_queue *queue, msgs *val );

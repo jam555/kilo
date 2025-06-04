@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <time.h>
 
 #include "msgs.h"
 
@@ -123,21 +124,21 @@ int msgs_queue_rotate( msgs_queue *queue )
 			
 			if
 			(
-				tmp->msgsflags & msgs_flags_discard == msgs_flags_discard ||
+				( tmp->msgsflags & msgs_flags_discard ) == msgs_flags_discard ||
 				(
-					tmp->msgsflags & msgs_flags_timecalced == msgs_flags_timecalced &&
+					( tmp->msgsflags & msgs_flags_timecalced ) == msgs_flags_timecalced &&
 					tmp->reftime < time( 0 )
 				)
 			)
 			{
-				if( tmp->msgsflags & msgs_flags_timecalced == msgs_flags_hardwired )
+				if( ( tmp->msgsflags & msgs_flags_timecalced ) == msgs_flags_hardwired )
 				{
 					/* Hardwired, so delinking is all we're allowed to do. */
 					
 					return( 1 );
 				}
 				
-				*tmp = { 0 };
+				*tmp = (msgs){ 0 };
 				free( tmp );
 				tmp = 0;
 				
@@ -174,9 +175,9 @@ int msgs_queue_deinit( msgs_queue *queue )
 				return( -3 );
 			}
 			
-			if( tmp->msgsflags & msgs_flags_timecalced != msgs_flags_hardwired )
+			if( ( tmp->msgsflags & msgs_flags_timecalced ) != msgs_flags_hardwired )
 			{
-				*tmp = { 0 };
+				*tmp = (msgs){ 0 };
 				free( tmp );
 				tmp = 0;
 			}
@@ -245,8 +246,7 @@ static int msgs_innerbuild( msgs **ret,  const char *format, va_list *args )
 		int i =
 			vsnprintf
 			(
-				char* restrict buffer,
-				size_t bufsz,
+				(char*)0, 0,
 				
 				format, *args
 			);
@@ -261,16 +261,16 @@ static int msgs_innerbuild( msgs **ret,  const char *format, va_list *args )
 			return( -3 );
 		}
 		
-		*ret = { 0 };
+		**ret = (msgs){ 0 };
 		
-		( *ret )->len = i;
-		( *ret )->b = (char*)( ( *ret ) + 1 );
+		( *ret )->buf.len = i;
+		( *ret )->buf.b = (char*)( ( *ret ) + 1 );
 		
 		int i2 =
 			vsnprintf
 			(
-				( *ret )->b,
-				( *ret )->len,
+				( *ret )->buf.b,
+				( *ret )->buf.len,
 				
 				format, args2
 			);
@@ -297,7 +297,7 @@ int msgs_build( msgs **ret,  const char *format, ... )
 		va_list args;
 		va_start( args, format );
 		
-		int i = msgs_innerbuild( ret,  format, args );
+		int i = msgs_innerbuild( ret,  format, &( args ) );
 		
 		va_end( args );
 		
@@ -324,7 +324,7 @@ int msgs_build_note( msgs **ret,  const char *format, ... )
 		
 		msgs *msg = 0;
 		
-		int i = msgs_innerbuild( &msg,  format, args );
+		int i = msgs_innerbuild( &msg,  format, &( args ) );
 		if( !msg )
 		{
 			return( -2 );
@@ -362,7 +362,7 @@ int msgs_build_alert( msgs **ret,  const char *format, ... )
 		
 		msgs *msg = 0;
 		
-		int i = msgs_innerbuild( &msg,  format, args );
+		int i = msgs_innerbuild( &msg,  format, &( args ) );
 		if( !msg )
 		{
 			return( -2 );
@@ -403,7 +403,7 @@ int msgs_build_error( msgs **ret,  const char *format, ... )
 		
 		msgs *msg = 0;
 		
-		int i = msgs_innerbuild( &msg,  format, args );
+		int i = msgs_innerbuild( &msg,  format, &( args ) );
 		if( !msg )
 		{
 			return( -2 );
@@ -448,7 +448,7 @@ int msgs_build_fatal( msgs **ret,  const char *format, ... )
 		
 		msgs *msg = 0;
 		
-		int i = msgs_innerbuild( &msg,  format, args );
+		int i = msgs_innerbuild( &msg,  format, &( args ) );
 		if( !msg )
 		{
 			return( -2 );
@@ -481,7 +481,7 @@ int msgs_build_fatal( msgs **ret,  const char *format, ... )
 	}
 	
 	return( -1 );
-
+}
 
 
 	/* Automatically chooses between notes/alerts, vs errors. Note that */
@@ -498,7 +498,7 @@ struct abuf* msgs_peek()
 	
 	if( tmp )
 	{
-		if( tmp->msgsflags & msgs_flags_timecalced == msgs_flags_timepending )
+		if( ( tmp->msgsflags & msgs_flags_timecalced ) == msgs_flags_timepending )
 		{
 			/* Process timer messages. */
 			
@@ -531,21 +531,21 @@ int msgs_rotate()
 		
 		if
 		(
-			tmp->msgsflags & msgs_flags_discard == msgs_flags_discard ||
+			( tmp->msgsflags & msgs_flags_discard ) == msgs_flags_discard ||
 			(
-				tmp->msgsflags & msgs_flags_timecalced == msgs_flags_timecalced &&
+				( tmp->msgsflags & msgs_flags_timecalced ) == msgs_flags_timecalced &&
 				tmp->reftime < time( 0 )
 			)
 		)
 		{
-			if( tmp->msgsflags & msgs_flags_timecalced == msgs_flags_hardwired )
+			if( ( tmp->msgsflags & msgs_flags_timecalced ) == msgs_flags_hardwired )
 			{
 				/* Hardwired, so delinking is all we're allowed to do. */
 				
 				return( 1 );
 			}
 			
-			*tmp = { 0 };
+			*tmp = (msgs){ 0 };
 			free( tmp );
 			tmp = 0;
 			
@@ -591,14 +591,14 @@ int msgs_freecurrent()
 		}
 	}
 	
-	if( tmp->msgsflags & msgs_flags_timecalced == msgs_flags_hardwired )
+	if( ( tmp->msgsflags & msgs_flags_timecalced ) == msgs_flags_hardwired )
 	{
 		/* Hardwired, so delinking is all we're allowed to do. */
 		
 		return( 1 );
 	}
 	
-	*tmp = { 0 };
+	*tmp = (msgs){ 0 };
 	free( tmp );
 	tmp = 0;
 	
@@ -607,7 +607,7 @@ int msgs_freecurrent()
 
 	/* Prints the 'fatal' messages. This MUST be called after returning */
 	/*  to the normal state of the terminal. No free()s attemted. */
-void msgs_atexit()
+void msgs_atexit( void )
 {
 	msgs *tmp = 0;
 	
@@ -623,5 +623,6 @@ void msgs_atexit()
 	}
 	
 	/* Done. */
+	;
 }
 
