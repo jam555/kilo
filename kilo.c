@@ -130,8 +130,10 @@ int main( int argn_, char **args_ )
 		exit( 1 );
 	}
 	
+	/*
 	msgs_build_fatal( (msgs**)0,  "\tmsgs_build_fatal() test message.\n" );
 	exit( 1 );
+	*/
 	
 		/* Wrap, and continue with main(). */
 		/* Note that the void pointer will probably need to be non-null */
