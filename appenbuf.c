@@ -160,7 +160,17 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 {
 	(void)util;
 	
-	size_t msglen = strlen( E.statusmsg );
+	size_t msglen;
+	msgs_view msgsv = msgs_peek();
+	if( !msgsv.buf || !( msgsv.buf->b ) )
+	{
+		msglen = 0;
+		
+	} else {
+		
+		msglen = strlen( msgsv.buf->b );
+	}
+	
 	if
 	(
 		msglen &&
@@ -182,8 +192,8 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 		
 		
 		/*
-		abAppend( ab, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
-		abAppend( util, E.statusmsg, msglen <= E.screencols ? msglen : E.screencols );
+		abAppend( ab, msgsv.buf->b, msglen <= E.screencols ? msglen : E.screencols );
+		abAppend( util, msgsv.buf->b, msglen <= E.screencols ? msglen : E.screencols );
 		*/
 	}
 }

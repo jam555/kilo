@@ -36,11 +36,13 @@
 #include "kilo.h"
 #include "coroutine/coro.h"
 #include "statview.h"
+#include "msgs.h"
 
 #include <stddef.h>
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 
@@ -135,6 +137,7 @@ static void statview_fetchmsg_inner( void )
 	/* Runs inside the coro. */
 	/* printf( "\nstatview_fetchmsg_inner() entered.\n" ); fflush( stdout ); */
 	
+	msgs_view msgsv;
 	
 	/* printf( "\tGetting aux:" );
 		fflush( stdout ); */
@@ -146,8 +149,13 @@ static void statview_fetchmsg_inner( void )
 	size_t usewid = sv->len;
 	/* printf( "\tusewid: %zu", usewid );
 		fflush( stdout ); */
-#warning "Rework this to use the new msgs.h stuff."
-	size_t slen = strlen( E.statusmsg );
+	msgsv = msgs_peek();
+	if( !msgsv.buf || !( msgsv.buf->b ) )
+	{
+		msgs_build_fatal( (msgs**)0,  "statview.c : statview_fetchmsg_inner() couldn't get a source buf." );
+		exit( 1 );
+	}
+	size_t slen = strlen( msgsv.buf->b );
 	/* printf( "\tstring length: %zu", slen );
 		fflush( stdout ); */
 	time_t t = time( (time_t*)0 );
@@ -163,14 +171,15 @@ static void statview_fetchmsg_inner( void )
 		stats->off = 0;
 	}
 	
+#warning "Do something to perpetuate the flags to later stages!"
 	if( slen <= usewid )
 	{
-		sv->start = E.statusmsg;
-		sv->len = slen;
+		sv->start = msgsv.buf->b;
+		sv->len = msgsv.buf->len;
 		
 	} else {
 		
-		sv->start = E.statusmsg + stats->off;
+		sv->start = ( msgsv.buf->b ) + stats->off;
 		
 			slen -= stats->off;
 		sv->len = ( slen > usewid ) ? usewid : slen ;
