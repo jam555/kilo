@@ -75,6 +75,13 @@
 		msgs *head, **tail;
 		
 	} msgs_queue;
+	typedef struct msgs_view
+	{
+		struct abuf *buf;
+			/* Use values from msgs_flags. */
+		unsigned char msgsflags;
+		
+	} msgs_view;
 	
 		/* Note that the e.g. error queue are statically initialized. */
 	int msgs_queue_init( msgs_queue *queue );
@@ -119,7 +126,7 @@
 		/* Automatically chooses between notes/alerts, vs errors. Note that */
 		/*  this will also "initialize" any time-pending message that it */
 		/*  returns into a time-calculated message, but DOES NOT release any. */
-	struct abuf* msgs_peek( void );
+	msgs_view msgs_peek( void );
 	
 		/* Shift msgs_peek() from it's current target, to it's next. This can */
 		/*  result in the "current" message being deallocated after */

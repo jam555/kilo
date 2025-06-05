@@ -328,6 +328,8 @@ static int msgs_innerbuild( msgs **ret,  const char *format, va_list *args )
 		{
 			return( -2 );
 		}
+			/* Fix a shortfall of 1 character. */
+		i += 1;
 		
 			/* We've already checked the range, so we can reliably cast 'i'. */
 		*ret =
@@ -568,7 +570,13 @@ int msgs_build_fatal( msgs **ret,  const char *format, ... )
 	/* Automatically chooses between notes/alerts, vs errors. Note that */
 	/*  this will also "initialize" any time-pending message that it */
 	/*  returns into a time-calculated message, but DOES NOT release any. */
-struct abuf* msgs_peek()
+	/*
+		Relevant locations:
+			edtools.c : editorSetStatusMessage()
+			statview.c : statview_fetchmsg_inner()
+			appenbuf.c : abMessageLine()
+	*/
+msgs_view msgs_peek()
 {
 	msgs *tmp = errors.head;
 	
@@ -587,10 +595,17 @@ struct abuf* msgs_peek()
 			tmp->msgsflags |= msgs_flags_timecalced;
 		}
 		
-		return( &( tmp->buf ) );
+		return
+		(
+			(msgs_view)
+			{
+				&( tmp->buf ),
+				tmp->msgsflags
+			}
+		);
 	}
 	
-	return( 0 );
+	return( (msgs_view){ 0 } );
 }
 
 	/* Shift msgs_peek() from it's current target, to it's next. This can */
