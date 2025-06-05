@@ -98,16 +98,7 @@ struct editorSyntax HLDB[] =
 size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 
-#warning "Move error-exit messages to something that an atexit() handler will print."
-
-
-void main_atexit( void )
-{
-	fflush( stderr );
-	fflush( stdout );
-	fprintf( stdout,  "\nKilo is exiting.\n" );
-	fflush( stdout );
-}
+void main_atexit( void );
 int main_coro( void *ign );
 int argn;
 char **args;
@@ -130,44 +121,47 @@ int main( int argn_, char **args_ )
 		exit( 1 );
 	}
 	
-	/*
-	msgs_build_fatal( (msgs**)0,  "\tmsgs_build_fatal() test message.\n" );
-	exit( 1 );
-	*/
-	
 		/* Wrap, and continue with main(). */
 		/* Note that the void pointer will probably need to be non-null */
 		/*  at some point in the future. */
 	argn_ = cocontext( (void*)0, &main_coro );
 	/* Let's just trash the return for now. */
 }
+const char noaltscr_opt[] = "--no-alt-screen";
+void main_noargs_print()
+{
+	fprintf( stderr, "Usage: kilo <filename> [%s]\n", noaltscr_opt );
+	exit( 1 );
+}
+void main_args()
+{
+	if( argn < 2 || argn > 3 )
+	{
+		main_noargs_print();
+	}
+	
+	if( argn == 3 )
+	{
+		/* Surpress usage of the alternate screen: useful if you */
+		/*  want to keep info displayed on exit. */
+		if( strcmp( noaltscr_opt, args[ 2 ] ) != 0 )
+		{
+			perror( "Unfamiliar command-line option:" );
+			fprintf( stderr, "  %s", args[ 2 ] );
+			exit( 1 );
+		}
+		E.no_altscr = 1;
+		
+	} else {
+		
+		E.no_altscr = 0;
+	}
+}
 int main_coro( void *ign )
 {
     (void)ign;
 	
-	const char noaltscr_opt[] = "--no-alt-screen";
-    if( argn < 2 || argn > 3 )
-	{
-        fprintf( stderr, "Usage: kilo <filename> [%s]\n", noaltscr_opt );
-        exit( 1 );
-    }
-
-    if( argn == 3 )
-	{
-        /* Surpress usage of the alternate screen: useful if you */
-        /*  want to keep info displayed on exit. */
-        if( strcmp( noaltscr_opt, args[ 2 ] ) != 0 )
-		{
-            perror( "Unfamiliar command-line option:" );
-            fprintf( stderr, "  %s", args[ 2 ] );
-            exit( 1 );
-        }
-        E.no_altscr = 1;
-		
-    } else {
-        
-		E.no_altscr = 0;
-    }
+	main_args();
 
     initEditor();
     editorSelectSyntaxHighlight( args[ 1 ] );
@@ -176,6 +170,7 @@ int main_coro( void *ign )
 		/* TODO: This message needs to be displayed by default! */
 		/* Note that the max length for a line is currentlt UINT32_MAX stored characters (NOT displayed characters). */
     editorSetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" );
+	msgs_build_note( &( E.modemsg ),  "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" );
     while( 1 )
 	{
         editorRefreshScreen();
@@ -186,4 +181,14 @@ int main_coro( void *ign )
         editorProcessKeypress( STDIN_FILENO );
     }
     return 0;
+}
+void main_atexit( void )
+{
+	/* This should be the VERY LAST of the "normal" functions that exit() */
+	/*  runs before finishing the exit sequence. */
+	
+	fflush( stderr );
+	fflush( stdout );
+	fprintf( stdout,  "\nKilo is exiting.\n" );
+	fflush( stdout );
 }

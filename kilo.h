@@ -61,6 +61,7 @@
 #include "statview.h"
 #include "appenbuf.h"
 #include "term.h"
+#include "msgs.h"
 
 
 /* TODO: Find all of the "warning" directives, and fix them. */
@@ -119,6 +120,7 @@ typedef struct hlcolor {
 
 	/* TODO: Break this into separate window & pane (frame & glass?) */
 	/*  sections, to support multi-document capability. */
+	/* This gets initialized in initEditor() in edevents.c */
 struct editorConfig {
     int no_altscr;  /* Forbid usage of the alternate-screen. */
 
@@ -160,6 +162,8 @@ struct editorConfig {
 		/*  should implement ticker-tape behavior, when the status-message is larger than the */
 		/*  allocated space! */
 	statstate *statusinterface;
+		/* Replaces statusmsg. */
+	msgs *modemsg;
 };
 
 enum KEY_ACTION{

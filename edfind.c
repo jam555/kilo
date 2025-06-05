@@ -59,11 +59,19 @@ void editorFind( int fd )
     /* Save the cursor position in order to restore it later. */
     int saved_cx = E.cx, saved_cy = E.cy;
     int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+	msgs *msgtmp = 0;
 
     while( 1 ) {
         editorSetStatusMessage(
             "Search: %s (Use ESC/Arrows/Enter)", query );
-        editorRefreshScreen();
+				/* Should this be note, or alert? */
+        msgs_build_note( &msgtmp,  "Search: %s (Use ESC/Arrows/Enter)", query );
+		if( E.modemsg )
+		{
+			E.modemsg->msgsflags |= msgs_flags_discard;
+		}
+		E.modemsg = msgtmp;
+		editorRefreshScreen();
 
         int c = editorReadKey( fd );
         if( c == DEL_KEY || c == CTRL_H || c == BACKSPACE ) {
@@ -75,6 +83,7 @@ void editorFind( int fd )
                 E.coloff = saved_coloff; E.rowoff = saved_rowoff;
             }
             FIND_RESTORE_HL;
+#warning "Replace this with setting the discard flag."
             editorSetStatusMessage( "" );
             return;
         } else if( c == ARROW_RIGHT || c == ARROW_DOWN ) {

@@ -133,6 +133,7 @@ void editorMoveCursor( int key )
 	    
 		default:
 			editorSetStatusMessage( "Unknown key in editorMoveCursor( %d )",  key );
+			msgs_build_alert( (msgs**)0,  "Unknown key in editorMoveCursor( %d )",  key );
 				/* Not a proper error, just useful to keep displayed after exit. */
 			msgs_build_fatal( (msgs**)0,  "\tUnknown key in editorMoveCursor( %d )\n", key );
 			break;
@@ -194,6 +195,13 @@ void editorProcessKeypress( int fd )
 					"WARNING!!! File has unsaved changes. "
 					"Press Ctrl-Q %d more times to quit.",
 					quit_times
+				);
+				msgs_build_alert
+				(
+					(msgs**)0,
+						"WARNING!!! File has unsaved changes. "
+						"Press Ctrl-Q %d more times to quit.",
+						quit_times
 				);
 	            quit_times--;
 	            return;
@@ -326,6 +334,7 @@ void initEditor( void )
 	E.externrows = 0;
 	E.externcols = 0;
 	E.statusinterface = statview_build();
+	E.modemsg = 0;
 	
     if( !E.altscr && !E.no_altscr )
     {
@@ -425,7 +434,8 @@ int editorSave( void )
     E.dirty = 0;
 		/* TODO: Do something to move this to the FIRST status line. */
     editorSetStatusMessage( "%d bytes written on disk", len );
-    return 0;
+    msgs_build_note( (msgs**)0,  "%d bytes written on disk", len );
+	return 0;
 
 writeerr:
     free( buf );
@@ -433,6 +443,7 @@ writeerr:
 		/* Just in case strerror() does something janky. */
 	int eerr = errno;
     editorSetStatusMessage( "Can't save! I/O error: %s", strerror( errno ) );
+	msgs_build_error( (msgs**)0,  "Can't save! I/O error: %s", strerror( errno ) );
 	msgs_build_fatal( (msgs**)0,  "\teditorSave() couldn't save! I/O error: %s\n", strerror( eerr ) );
     return 1;
 }
