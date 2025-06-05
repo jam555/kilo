@@ -69,6 +69,8 @@ void abStatusLine
 (
 	struct abuf *ab, struct abuf *util,
 	
+		/* These two status bits are just buffers: the contents are added IN */
+		/*  THIS FUNCTION. */
 	char *fstatus, size_t fstat_len,
 	char *rstatus, size_t rstat_len
 )
@@ -110,6 +112,8 @@ void abStatusLine
 	}
 	rstat_len = (size_t)tmp;
 	
+#warning "Add the message line into this approximate area."
+#warning "Make the stuff below this into an adaptive/responsive layout system."
 	abAppend( ab, fstatus, fstat_len );
 	abAppend( util, fstatus, fstat_len );
 	while( fstat_len < E.screencols )
@@ -136,6 +140,7 @@ void editorStatusLine
 (
 	struct abuf *ab, struct abuf *util,
 	
+		/* These are just used as buffers, abStatusLine both fills AND uses the resulting contents. */
 	char *fstatus, size_t fstat_len,
 	char *rstatus, size_t rstat_len
 )
@@ -164,10 +169,8 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 			1
 	)
 	{
-		
 		statview_view sv = { 0 };
 		
-			/* Where do we get stats* from? The 'E' global? Is there a source? */
 		if( !statview_fetchmsg( E.statusinterface, E.screencols,  &sv ) )
 		{
 			msgs_build_fatal( (msgs**)0,  "\tstatview_fetchmsg() failed in abMessageLine().\n" );
