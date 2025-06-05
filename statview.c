@@ -50,8 +50,8 @@ struct statstate
 	size_t off;
 	time_t last_time;
 	
-	volatile void *data;
-	volatile void (*func)();
+	void *volatile data;
+	void (*volatile func)( void );
 };
 
 
@@ -60,7 +60,8 @@ struct statstate
 static const size_t allocation = 8 * 1024;
 
 
-static void statview_fetchmsg_inner();
+static void statview_fetchmsg_inner( void );
+static int inneryield( corohead *dest,  void *data, void (*func)( void ) );
 
 
 
@@ -79,7 +80,7 @@ static statstate* get_stats( corohead *dest )
 	/* printf( "\tFailure return.\n" ); fflush( stdout ); */
 	return( 0 );
 }
-static int inneryield( corohead *dest,  void *data, void (*func)() )
+static int inneryield( corohead *dest,  void *data, void (*func)( void ) )
 {
 	/* printf( "\nEntering inneryield" ); fflush( stdout );
 		printf( "( %p,  %p, %p )\n", (void*)dest, data, (void*)func ); fflush( stdout );  */
@@ -129,7 +130,7 @@ static int inneryield( corohead *dest,  void *data, void (*func)() )
 }
 
 
-static void statview_fetchmsg_inner()
+static void statview_fetchmsg_inner( void )
 {
 	/* Runs inside the coro. */
 	/* printf( "\nstatview_fetchmsg_inner() entered.\n" ); fflush( stdout ); */
@@ -145,6 +146,7 @@ static void statview_fetchmsg_inner()
 	size_t usewid = sv->len;
 	/* printf( "\tusewid: %zu", usewid );
 		fflush( stdout ); */
+#warning "Rework this to use the new msgs.h stuff."
 	size_t slen = strlen( E.statusmsg );
 	/* printf( "\tstring length: %zu", slen );
 		fflush( stdout ); */
@@ -181,6 +183,8 @@ static void statview_fetchmsg_inner()
 
 static void statview_coromain( corohead *head, void *data )
 {
+	(void)data;
+	
 	/* printf( "\nEntering statview_coromain" ); fflush( stdout );
 		printf
 		(
@@ -221,6 +225,8 @@ static void statview_coromain( corohead *head, void *data )
 }
 static int statview_conclude( corohead *head, uintptr_t aux )
 {
+	(void)aux;
+	
 	/* printf( "\nEntering statview_conclude()\n" ); fflush( stdout ); */
 	
 	if( head )

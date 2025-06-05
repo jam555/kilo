@@ -33,10 +33,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #ifndef STATVIEW_H
 # define STATVIEW_H
-	#include <stddef.h>
 	
+	#include <stddef.h>
 	
 	typedef struct statstate statstate;
 	typedef struct statview_view
