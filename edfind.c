@@ -62,8 +62,7 @@ void editorFind( int fd )
 	msgs *msgtmp = 0;
 
     while( 1 ) {
-        editorSetStatusMessage(
-            "Search: %s (Use ESC/Arrows/Enter)", query );
+        /* editorSetStatusMessage( "Search: %s (Use ESC/Arrows/Enter)", query ); */
 				/* Should this be note, or alert? */
         msgs_build_note( &msgtmp,  "Search: %s (Use ESC/Arrows/Enter)", query );
 		if( E.modemsg )
@@ -84,7 +83,7 @@ void editorFind( int fd )
             }
             FIND_RESTORE_HL;
 #warning "Delete this once we finish moving to msgs."
-            editorSetStatusMessage( "" );
+            /* editorSetStatusMessage( "" ); */
             return;
         } else if( c == ARROW_RIGHT || c == ARROW_DOWN ) {
             find_next = 1;

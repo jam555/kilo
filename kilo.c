@@ -169,7 +169,7 @@ int main_coro( void *ign )
     enableRawMode( STDIN_FILENO );
 		/* TODO: This message needs to be displayed by default! */
 		/* Note that the max length for a line is currentlt UINT32_MAX stored characters (NOT displayed characters). */
-    editorSetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" );
+    /* editorSetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" ); */
 	msgs_build_note( &( E.modemsg ),  "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" );
     while( 1 )
 	{
