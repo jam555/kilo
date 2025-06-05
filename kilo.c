@@ -128,12 +128,12 @@ int main( int argn_, char **args_ )
 	/* Let's just trash the return for now. */
 }
 const char noaltscr_opt[] = "--no-alt-screen";
-void main_noargs_print()
+void main_noargs_print( void )
 {
 	fprintf( stderr, "Usage: kilo <filename> [%s]\n", noaltscr_opt );
 	exit( 1 );
 }
-void main_args()
+void main_args( void )
 {
 	if( argn < 2 || argn > 3 )
 	{

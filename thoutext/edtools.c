@@ -200,7 +200,7 @@ void editorRefreshScreen( void )
  * end of the screen. */
 void editorSetStatusMessage( const char *fmt, ... )
 {
-#warning "Rework this to use the msgs stuff."
+#warning "Replace this with the msgs.h stuff, the funcs already exist.."
 	va_list ap;
 	va_start( ap,fmt );
 		vsnprintf( E.statusmsg, sizeof( E.statusmsg ), fmt, ap );

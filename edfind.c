@@ -68,7 +68,7 @@ void editorFind( int fd )
         msgs_build_note( &msgtmp,  "Search: %s (Use ESC/Arrows/Enter)", query );
 		if( E.modemsg )
 		{
-			E.modemsg->msgsflags |= msgs_flags_discard;
+			msgs_mark_discard( E.modemsg );
 		}
 		E.modemsg = msgtmp;
 		editorRefreshScreen();
@@ -83,7 +83,7 @@ void editorFind( int fd )
                 E.coloff = saved_coloff; E.rowoff = saved_rowoff;
             }
             FIND_RESTORE_HL;
-#warning "Replace this with setting the discard flag."
+#warning "Delete this once we finish moving to msgs."
             editorSetStatusMessage( "" );
             return;
         } else if( c == ARROW_RIGHT || c == ARROW_DOWN ) {
