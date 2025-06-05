@@ -52,6 +52,80 @@ static msgs_queue
 
 
 
+int msgs_mark_discard( msgs *msg )
+{
+	if( msg )
+	{
+		msg->msgsflags |= (unsigned char)( msgs_flags_discard );
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
+	/* Note that you should just use *_alert() in many cases. */
+int msgs_mark_unimportant( msgs *msg )
+{
+	if( msg )
+	{
+		msg->msgsflags &= (unsigned char)( ~msgs_flags_important );
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
+int msgs_mark_important( msgs *msg )
+{
+	if( msg )
+	{
+		msg->msgsflags |= (unsigned char)( msgs_flags_important );
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
+int msgs_mark_plainlife( msgs *msg )
+{
+	if( msg )
+	{
+		msg->msgsflags &= (unsigned char)( ~msgs_flags_timecalced );
+		/* We don't HAVE a "plain" valoue, we just leave it blank. */
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
+int msgs_mark_hardlife( msgs *msg )
+{
+	if( msg )
+	{
+		msg->msgsflags &= (unsigned char)( ~msgs_flags_timecalced );
+		msg->msgsflags |= msgs_flags_hardwired;
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
+int msgs_mark_timelife( msgs *msg, time_t relative )
+{
+	if( msg )
+	{
+		msg->msgsflags &= (unsigned char)( ~msgs_flags_timecalced );
+		msg->msgsflags |= msgs_flags_timepending;
+		msg->reftime = relative;
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
+
+
+
 int msgs_queue_init( msgs_queue *queue )
 {
 	if( queue )
@@ -255,7 +329,13 @@ static int msgs_innerbuild( msgs **ret,  const char *format, va_list *args )
 			return( -2 );
 		}
 		
-		*ret = (msgs*)malloc( sizeof( msgs ) + sizeof( char ) * ( i + 1 ) );
+			/* We've already checked the range, so we can reliably cast 'i'. */
+		*ret =
+			(msgs*)malloc
+			(
+				sizeof( msgs ) +
+				sizeof( char ) * ( (unsigned)i + 1 )
+			);
 		if( !( *ret ) )
 		{
 			return( -3 );
@@ -263,7 +343,8 @@ static int msgs_innerbuild( msgs **ret,  const char *format, va_list *args )
 		
 		**ret = (msgs){ 0 };
 		
-		( *ret )->buf.len = i;
+			/* We've already checked the range, so we can reliably cast 'i'. */
+		( *ret )->buf.len = (unsigned)i;
 		( *ret )->buf.b = (char*)( ( *ret ) + 1 );
 		
 		int i2 =
@@ -382,7 +463,7 @@ int msgs_build_alert( msgs **ret,  const char *format, ... )
 			}
 			
 				/* Visually distinguish this message as important. */
-			msg->msgsflags = msgs_flags_important;
+			msgs_mark_important( msg );
 			
 			/* Fall-through. */
 		}
@@ -427,7 +508,7 @@ int msgs_build_error( msgs **ret,  const char *format, ... )
 			}
 			
 				/* Visually distinguish this message as important. */
-			msg->msgsflags = msgs_flags_important;
+			msgs_mark_important( msg );
 			
 			/* Fall-through. */
 		}
@@ -470,7 +551,7 @@ int msgs_build_fatal( msgs **ret,  const char *format, ... )
 			}
 			
 				/* Visually distinguish this message as important. */
-			msg->msgsflags = msgs_flags_important;
+			msgs_mark_important( msg );
 			
 			/* Fall-through. */
 		}
@@ -623,6 +704,5 @@ void msgs_atexit( void )
 	}
 	
 	/* Done. */
-	;
 }
 

@@ -108,25 +108,33 @@
 	int msgs_build_error( msgs**,  const char*, ... );
 	int msgs_build_fatal( msgs**,  const char*, ... );
 	
+	int msgs_mark_discard( msgs* );
+	int msgs_mark_unimportant( msgs* );
+		/* Note that you should just use *_alert() in many cases. */
+	int msgs_mark_important( msgs* );
+	int msgs_mark_plainlife( msgs* );
+	int msgs_mark_hardlife( msgs* );
+	int msgs_mark_timelife( msgs *msg, time_t relative );
+	
 		/* Automatically chooses between notes/alerts, vs errors. Note that */
 		/*  this will also "initialize" any time-pending message that it */
 		/*  returns into a time-calculated message, but DOES NOT release any. */
-	struct abuf* msgs_peek();
+	struct abuf* msgs_peek( void );
 	
 		/* Shift msgs_peek() from it's current target, to it's next. This can */
 		/*  result in the "current" message being deallocated after */
 		/*  replacement (notes, alerts, or errors), or to be moved into the */
 		/*  "note/alert" queue (for errors). */
-	int msgs_rotate();
+	int msgs_rotate( void );
 	
 		/* Forcibly deletes the current target of msgs_peek(): note that this */
 		/*  DOES NOT update the peek until AFTER delinking the target, so */
 		/*  messages added since the last call to *_peek() will NEVER be */
 		/*  deleted by this function. */
-	int msgs_freecurrent();
+	int msgs_freecurrent( void );
 	
 		/* Prints the 'fatal' messages. This MUST be called after returning */
 		/*  to the normal state of the terminal. No free()s attemted. */
-	void msgs_atexit();
+	void msgs_atexit( void );
 	
 #endif
