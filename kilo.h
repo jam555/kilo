@@ -35,6 +35,10 @@
 
 
 
+/*
+	Interesting key combo: ctrl-/ to turn the current line into a
+	single-line comment.
+*/
 #define KILO_VERSION "0.0.1"
 
 #ifdef __linux__
@@ -64,7 +68,88 @@
 #include "msgs.h"
 
 
+/* 6/June/2025: I've decided (several days ago) to rename the system in */
+/*  general Thou (maybe it'll get memed on, but more importantly it */
+/*  referebces Kilo via "Thousand"), and the text-editor sub-tool Milli (to */
+/*  reference Kilo via SI prefixes, but to clearly be "smaller"). */
+	/* TODO: Rename stuff appropriately. */
+
 /* TODO: Find all of the "warning" directives, and fix them. */
+
+#warning "Attempting to add a character currently results in an out-of-bounds for editorRowInsertChar()."
+
+
+#define THOU_SEV_SEVERITY_0  ( 0x200 )  /* 512 */
+#define THOU_SEV_SEVERITY_1  ( 0x400 ) /* 1024 */
+#define THOU_SEV_SEVERITY_2  ( 0x600 ) /* 1536 */
+#define THOU_SEV_SEVERITY_3  ( 0x800 ) /* 2048 */
+
+#define THOU_SEV_SEVERITY_4  ( 0xA00 ) /* 2560 */
+#define THOU_SEV_SEVERITY_5  ( 0xC00 ) /* 3072 */
+#define THOU_SEV_SEVERITY_6  ( 0xE00 ) /* 3584 */
+#define THOU_SEV_SEVERITY_7 ( 0x1000 ) /* 4096 */
+
+#define THOU_SEV_SEVERITY_8 ( 0x1200 ) /* 4608 */
+#define THOU_SEV_SEVERITY_9 ( 0x1400 ) /* 5120 */
+#define THOU_SEV_SEVERITY_A ( 0x1600 ) /* 5632 */
+#define THOU_SEV_SEVERITY_B ( 0x1800 ) /* 6144 */
+
+#define THOU_SEV_SEVERITY_C ( 0x1A00 ) /* 6656 */
+#define THOU_SEV_SEVERITY_D ( 0x1C00 ) /* 7168 */
+#define THOU_SEV_SEVERITY_E ( 0x1E00 ) /* 7680 */
+#define THOU_SEV_SEVERITY_F ( 0x2000 ) /* 8192 */
+
+
+#ifndef THOU_SEV_STEP
+	#define THOU_SEV_STEP ( 1024 )
+#endif
+
+
+#ifndef THOU_SEV_NOTE
+	#define THOU_SEV_NOTE ( 1024 )
+#endif
+#ifndef THOU_SEV_ALERT
+	#define THOU_SEV_ALERT ( THOU_SEV_NOTE + THOU_SEV_STEP /* commonly 2048 */ )
+#endif
+#ifndef THOU_SEV_ERROR
+	#define THOU_SEV_ERROR ( THOU_SEV_ALERT + THOU_SEV_STEP /* commonly 3072 */ )
+#endif
+#ifndef THOU_SEV_FATAL
+	#define THOU_SEV_FATAL ( THOU_SEV_ERROR + THOU_SEV_STEP /* commonly 4096 */ )
+#endif
+
+
+#ifndef NDEBUG
+	
+	#define THOU_ASSERT( severity, comment, allowexit, exitval, condition ) \
+			( ( ( (severity) >= THOU_SEV_NOTE ) ? \
+				( \
+					( !( (int)( condition ) ) ) ? \
+						( \
+							( ( (severity) >= THOU_SEV_FATAL ) ? \
+								( msgs_build_fatal( (msgs**)0,  (comment) ) ) : \
+								( \
+									( (severity) >= THOU_SEV_ERROR ) ? \
+										( msgs_build_error( (msgs**)0,  (comment) ) ) : \
+										( \
+											( (severity) >= THOU_SEV_ALERT ) ? \
+												( msgs_build_alert( (msgs**)0,  (comment) ) ) : \
+												( msgs_build_note( (msgs**)0,  (comment) ) ) \
+										) \
+								) ), \
+							( (allowexit) && ( (severity) >= THOU_SEV_FATAL ) ) ? \
+								( exit( exitval ), 0 ) \
+						) \
+				) ), \
+			(void) )
+	
+#else
+	
+	#define THOU_ASSERT( severity, comment, allowexit, exitval, condition ) \
+		/* Discarded assert. */
+	
+#endif
+
 
  /* TODO: Move these into a header and wrap in ifdef()s for */
  /*  override support. */
