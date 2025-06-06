@@ -199,7 +199,7 @@ void editorRowInsertChar( erow *row, size_t at, int c )
         memmove( row->chars + at + 1, row->chars + at, row->size - at + 1 );
         row->size++;
     }
-    if( CHAR_MIN > c || c < CHAR_MAX )
+    if( CHAR_MIN > c || c > CHAR_MAX )
 	{
 		msgs_build_fatal
 		(
