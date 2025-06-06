@@ -135,20 +135,17 @@ static int inneryield( corohead *dest,  void *data, void (*func)( void ) )
 static void statview_fetchmsg_inner( void )
 {
 	/* Runs inside the coro. */
-	/* printf( "\nstatview_fetchmsg_inner() entered.\n" ); fflush( stdout ); */
+	/* printf( "\nstatview_fetchmsg_inner() entered.\n" ); */
 	
 	msgs_view msgsv;
 	
-	/* printf( "\tGetting aux:" );
-		fflush( stdout ); */
 	statstate *stats = (statstate*)( coro_getaux() );
-		/* printf( " %p\n", (void*)stats ); */
 	statview_view *sv = (statview_view*)( stats->data );
-	/* printf( "\tstatview_view: %p", (void*)sv );
-		fflush( stdout ); */
 	size_t usewid = sv->len;
-	/* printf( "\tusewid: %zu", usewid );
-		fflush( stdout ); */
+	int loop = 0;
+	/* printf( "\tusewid: %zu", usewid ); */
+	
+	afterloop:
 	msgsv = msgs_peek();
 	if( !msgsv.buf || !( msgsv.buf->b ) )
 	{
@@ -156,22 +153,35 @@ static void statview_fetchmsg_inner( void )
 		exit( 1 );
 	}
 	size_t slen = strlen( msgsv.buf->b );
-	/* printf( "\tstring length: %zu", slen );
-		fflush( stdout ); */
-	time_t t = time( (time_t*)0 );
 	
-	double dtime = difftime( t, stats->last_time );
-	if( dtime * 10 >= MILA_MESSAGESLOTH )
+	/* Increment per time. */
+	if( !loop )
 	{
-		stats->off += 1;
-		stats->last_time = t;
-	}
-	if( stats->off >= slen )
-	{
-		stats->off = 0;
+#warning "Move this to it's own function so time tracking can happen independently of display stuff."
+		time_t t = time( (time_t*)0 );
+		double dtime = difftime( t, stats->last_time );
+		if( dtime * 10 >= MILA_MESSAGESLOTH )
+		{
+			stats->off += 1;
+			stats->last_time = t;
+		}
+		if( stats->off >= slen )
+		{
+			stats->off = 0;
+			
+				/* Cycle to the next message. */
+			if( msgs_rotate() < 0 )
+			{
+				msgs_build_fatal( (msgs**)0,  "\tmsgs_rotate() failed in statview_fetchmsg_inner().\n" );
+				exit( 1 );
+			}
+			
+			loop = 1;
+			goto afterloop;
+		}
 	}
 	
-#warning "Do something to perpetuate the flags to later stages!"
+	/* "Output" the effective string && flags. */
 	if( slen <= usewid )
 	{
 		sv->start = msgsv.buf->b;
@@ -184,6 +194,7 @@ static void statview_fetchmsg_inner( void )
 			slen -= stats->off;
 		sv->len = ( slen > usewid ) ? usewid : slen ;
 	}
+	sv->msgsflags = msgsv.msgsflags;
 	
 	/* printf( "\tstatview_fetchmsg_inner() returning.\n" ); */
 	/* Just fall back to the coro-main() loop, that'll handle the rest. */
@@ -194,12 +205,7 @@ static void statview_coromain( corohead *head, void *data )
 {
 	(void)data;
 	
-	/* printf( "\nEntering statview_coromain" ); fflush( stdout );
-		printf
-		(
-			"( %p, %p )\n",
-				(void*)head, (void*)data
-		);
+	/* printf( "\nEntering statview_coromain" );
 	printf
 	(
 		"\tCalculated footer: %p\n",
@@ -208,16 +214,8 @@ static void statview_coromain( corohead *head, void *data )
 	
 	if( head )
 	{
-		/* printf( "\tThird printf.\n" ); */
 		
 		statstate stats;
-		
-		/* printf
-		(
-			"\tstatview_coromain():&stats == %p, head->aux == %d\n",
-				(void*)&stats,
-				(int)( head->auxiliary )
-		); */
 		
 		stats.head = head;
 		stats.last_time = time( (time_t*)0 );

@@ -44,6 +44,7 @@
 	{
 		char *start;
 		size_t len;
+		unsigned char msgsflags;
 		
 	} statview_view;
 	
