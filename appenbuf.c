@@ -158,6 +158,8 @@ void editorStatusLine
 	/* See editorStatusLine() for argument info. */
 void abMessageLine( struct abuf *ab, struct abuf *util )
 {
+	int loop = 0;
+	afterloop:
 	(void)util;
 	
 	size_t msglen;
@@ -171,9 +173,9 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 		msglen = strlen( msgsv.buf->b );
 	}
 	
+	
 	if
 	(
-		msglen &&
 		MILA_MESSAGETIMEOUTS ?
 			( time( NULL ) - E.statusmsg_time < 5 ) :
 			1
@@ -181,10 +183,23 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 	{
 		statview_view sv = { 0 };
 		
-		if( !statview_fetchmsg( E.statusinterface, E.screencols,  &sv ) )
+		if( !statview_fetchmsg( E.statusinterface, /* E.screencols */ 12,  &sv ) )
 		{
 			msgs_build_fatal( (msgs**)0,  "\tstatview_fetchmsg() failed in abMessageLine().\n" );
 			exit( 1 );
+		}
+		
+#warning "How do I get the damn messages to cycle?"
+		if( !loop && sv.len < 1 )
+		{
+			if( msgs_rotate() < 0 )
+			{
+				msgs_build_fatal( (msgs**)0,  "\tstatview_fetchmsg() failed in msgs_rotate().\n" );
+				exit( 1 );
+			}
+			
+			loop = 1;
+			goto afterloop;
 		}
 		
 		abAppend( ab, sv.start, sv.len );
