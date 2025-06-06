@@ -189,19 +189,6 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 			exit( 1 );
 		}
 		
-#warning "How do I get the damn messages to cycle?"
-		if( !loop && sv.len < 1 )
-		{
-			if( msgs_rotate() < 0 )
-			{
-				msgs_build_fatal( (msgs**)0,  "\tstatview_fetchmsg() failed in msgs_rotate().\n" );
-				exit( 1 );
-			}
-			
-			loop = 1;
-			goto afterloop;
-		}
-		
 		abAppend( ab, sv.start, sv.len );
 		abAppend( util, sv.start, sv.len );
 		
