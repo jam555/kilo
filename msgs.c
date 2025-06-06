@@ -615,6 +615,7 @@ msgs_view msgs_peek()
 int msgs_rotate()
 {
 	msgs *tmp;
+	int res;
 	
 	msgs_peek();
 	
@@ -656,7 +657,8 @@ int msgs_rotate()
 		return( 1 );
 	}
 	
-	if( !msgs_queue_rotate( &messages ) )
+	res = msgs_queue_rotate( &messages );
+	if( res < 0 )
 	{
 		return( -4 );
 	}
