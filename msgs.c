@@ -1,38 +1,37 @@
-/* Mila -- A very simple editor derived from Salvatore Sanfilippo's Kilo,
- *         a text editor in less than 1-kilo lines of code (as counted
- *         by "cloc"). Does not depend on libcurses, directly emits VT100
- *         escapes on the terminal.
+/* Thou:Milli -- A very simple editor derived from Salvatore Sanfilippo's Kilo,
+ *     a text editor in less than 1-kilo lines of code (as counted by "cloc").
+ *     Does not depend on libcurses, directly emits VT100 escapes on the
+ *     terminal.
  *
  * -----------------------------------------------------------------------
  *
- * msgs.h : A message-handling system
+ * msgs.c : A message-handling system
  *
  * Copyright (C) 2025 Jam555 <3349478+jam555@users.noreply.github.com>
  *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * modification, are permitted provided that the following conditions are met:
  *
- *  *  Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
+ *  *  Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
  *
- *  *  Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
+ *  *  Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdlib.h>
@@ -40,6 +39,7 @@
 #include <stdarg.h>
 #include <time.h>
 
+#include "kilo.h"
 #include "msgs.h"
 
 
@@ -49,6 +49,28 @@ static msgs_queue
 	messages = { 0, &( messages.head ) },
 	errors = { 0, &( errors.head ) },
 	fatalities = { 0, &( fatalities.head ) };
+
+
+
+int msgs_initmsg( msgs *recip,  unsigned char flags, char *text, size_t len )
+{
+	if( recip && text )
+	{
+		*recip =
+			(msgs)
+			{
+				(msgs*)0,
+				
+				(struct abuf){ text, len },
+				(time_t)0,
+				flags
+			};
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
 
 
 
@@ -170,7 +192,7 @@ int msgs_queue_append( msgs_queue *queue, msgs *val )
 {
 	if( queue )
 	{
-		if( !val )
+		if( !val || val->next || queue->tail == &( val->next ) )
 		{
 			return( 0 );
 		}
@@ -576,7 +598,7 @@ int msgs_build_fatal( msgs **ret,  const char *format, ... )
 			statview.c : statview_fetchmsg_inner()
 			appenbuf.c : abMessageLine()
 	*/
-msgs_view msgs_peek()
+msgs_view msgs_peek( void )
 {
 	msgs *tmp = errors.head;
 	
@@ -723,3 +745,103 @@ void msgs_atexit( void )
 	/* Done. */
 }
 
+
+
+int modemsgs_setmodal( int id )
+{
+	static msgs mainmsg, findmsg;
+	static msgs *active = 0;
+	static int is_init = 0;
+	
+	if( !is_init )
+	{
+		/* Init messages. */
+		
+			/* Note that the max length for a line is currentlt UINT32_MAX */
+			/*  stored characters (NOT displayed characters). */
+		static const char
+			*mainmsg_ = "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find",
+			*findmsg_ = "Search: %s (Use ESC/Arrows/Enter)";
+		
+		if
+		(
+			!msgs_initmsg
+			(
+				&mainmsg,
+				
+				msgs_flags_hardwired,
+				mainmsg_,
+				strlen( mainmsg_ )
+			)
+		)
+		{
+			/* Ignore this. */
+		}
+		if
+		(
+			!msgs_initmsg
+			(
+				&findmsg,
+				
+				msgs_flags_hardwired,
+				findmsg_,
+				strlen( findmsg_ )
+			)
+		)
+		{
+			
+			/* Ignore this. */
+		}
+		
+		is_init = 1;
+	}
+	
+	switch( id )
+	{
+		case MODEMSGS_MILLI_MAIN:
+			if( active != &mainmsg )
+			{
+				mainmsg.msgsflags = msgs_flags_hardwired;
+				if( msgs_queue_append( &messages, &mainmsg ) < 0 )
+				{
+					return( -2 );
+				}
+				if( active )
+				{
+					active->msgsflags |= msgs_flags_discard;
+				}
+				active = &mainmsg;
+				return( 1 );
+				
+			} else if( mainmsg.msgsflags & msgs_flags_discard == msgs_flags_discard )
+			{
+				mainmsg.msgsflags ^= msgs_flags_discard;
+			}
+			return( 1 );
+		case MODEMSGS_MILLI_FIND:
+			if( active != &findmsg )
+			{
+				findmsg.msgsflags = msgs_flags_hardwired;
+				if( msgs_queue_append( &messages, &findmsg ) < 0 )
+				{
+					return( -2 );
+				}
+				if( active )
+				{
+					active->msgsflags |= msgs_flags_discard;
+				}
+				active = &findmsg;
+				return( 1 );
+				
+			} else if( findmsg.msgsflags & msgs_flags_discard == msgs_flags_discard )
+			{
+				findmsg.msgsflags ^= msgs_flags_discard;
+			}
+			return( 1 );
+		default:
+			E.deathrattle = "\nmodemsgs_setmodal() \"unknown arg\" failure.\n";
+			break;
+	}
+	
+	return( -1 );
+}

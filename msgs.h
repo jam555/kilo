@@ -1,7 +1,7 @@
-/* Mila -- A very simple editor derived from Salvatore Sanfilippo's Kilo,
- *         a text editor in less than 1-kilo lines of code (as counted
- *         by "cloc"). Does not depend on libcurses, directly emits VT100
- *         escapes on the terminal.
+/* Thou:Milli -- A very simple editor derived from Salvatore Sanfilippo's Kilo,
+ *     a text editor in less than 1-kilo lines of code (as counted by "cloc").
+ *     Does not depend on libcurses, directly emits VT100 escapes on the
+ *     terminal.
  *
  * -----------------------------------------------------------------------
  *
@@ -12,27 +12,26 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * modification, are permitted provided that the following conditions are met:
  *
- *  *  Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
+ *  *  Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
  *
- *  *  Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
+ *  *  Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef MSGS_H
@@ -83,12 +82,19 @@
 		
 	} msgs_view;
 	
+	
+	
+	int msgs_initmsg( msgs *recip,  unsigned char flags, char *text, size_t len );
+	
+	
+	
 		/* Note that the e.g. error queue are statically initialized. */
 	int msgs_queue_init( msgs_queue *queue );
 	int msgs_queue_pop( msgs_queue *queue,  msgs **recip );
 	int msgs_queue_append( msgs_queue *queue, msgs *val );
 	int msgs_queue_rotate( msgs_queue *queue );
 	int msgs_queue_deinit( msgs_queue *queue );
+	
 	
 	
 		/* Uses common vsnprintf() to parse it's args into a message string, */
@@ -143,5 +149,12 @@
 		/* Prints the 'fatal' messages. This MUST be called after returning */
 		/*  to the normal state of the terminal. No free()s attemted. */
 	void msgs_atexit( void );
+	
+	
+	
+	#define MODEMSGS_MILLI_MAIN 1
+	#define MODEMSGS_MILLI_FIND 2
+	
+	int modemsgs_setmodal( int id );
 	
 #endif
