@@ -335,6 +335,7 @@ void initEditor( void )
 	E.externcols = 0;
 	E.statusinterface = statview_build();
 	E.modemsg = 0;
+	E.deathrattle = 0;
 	
     if( !E.altscr && !E.no_altscr )
     {

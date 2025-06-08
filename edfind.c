@@ -41,7 +41,7 @@
 
 void editorFind( int fd )
 {
-    char query[ KILO_QUERY_LEN + 1 ] = {0};
+    char query[ KILO_QUERY_LEN + 1 ] = { 0 };
     int qlen = 0;
     int last_match = -1; /* Last line where a match was found. -1 for none. */
     int find_next = 0; /* if 1 search next, if -1 search prev. */
@@ -63,43 +63,86 @@ void editorFind( int fd )
 
     while( 1 ) {
         /* editorSetStatusMessage( "Search: %s (Use ESC/Arrows/Enter)", query ); */
-				/* Should this be note, or alert? */
-        msgs_build_note( &msgtmp,  "Search: %s (Use ESC/Arrows/Enter)", query );
+			/* Should this be note, or alert? */
+		/*
+		msgs_build_note( &msgtmp,  "Search: %s (Use ESC/Arrows/Enter)", query );
 		if( E.modemsg )
 		{
 			msgs_mark_discard( E.modemsg );
 		}
 		E.modemsg = msgtmp;
+		*/
+		int res = modemsgs_setmodal( MODEMSGS_MILLI_FIND );
+		switch( res )
+		{
+			case 0:
+			case 1:
+				break;
+			case -1:
+				/* .deathrattle is already set. */
+				exit( 1 );
+			case -2:
+				E.deathrattle = "\neditorFind() : modemsgs_setmodal() : msgs_queue_append() failure.\n";
+				exit( 1 );
+			default:
+				E.deathrattle = "\neditorFind unforeseen failure 1.\n";
+				exit( 2 );
+		}
 		editorRefreshScreen();
+		
+		int c = editorReadKey( fd );
+		if( c == DEL_KEY || c == CTRL_H || c == BACKSPACE )
+		{
+			if( qlen != 0 )
+			{
+				query[ --qlen ] = '\0';
+			}
+			last_match = -1;
+			
+		} else if( c == ESC || c == ENTER )
+		{
+			if( c == ESC )
+			{
+				E.cx = saved_cx;
+				E.cy = saved_cy;
+				E.coloff = saved_coloff;
+				E.rowoff = saved_rowoff;
+			}
+			FIND_RESTORE_HL;
+			if( modemsgs_setmodal( MODEMSGS_MILLI_MAIN ) < 0 )
+			{
+					/* Note: do something to pass on a message... maybe pre-specced exit values? */
+				E.deathrattle = "\neditorFind unforeseen failure 2.\n";
+				exit( 2 );
+			}
+			/* editorSetStatusMessage( "" ); */
+			return;
 
-        int c = editorReadKey( fd );
-        if( c == DEL_KEY || c == CTRL_H || c == BACKSPACE ) {
-            if( qlen != 0 ) query[ --qlen ] = '\0';
-            last_match = -1;
-        } else if( c == ESC || c == ENTER ) {
-            if( c == ESC ) {
-                E.cx = saved_cx; E.cy = saved_cy;
-                E.coloff = saved_coloff; E.rowoff = saved_rowoff;
-            }
-            FIND_RESTORE_HL;
-#warning "Delete this once we finish moving to msgs."
-            /* editorSetStatusMessage( "" ); */
-            return;
-        } else if( c == ARROW_RIGHT || c == ARROW_DOWN ) {
-            find_next = 1;
-        } else if( c == ARROW_LEFT || c == ARROW_UP ) {
-            find_next = -1;
-        } else if( isprint( c ) ) {
-            if( qlen < KILO_QUERY_LEN ) {
-                query[ qlen++ ] = (char)c; /* Trust isprint() */
-                query[ qlen ] = '\0';
-                last_match = -1;
-            }
-        }
-
-        /* Search occurrence. */
-        if( last_match == -1 ) find_next = 1;
-        if( find_next ) {
+		} else if( c == ARROW_RIGHT || c == ARROW_DOWN )
+		{
+			find_next = 1;
+			
+		} else if( c == ARROW_LEFT || c == ARROW_UP )
+		{
+			find_next = -1;
+			
+		} else if( isprint( c ) )
+		{
+			if( qlen < KILO_QUERY_LEN )
+			{
+				query[ qlen++ ] = (char)c; /* Trust isprint() */
+				query[ qlen ] = '\0';
+				last_match = -1;
+			}
+		}
+		
+		/* Search occurrence. */
+		if( last_match == -1 )
+		{
+			find_next = 1;
+		}
+		if( find_next )
+		{
             char *match = NULL;
             int match_offset = 0;
             int i, current = last_match;

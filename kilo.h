@@ -76,6 +76,58 @@
 
 /* TODO: Find all of the "warning" directives, and fix them. */
 
+/*
+	TODO: Get the "find" message to properly swap back to the "hotkeys" message.
+		Note: This needs a new subsystem to manage WHICH of the "mode-specific" messages are displayed at a time,
+		so that it'll be simpler to handle: write it.
+	TODO: Start using the flags returned from the statview stuff to draw "markup text".
+		Note: The markup text is used to mark status line sub-fields, and is mostly important for adaptive layout
+		stuff. There should PROBABLY be a bg/fg swap to distinguish them, AND they should exist at both the start
+		AND end of a sub-field, not just one or the other. They should also be distinctive from each other, as
+		their purpose is mostly to distinguish sub-fields when only a subset can be displayed at a time.
+	TODO: Start using the assert stuff below.
+	TODO: Move the "execute inside coroutine" stuff from statview to coro.
+	TODO: Coroutine-based non-blocking I/O routines.
+	TODO: Seperate code to do updates from code to do renders, for e.g. better marques.
+	TODO: Move the message into the status line.
+	TODO: Adaptive handling of the various file/message/row data, in case the terminal gets resized.
+		Note: This involves message-cycling- just use the msgs_queue stuff.
+	TODO: ???
+*/
+/*
+	Wishlist:
+		Multi-document Milli
+		Hex Editor (call it Runes, include multi-doc)
+		CLI (not a mode, always at the bottom, controls the program rather than OS, maybe scriptable)
+			Hooks for TinyC, Lua, TCL, maybe more? Forth? There's a mini-Javascript that might be useful. Is
+			there a BASIC that can be used? Anything else?
+			Select/Insert/Copy/Cut/Delete for Milli & Runes, and CLI.
+			Better/heavier-duty text-file edit scheme (we aren't using ropes yet, are we?) for Milli & Runes
+		
+		Minesweeper
+		
+		"Menu/button mode"; configurable, to allow TUI execution of e.g. arbitrary Makefile targets, meant
+			to improve usefullness as IDE/project-manager
+		Calculator (scriptable? graphing? RPN & Infix switchable? arbitrary-length numbers? !!!Base
+			Conversion & Programmer's commands!!! Sign-bit/1s-complement/2s-complement conversion!
+			If ALN, then BCD/Packed-BCD/ASCII/EBCDIC/Binary conversions.
+			If scriptable, then SEPERATE EXECUTABLE for crash-resistance, and struct{} + C-like operators +
+			Meta-C -like operator-overloading + gc + coroutines; DO NOT attempt to make a "solver")
+		Contacts management
+			Use a common format, use same format for e.g. CONTRIBUTORS
+		
+		Extended keyboard support (XTerm, Kitty, that thing Kitty is based on)
+		Unix-Ed over remote connection as I/O option (to deal with remote servers)
+			Vi-mode for the same?
+		Multi-terminal mode (use a sub-program to simplify I/O, 1 instance per terminal: should be fine to
+			have a variant that uses NCurses, another for PDCurses, maybe another for SDL, maybe another for
+			bare-metal MDA/CGA/EGA/VGA, preferably another for RS-232 character-LCD)
+		
+		Hierarchal config files (go looking all the way to root, include a "additional configs" option for e.g.
+			/etc configs); "leaf-most" (as opposed to root-most) files are dominant
+		Extend config file syntax all the way to "project management" & "IDE" level (even if just slightly)
+*/
+
 #warning "Attempting to add a character currently results in an out-of-bounds for editorRowInsertChar()."
 
 
@@ -249,6 +301,7 @@ struct editorConfig {
 	statstate *statusinterface;
 		/* Replaces statusmsg. */
 	msgs *modemsg;
+	char *deathrattle;
 };
 
 enum KEY_ACTION{

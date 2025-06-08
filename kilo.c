@@ -167,10 +167,12 @@ int main_coro( void *ign )
     editorSelectSyntaxHighlight( args[ 1 ] );
     editorOpen( args[ 1 ] );
     enableRawMode( STDIN_FILENO );
-		/* TODO: This message needs to be displayed by default! */
-		/* Note that the max length for a line is currentlt UINT32_MAX stored characters (NOT displayed characters). */
     /* editorSetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" ); */
-	msgs_build_note( &( E.modemsg ),  "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" );
+	/* msgs_build_note( &( E.modemsg ),  "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" ); */
+	if( !modemsgs_setmodal( MODEMSGS_MILLI_MAIN ) )
+	{
+		/* Ignore for now. */
+	}
     while( 1 )
 	{
         editorRefreshScreen();
@@ -189,6 +191,10 @@ void main_atexit( void )
 	
 	fflush( stderr );
 	fflush( stdout );
+	if( E.deathrattle )
+	{
+		printf( E.deathrattle );
+	}
 	fprintf( stdout,  "\nKilo is exiting.\n" );
 	fflush( stdout );
 }
