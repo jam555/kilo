@@ -97,6 +97,8 @@
 	TODO: Adaptive handling of the various file/message/row data, in case the terminal gets resized.
 		Note: This involves message-cycling- just use the msgs_queue stuff.
 	TODO: Build a "metaterm" to represent concepts (e.g. marques, and markup-text surrounding sub-fields).
+	TODO: While testing the status-message stuff, the cursor somehow got stuck inside the status message area:
+		hunt this down asnd fix (entered C-f, then exited, was doing lots of scrolling the whole time).
 */
 /*
 	Wishlist:

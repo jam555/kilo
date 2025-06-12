@@ -16,7 +16,7 @@ other coroutine functions to threads that have called cocontext(), but haven't
 returned from it yet. BEWARE, the use of things like Shadow Stacks and other
 stack-protection mechanisms can interfere with the usage of coroutines if a
 coroutine library doesn't integrate with them, and this system doesn't currently
-make ANY attempts to integrate with such systems: beware, using this system on
+make ANY attempts to integrate with such systems: be aware, using this system on
 computers using those systems can easily lead to unpredictable behavior.
 	cocontext() initializes a per-thread coroutine structure that CANNOT be
 reliably accessed by other threads: don't resist this, just leave it to it's
