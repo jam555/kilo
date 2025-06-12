@@ -70,29 +70,33 @@
 
 /* 6/June/2025: I've decided (several days ago) to rename the system in */
 /*  general Thou (maybe it'll get memed on, but more importantly it */
-/*  referebces Kilo via "Thousand"), and the text-editor sub-tool Milli (to */
+/*  refereces Kilo via "Thousand"), and the text-editor sub-tool Milli (to */
 /*  reference Kilo via SI prefixes, but to clearly be "smaller"). */
 	/* TODO: Rename stuff appropriately. */
 
 /* TODO: Find all of the "warning" directives, and fix them. */
 
 /*
-	TODO: Get the "find" message to properly swap back to the "hotkeys" message.
-		Note: This needs a new subsystem to manage WHICH of the "mode-specific" messages are displayed at a time,
-		so that it'll be simpler to handle: write it.
+	
+	!!!
+	TODO: Move the "execute inside coroutine" stuff from statview to coro.
+	!!!
+		Do this one first!
+	!!!
+	
+	TODO: Get the "mode" status messages to swap out faster.
 	TODO: Start using the flags returned from the statview stuff to draw "markup text".
 		Note: The markup text is used to mark status line sub-fields, and is mostly important for adaptive layout
 		stuff. There should PROBABLY be a bg/fg swap to distinguish them, AND they should exist at both the start
 		AND end of a sub-field, not just one or the other. They should also be distinctive from each other, as
 		their purpose is mostly to distinguish sub-fields when only a subset can be displayed at a time.
 	TODO: Start using the assert stuff below.
-	TODO: Move the "execute inside coroutine" stuff from statview to coro.
 	TODO: Coroutine-based non-blocking I/O routines.
 	TODO: Seperate code to do updates from code to do renders, for e.g. better marques.
 	TODO: Move the message into the status line.
 	TODO: Adaptive handling of the various file/message/row data, in case the terminal gets resized.
 		Note: This involves message-cycling- just use the msgs_queue stuff.
-	TODO: ???
+	TODO: Build a "metaterm" to represent concepts (e.g. marques, and markup-text surrounding sub-fields).
 */
 /*
 	Wishlist:
