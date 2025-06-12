@@ -82,6 +82,26 @@ static statstate* get_stats( corohead *dest )
 	/* printf( "\tFailure return.\n" ); fflush( stdout ); */
 	return( 0 );
 }
+static void helper( void *ign )
+{
+	(void)ign;
+	
+	if
+	(
+		(statstate*)( coro_getaux() ) &&
+		( (statstate*)( coro_getaux() ) )->func
+	)
+	{
+		statstate *stats = (statstate*)( coro_getaux() );
+		
+		void (*func)( void ) = stats->func;
+		void *data = stats->data;
+		
+		stats->func = 0;
+			func();
+		stats->data = 0;
+	}
+}
 static int inneryield( corohead *dest,  void *data, void (*func)( void ) )
 {
 	/* printf( "\nEntering inneryield" ); fflush( stdout );
@@ -105,24 +125,9 @@ static int inneryield( corohead *dest,  void *data, void (*func)( void ) )
 		}
 		
 			/* printf( "\tinneryield(): calling coyield().\n" ); fflush( stdout ); */
-		coyield( dest );
+		/* coyield( dest ); */
+		coyield2( dest, (corohead**)0,  (void*)0, &helper );
 			/* printf( "\n\tinneryield(): returned from coyield().\n" ); fflush( stdout ); */
-		
-		if
-		(
-			(statstate*)( coro_getaux() ) &&
-			( (statstate*)( coro_getaux() ) )->func
-		)
-		{
-			stats = (statstate*)( coro_getaux() );
-			
-			func = stats->func;
-			data = stats->data;
-			
-			stats->func = 0;
-				func();
-			stats->data = 0;
-		}
 		
 		return( 1 );
 	}

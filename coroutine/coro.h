@@ -221,6 +221,13 @@ struct corohead
 	
 	uintptr_t auxiliary;
 	
+	struct
+	{
+		void *data;
+		void (*func)( void* );
+		
+	} yield_akron;
+	
 	jmp_buf state;
 };
 	/* Note that the stack frame for this SHOULD perfectly overlap this */
@@ -258,6 +265,7 @@ int cocontext( void *data, int (*func)( void* ) );
 	);
 		uintptr_t coro_getaux( void );
 		int coyield( corohead *dest );
+		int coyield2( corohead *dest, corohead **volatile old,  void *data, void (*func)( void* ) );
 	void coclean( void );
 
 

@@ -117,6 +117,8 @@ int cocontext( void *data, int (*func)( void* ) )
 			
 			0,				/* uintptr_t auxiliary; */
 			
+			{ 0 },			/* akron. */
+			
 			{{{0}}}			/* jmp_buf state; */
 		};
 #pragma GCC diagnostic pop
@@ -319,6 +321,8 @@ int cobuild
 			head->lastbyte_b = (corobody*)alloc;
 			head->conclude = conclude;
 			head->auxiliary = coro_auxiliarydata;
+			head->yield_akron.data = (void*)0;
+			head->yield_akron.func = (void (*)( void* ))0;
 			/* head->state gets initialized a bit later. */
 			
 			/* Update alloc. */
@@ -393,6 +397,10 @@ uintptr_t coro_getaux( void )
 
 int coyield( corohead *dest )
 {
+	return( coyield2( dest, (corohead**)0,  (void*)0, (void (*)( void* ))0 ) );
+}
+int coyield2( corohead *dest, corohead **volatile old,  void *data, void (*func)( void* ) )
+{
 	/*
 	printf( "\ncoyield( %p ) entered.\n", (void*)dest );
 	printf( "        main: %p\n", (void*)( &main_fiber ) );
@@ -411,17 +419,34 @@ int coyield( corohead *dest )
 			return( CORO_DONE );
 		}
 		
+		dest->yield_akron.data = data;
+		dest->yield_akron.func = func;
 		/* printf( "\ncoyield(): setjmp( %p ->state )\n", (void*)current_fiber ); */
 		int res = setjmp( ( (corohead*)current_fiber )->state );
 		if( !res )
 		{
 			/* printf( "\n  coyield(): calling longjmp( %p ->state ).\n", (void*)dest ); */
+			if( old )
+			{
+				*old = (corohead*)current_fiber;
+			}
 			current_fiber = dest;
 			longjmp( dest->state, CORO_WORKING );
 		}
 		
 			/* Let's take advantage to get rid of any accumulated debris. */
 		coclean();
+		
+		if( ( (corohead*)current_fiber )->yield_akron.func )
+		{
+			data = ( (corohead*)current_fiber )->yield_akron.data;
+			func = ( (corohead*)current_fiber )->yield_akron.func;
+			
+			current_fiber->yield_akron.data = 0;
+			current_fiber->yield_akron.func = 0;
+			
+			func( data );
+		}
 		
 		return( res );
 	}
