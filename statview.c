@@ -62,7 +62,7 @@ struct statstate
 static const size_t allocation = 8 * 1024;
 
 
-static void statview_fetchmsg_inner( void );
+static void statview_fetchmsg_inner( void* );
 static int inneryield( corohead *dest,  void *data, void (*func)( void ) );
 
 
@@ -109,24 +109,9 @@ static int inneryield( corohead *dest,  void *data, void (*func)( void ) )
 	
 	if( dest )
 	{
-		/* printf( "\tget_stats( %p ) == ", (void*)dest ); fflush( stdout ); */
-		statstate *stats = get_stats( dest );
-			/* printf( "%p\n", (void*)stats ); fflush( stdout ); */
-		if( stats )
-		{
-			/* printf( "\tdata == %p", data ); fflush( stdout ); */
-			stats->data = data;
-			/* printf( ", func == %p\n", (void*)func ); fflush( stdout ); */
-			stats->func = func;
-			
-		} else {
-			
-			/* printf( "\tNo valid initializations.\n" ); fflush( stdout ); */
-		}
-		
 			/* printf( "\tinneryield(): calling coyield().\n" ); fflush( stdout ); */
 		/* coyield( dest ); */
-		coyield2( dest, (corohead**)0,  (void*)0, &helper );
+		coyield2( dest, (corohead**)0,  data, func );
 			/* printf( "\n\tinneryield(): returned from coyield().\n" ); fflush( stdout ); */
 		
 		return( 1 );
@@ -137,7 +122,7 @@ static int inneryield( corohead *dest,  void *data, void (*func)( void ) )
 }
 
 
-static void statview_fetchmsg_inner( void )
+static void statview_fetchmsg_inner( void *v_ )
 {
 	/* Runs inside the coro. */
 	/* printf( "\nstatview_fetchmsg_inner() entered.\n" ); */
@@ -145,7 +130,7 @@ static void statview_fetchmsg_inner( void )
 	msgs_view msgsv;
 	
 	statstate *stats = (statstate*)( coro_getaux() );
-	statview_view *sv = (statview_view*)( stats->data );
+	statview_view *sv = (statview_view*)v_;
 	size_t usewid = sv->len;
 	int loop = 0;
 	/* printf( "\tusewid: %zu", usewid ); */
