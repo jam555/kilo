@@ -84,7 +84,6 @@
 		Do this one first!
 	!!!
 	
-	TODO: Get the "mode" status messages to swap out faster.
 	TODO: Start using the flags returned from the statview stuff to draw "markup text".
 		Note: The markup text is used to mark status line sub-fields, and is mostly important for adaptive layout
 		stuff. There should PROBABLY be a bg/fg swap to distinguish them, AND they should exist at both the start

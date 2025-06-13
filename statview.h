@@ -48,7 +48,10 @@
 		
 	} statview_view;
 	
+		/* Sets the statview_view according to the state & */
+		/*  usable_width. */
 	int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data );
+		/* Builds the statstate that *_fetchmsg() needs. */
 	statstate* statview_build( void );
 	
 #endif
