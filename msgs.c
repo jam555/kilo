@@ -178,6 +178,11 @@ int msgs_queue_pop( msgs_queue *queue,  msgs **recip )
 				/* Reset. */
 				
 				queue->tail = &( queue->head );
+				
+			} else {
+				
+				/* queue->head should have a target, mark as fresh. */
+				queue->head->msgsflags |= msgs_flags_fresh;
 			}
 			
 			return( 1 );
@@ -197,6 +202,10 @@ int msgs_queue_append( msgs_queue *queue, msgs *val )
 			return( 0 );
 		}
 		
+		if( queue->tail == &( queue->head ) )
+		{
+			val->msgsflags |= msgs_flags_fresh;
+		}
 		*( queue->tail ) = val;
 		queue->tail = &( val->next );
 		
@@ -601,6 +610,7 @@ int msgs_build_fatal( msgs **ret,  const char *format, ... )
 msgs_view msgs_peek( void )
 {
 	msgs *tmp = errors.head;
+	int isfresh = 0;
 	
 	if( !tmp )
 	{
@@ -616,13 +626,19 @@ msgs_view msgs_peek( void )
 			tmp->reftime += time( 0 );
 			tmp->msgsflags |= msgs_flags_timecalced;
 		}
+		if( ( tmp->msgsflags & msgs_flags_fresh ) == msgs_flags_fresh )
+		{
+			tmp->msgsflags &= ~( (unsigned char)msgs_flags_fresh );
+			isfresh = 1;
+		}
 		
 		return
 		(
 			(msgs_view)
 			{
 				&( tmp->buf ),
-				tmp->msgsflags
+				tmp->msgsflags |
+					( isfresh ? msgs_flags_fresh : 0 )
 			}
 		);
 	}

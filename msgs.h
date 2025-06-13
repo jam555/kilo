@@ -75,7 +75,14 @@
 			/*  the needed time. */
 		msgs_flags_timepending = 8,
 			/* Pay attention to the time. */
-		msgs_flags_timecalced = 12
+		msgs_flags_timecalced = 12,
+		
+			/* "Never" set on msgs themselves, artificially inserted on */
+			/*  rotation. queue pop() and append() will set this on */
+			/*  occasion, but the user will have to clear it on their */
+			/*  own (note that peek() does exactly that: the logic is */
+			/*  fairly simple, take a look). */
+		msgs_flags_fresh = 16
 		
 	} msgs_flags;
 	struct msgs
@@ -135,6 +142,10 @@
 		/* Automatically chooses between notes/alerts, vs errors. Note that */
 		/*  this will also "initialize" any time-pending message that it */
 		/*  returns into a time-calculated message, but DOES NOT release any. */
+		/* NOTE: This will return msgs_flags_fresh if it's set on the current */
+		/*  message, but WILL ALSO clear it at the same time: this is NOT a */
+		/*  bug, that is ONLY meant to mark that a message has been freshly */
+		/*  moved into place for those things that care. */
 	msgs_view msgs_peek( void );
 	
 		/* Shift msgs_peek() from it's current target, to it's next. This can */
