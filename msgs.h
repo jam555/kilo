@@ -42,6 +42,24 @@
 	
 	typedef struct msgs msgs;
 	
+	
+	
+	typedef struct msgs_queue
+	{
+		msgs *head, **tail;
+		
+	} msgs_queue;
+	
+	
+		/* Note that the e.g. error queue are statically initialized. */
+	int msgs_queue_init( msgs_queue *queue );
+	int msgs_queue_pop( msgs_queue *queue,  msgs **recip );
+	int msgs_queue_append( msgs_queue *queue, msgs *val );
+	int msgs_queue_rotate( msgs_queue *queue );
+	int msgs_queue_deinit( msgs_queue *queue );
+	
+	
+	
 	typedef enum
 	{
 			/* This message isn't needed anymore, free it. */
@@ -69,11 +87,6 @@
 			/* Use values from msgs_flags. */
 		unsigned char msgsflags;
 	};
-	typedef struct msgs_queue
-	{
-		msgs *head, **tail;
-		
-	} msgs_queue;
 	typedef struct msgs_view
 	{
 		struct abuf *buf;
@@ -83,18 +96,8 @@
 	} msgs_view;
 	
 	
-	
+		/* For initializing a preallocated message. */
 	int msgs_initmsg( msgs *recip,  unsigned char flags, char *text, size_t len );
-	
-	
-	
-		/* Note that the e.g. error queue are statically initialized. */
-	int msgs_queue_init( msgs_queue *queue );
-	int msgs_queue_pop( msgs_queue *queue,  msgs **recip );
-	int msgs_queue_append( msgs_queue *queue, msgs *val );
-	int msgs_queue_rotate( msgs_queue *queue );
-	int msgs_queue_deinit( msgs_queue *queue );
-	
 	
 	
 		/* Uses common vsnprintf() to parse it's args into a message string, */
@@ -123,7 +126,7 @@
 	
 	int msgs_mark_discard( msgs* );
 	int msgs_mark_unimportant( msgs* );
-		/* Note that you should just use *_alert() in many cases. */
+		/* Note that you should just use *_alert() in almost all cases. */
 	int msgs_mark_important( msgs* );
 	int msgs_mark_plainlife( msgs* );
 	int msgs_mark_hardlife( msgs* );
