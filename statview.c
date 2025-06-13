@@ -108,7 +108,7 @@ static void statview_fetchmsg_inner( void *v_ )
 	/* Runs inside the coro. */
 	/* printf( "\nstatview_fetchmsg_inner() entered.\n" ); */
 	
-	msgs_view msgsv;
+	msgs_view msgsv = { 0 };
 	
 	statstate *stats = (statstate*)( coro_getaux() );
 	statview_view *sv = (statview_view*)v_;
@@ -117,11 +117,36 @@ static void statview_fetchmsg_inner( void *v_ )
 	/* printf( "\tusewid: %zu", usewid ); */
 	
 	afterloop:
-	msgsv = msgs_peek();
-	if( !msgsv.buf || !( msgsv.buf->b ) )
+	while( !( msgsv.buf ) )
 	{
-		msgs_build_fatal( (msgs**)0,  "statview.c : statview_fetchmsg_inner() couldn't get a source buf." );
-		exit( 1 );
+		msgsv = msgs_peek();
+		if( !msgsv.buf || !( msgsv.buf->b ) )
+		{
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					"statview.c : statview_fetchmsg_inner() couldn't get a source buf."
+			);
+			exit( 1 );
+		}
+		if
+		(
+			( msgsv.msgsflags & msgs_flags_discard ) ==
+			msgs_flags_discard
+		)
+		{
+			int res = msgs_rotate();
+			if( !res )
+			{
+				msgs_build_fatal
+				(
+					(msgs**)0,
+						"statview.c : msgs_rotate() returned error: %d",
+						res
+				);
+				exit( 1 );
+			}
+		}
 	}
 	size_t slen = strlen( msgsv.buf->b );
 	
