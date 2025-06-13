@@ -63,7 +63,6 @@ static const size_t allocation = 8 * 1024;
 
 
 static void statview_fetchmsg_inner( void* );
-static int inneryield( corohead *dest,  void *data, void (*func)( void ) );
 
 
 
@@ -101,24 +100,6 @@ static void helper( void *ign )
 			func();
 		stats->data = 0;
 	}
-}
-static int inneryield( corohead *dest,  void *data, void (*func)( void ) )
-{
-	/* printf( "\nEntering inneryield" ); fflush( stdout );
-		printf( "( %p,  %p, %p )\n", (void*)dest, data, (void*)func ); fflush( stdout );  */
-	
-	if( dest )
-	{
-			/* printf( "\tinneryield(): calling coyield().\n" ); fflush( stdout ); */
-		/* coyield( dest ); */
-		coyield2( dest, (corohead**)0,  data, func );
-			/* printf( "\n\tinneryield(): returned from coyield().\n" ); fflush( stdout ); */
-		
-		return( 1 );
-	}
-	
-	/* printf( "\tbad args. dest == %p, func == %p\n", (void*)dest, (void*)func ); fflush( stdout ); */
-	return( -1 );
 }
 
 
@@ -214,8 +195,8 @@ static void statview_coromain( corohead *head, void *data )
 		int loop = 1 /*CORO_WORKING*/ ;
 		while( loop == 1 /*CORO_WORKING*/ )
 		{
-			/* printf( "\tcalling inneryield()\n" ); fflush( stdout ); */
-			loop = inneryield( &main_fiber,  (void*)0, (void (*)())0 );
+			/* printf( "\tcalling coyield()\n" ); fflush( stdout ); */
+			loop = coyield( &main_fiber );
 		}
 	}
 	/* printf( "\tExiting statview_coromain().\n" ); */
@@ -256,7 +237,7 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 		fflush( stdout );
 		data->len = usable_width;
 		
-		inneryield( stats->head,  (void*)data, &statview_fetchmsg_inner );
+		coyield2( stats->head, (corohead**)0,  (void*)data, &statview_fetchmsg_inner );
 		
 		/* printf( "\tstatview_fetchmsg() successful exit.\n" ); */
 		return( 1 );
