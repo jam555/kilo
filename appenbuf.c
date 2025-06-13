@@ -282,6 +282,7 @@ void abStatusLine
 {
 	(void)util;
 	
+	
 	/* Prepare the file status info. */
 	int tmp =
 		snprintf
@@ -305,6 +306,7 @@ void abStatusLine
 		fstat_len = E.screencols;
 	}
 	
+	
 	/* Prepare the row/cursor status info. */
 	tmp =
 		snprintf
@@ -318,6 +320,7 @@ void abStatusLine
 		exit( 1 );
 	}
 	rstat_len = (size_t)tmp;
+	
 	
 	/* Calc & render the final status line. */
 	statview_view sv = { 0 };
@@ -362,6 +365,10 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 	int loop = 0;
 	afterloop:
 	(void)util;
+	
+	abAppend( ab,  " ", 1 );
+	abAppend( util,  " ", 1 );
+	return;
 	
 	size_t msglen;
 	msgs_view msgsv = msgs_peek();
