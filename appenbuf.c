@@ -57,6 +57,211 @@ void abFree( struct abuf *ab )
 
 /* ============================= Terminal update ============================ */
 
+	int abRespodapt_fullinner
+	(
+		struct abuf *buf,
+		size_t extra,
+		
+		char **stati,
+		size_t *lens,
+		size_t count
+	)
+	{
+		if( buf )
+		{
+			if( !count )
+			{
+				return( 0 );
+			}
+			if( !( stati && lens ) )
+			{
+				return( -2 );
+			}
+			
+			size_t step = 0;
+			if( count )
+			{
+				step = extra % ( count - 1 );
+				step = ( extra - step ) / ( count - 1 );
+			}
+			
+			while( count )
+			{
+				abAppend( buf,  *stati, *lens );
+				
+					/* Handle padding. */
+				if( count > 1 )
+				{
+					size_t tmp = 0;
+					while( tmp < step )
+					{
+						abAppend( buf,  " ", 1 );
+						tmp += 1;
+					}
+					
+					if( ( extra - ( step * ( count - 1 ) ) ) / 2.0 >= 0.4999 )
+					{
+						abAppend( buf,  " ", 1 );
+						extra -= 1;
+					}
+					
+					extra -= tmp;
+				}
+				
+				/* Increment. */
+				--count;
+				++stati;
+				++lens;
+			}
+			
+			return( 1 );
+		}
+		
+		return( -1 );
+	}
+	
+		/* This is a hack job, so mark it as deprecated from the start. */
+	int abRespodapt_skimpinner
+	(
+		struct abuf *buf,
+		size_t width,
+		
+		char **stati,
+		size_t *lene,
+		size_t *lens,
+		size_t count
+	) __attribute__ ((deprecated));
+	int abRespodapt_skimpinner
+	(
+		struct abuf *buf,
+		size_t width,
+		
+		char **stati,
+		size_t *lene,
+		size_t *lens,
+		size_t count
+	)
+	{
+		if( buf )
+		{
+			if( !count )
+			{
+				return( 0 );
+			}
+			if( !( stati && lene && lens ) )
+			{
+				return( -2 );
+			}
+			
+			size_t i = 0;
+			
+			abAppend( buf,  stati[ 0 ], lens[ 0 ] );
+			i += lene[ 0 ];
+			
+			if( count > 1 )
+			{
+				while( i + lene[ count - 1 ] < width )
+				{
+					abAppend( buf,  " ", 1 );
+					i += 1;
+				}
+				
+				if( width - i )
+				{
+					abAppend( buf,  stati[ count - 1 ], width - i );
+				}
+			}
+			
+			return( 1 );
+		}
+		
+		return( -1 );
+	}
+	
+	int abRespodapt
+	(
+		struct abuf *ab,
+		size_t abwide,
+		
+		struct abuf *util,
+		size_t utilwide,
+		
+		char **stati,
+			/* Effective length, only considers space consumed. */
+		size_t *lene,
+			/* Memory length, includes escape sequences. */
+		size_t *lens,
+		size_t count
+	)
+	{
+		if( ab )
+		{
+			if( count < 1 )
+			{
+					/* Nothing to do. */
+				return( 0 );
+			}
+			if( !( stati && lene && lens ) )
+			{
+				return( -2 );
+			}
+			
+			int abfull = 0, utilfull = 0;
+			size_t ablen = 0, utillen = 0;
+			
+			size_t loopsz = 0;
+			while( loopsz < count )
+			{
+				ablen += lene[ loopsz ];
+				utillen += lene[ loopsz ];
+				++loopsz;
+			}
+			
+			if( ablen <= abwide )
+			{
+				abRespodapt_fullinner
+				(
+					ab, abwide - ablen,
+					
+					stati, lens, count
+				);
+				
+			} else {
+				
+				abRespodapt_skimpinner
+				(
+					ab, abwide,
+					
+					stati, lene, lens, count
+				);
+			}
+			if( util )
+			{
+				if( utillen <= utilwide )
+				{
+					abRespodapt_fullinner
+					(
+						util, utilwide - utillen,
+						
+						stati, lens, count
+					);
+				} else {
+					
+					abRespodapt_skimpinner
+					(
+						util, utilwide,
+						
+						stati, lene, lens, count
+					);
+				}
+			}
+			
+			return( 1 );
+		}
+		
+		return( -1 );
+	}
+
 /* Draws the status line. Pulled out of editorRefreshScreen() for */
 /*  modularity. */
 	/* ab: the primary buffer, will get drawn to the conventional terminal. */
@@ -77,6 +282,7 @@ void abStatusLine
 {
 	(void)util;
 	
+	/* Prepare the file status info. */
 	int tmp =
 		snprintf
 		(
@@ -99,6 +305,7 @@ void abStatusLine
 		fstat_len = E.screencols;
 	}
 	
+	/* Prepare the row/cursor status info. */
 	tmp =
 		snprintf
 		(
@@ -112,29 +319,23 @@ void abStatusLine
 	}
 	rstat_len = (size_t)tmp;
 	
-#warning "Add the message line into this approximate area."
-#warning "Make the stuff below this into an adaptive/responsive layout system."
-	abAppend( ab, fstatus, fstat_len );
-	abAppend( util, fstatus, fstat_len );
-	while( fstat_len < E.screencols )
+	/* Calc & render the final status line. */
+	statview_view sv = { 0 };
+	if( !statview_fetchmsg( E.statusinterface, /* Should calc this instead. */ 24,  &sv ) )
 	{
-		if
-		(
-			E.screencols >= fstat_len && /* Constraints checking. */
-			E.screencols - fstat_len == rstat_len
-		)
-		{
-			abAppend( ab, rstatus, rstat_len );
-			abAppend( util, rstatus, rstat_len );
-			break;
-			
-		} else {
-			
-			abAppend( ab, " ", 1 );
-			abAppend( util, " ", 1 );
-			fstat_len++;
-		}
+		msgs_build_fatal( (msgs**)0,  "\tstatview_fetchmsg() failed in abStatusLine().\n" );
+		exit( 1 );
 	}
+	char *stati[ 3 ] = { fstatus, sv.start, rstatus };
+	size_t lens[ 3 ] = { fstat_len, sv.len, rstat_len };
+	abRespodapt
+	(
+		ab, E.screencols,
+		
+		0, 0,
+		
+		stati, lens, lens, 3
+	);
 }
 void editorStatusLine
 (
