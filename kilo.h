@@ -92,9 +92,8 @@
 	TODO: Start using the assert stuff below.
 	TODO: Coroutine-based non-blocking I/O routines.
 	TODO: Seperate code to do updates from code to do renders, for e.g. better marques.
-	TODO: Move the message into the status line.
-	TODO: Adaptive handling of the various file/message/row data, in case the terminal gets resized.
-		Note: This involves message-cycling- just use the msgs_queue stuff.
+	TODO: Improve the Responsive/Adaptive handling of the status line.
+		Note: This includes cycling between fields when compact- try to use the msgs_queue stuff.
 	TODO: Build a "metaterm" to represent concepts (e.g. marques, and markup-text surrounding sub-fields).
 	TODO: While testing the status-message stuff, the cursor somehow got stuck inside the status message area:
 		hunt this down asnd fix (entered C-f, then exited, was doing lots of scrolling the whole time).
@@ -132,8 +131,6 @@
 			/etc configs); "leaf-most" (as opposed to root-most) files are dominant
 		Extend config file syntax all the way to "project management" & "IDE" level (even if just slightly)
 */
-
-#warning "Attempting to add a character currently results in an out-of-bounds for editorRowInsertChar()."
 
 
 #define THOU_SEV_SEVERITY_0  ( 0x200 )  /* 512 */
