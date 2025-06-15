@@ -99,7 +99,6 @@
 	TODO: Build a "metaterm" to represent concepts (e.g. marques, and markup-text surrounding sub-fields).
 	TODO: While testing the status-message stuff, the cursor somehow got stuck inside the status message area:
 		hunt this down asnd fix (entered C-f, then exited, was doing lots of scrolling the whole time).
-	TODO: Move "unsupported character" code to a function, and use everywhere relevant.
 */
 /*
 	Wishlist:
