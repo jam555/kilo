@@ -201,12 +201,7 @@ void editorRowInsertChar( erow *row, size_t at, int c )
     }
     if( CHAR_MIN > c || c > CHAR_MAX )
 	{
-		msgs_build_fatal
-		(
-			(msgs**)0,
-				"\teditorRowInsertChar() encountered an out-of-bounds character: %x\n",
-				(int)c
-		);
+		io_unknownkey_message( "editorRowInsertChar", c );
 		exit( 1 );
 	}
 	row->chars[ at ] = (char)c;

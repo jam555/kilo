@@ -60,8 +60,9 @@ void editorFind( int fd )
     int saved_cx = E.cx, saved_cy = E.cy;
     int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
 	msgs *msgtmp = 0;
-
-    while( 1 ) {
+	
+	while( 1 )
+	{
         /* editorSetStatusMessage( "Search: %s (Use ESC/Arrows/Enter)", query ); */
 			/* Should this be note, or alert? */
 		/*
@@ -134,6 +135,11 @@ void editorFind( int fd )
 				query[ qlen ] = '\0';
 				last_match = -1;
 			}
+			
+		} else {
+			
+			io_unknownkey_message( "editorFind", c );
+			continue;
 		}
 		
 		/* Search occurrence. */

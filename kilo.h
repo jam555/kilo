@@ -66,6 +66,7 @@
 #include "appenbuf.h"
 #include "term.h"
 #include "msgs.h"
+#include "io/io.h"
 
 
 /* 6/June/2025: I've decided (several days ago) to rename the system in */
@@ -94,9 +95,11 @@
 	TODO: Seperate code to do updates from code to do renders, for e.g. better marques.
 	TODO: Improve the Responsive/Adaptive handling of the status line.
 		Note: This includes cycling between fields when compact- try to use the msgs_queue stuff.
+		Note: msgs_flags_fresh has been added so that msgs_queue can be triggered.
 	TODO: Build a "metaterm" to represent concepts (e.g. marques, and markup-text surrounding sub-fields).
 	TODO: While testing the status-message stuff, the cursor somehow got stuck inside the status message area:
 		hunt this down asnd fix (entered C-f, then exited, was doing lots of scrolling the whole time).
+	TODO: Move "unsupported character" code to a function, and use everywhere relevant.
 */
 /*
 	Wishlist:

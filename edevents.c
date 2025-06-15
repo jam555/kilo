@@ -132,10 +132,7 @@ void editorMoveCursor( int key )
 	        break;
 	    
 		default:
-			/* editorSetStatusMessage( "Unknown key in editorMoveCursor( %d )",  key ); */
-			msgs_build_alert( (msgs**)0,  "Unknown key in editorMoveCursor( %d )",  key );
-				/* Not a proper error, just useful to keep displayed after exit. */
-			msgs_build_fatal( (msgs**)0,  "\tUnknown key in editorMoveCursor( %d )\n", key );
+			io_unknownkey_message( "editorMoveCursor", key );
 			break;
     }
 	
@@ -190,12 +187,7 @@ void editorProcessKeypress( int fd )
 	        /* Quit if the file was already saved. */
 	        if( E.dirty && quit_times )
 			{
-	            /* editorSetStatusMessage
-				(
-					"WARNING!!! File has unsaved changes. "
-					"Press Ctrl-Q %d more times to quit.",
-					quit_times
-				); */
+#warning "Add a dedicated mode-message to msgs.c"
 				msgs_build_alert
 				(
 					(msgs**)0,
@@ -252,7 +244,8 @@ void editorProcessKeypress( int fd )
 	        /* Nothing to do for ESC in this mode. */
 	        break;
 	    default:
-	        editorInsertChar( c );
+	        	/* This alerts for unfamiliar characters. */
+			editorInsertChar( c );
 	        break;
     }
 
@@ -433,9 +426,16 @@ int editorSave( void )
     close( fd );
     free( buf );
     E.dirty = 0;
-		/* TODO: Do something to move this to the FIRST status line. */
-    /* editorSetStatusMessage( "%d bytes written on disk", len ); */
-    msgs_build_note( (msgs**)0,  "%d bytes written on disk", len );
+	{
+    	msgs *msg;
+		if( msgs_build_note( &msg,  "%d bytes written on disk", len ) && msg )
+		{
+			int res = msgs_mark_timelife( msg, 30 /* Seconds? */ );
+			(void)res;
+			
+		} else {
+		}
+	}
 	return 0;
 
 writeerr:

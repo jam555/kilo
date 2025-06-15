@@ -34,11 +34,11 @@ COMPOPTS= -ggdb -Wall -W -pedantic -std=c99 \
 # -Winvalid-utf8
 
 EDHEADERS= thoutext/edrows.h thoutext/edtools.h
-UTILHEADERS= coroutine/coro.h
+UTILHEADERS= coroutine/coro.h io/io.h
 ROOTHEADERS= kilo.h appenbuf.h term.h syntax.h edfind.h edevents.h statview.h msgs.h
 
 EDSRC= thoutext/edrows.c thoutext/edtools.c
-UTILSRC= coroutine/coro.c
+UTILSRC= coroutine/coro.c io/io.c
 ROOTSRC= kilo.c appenbuf.c term.c syntax.c edfind.c edevents.c statview.c msgs.c
 
 all: kilo
