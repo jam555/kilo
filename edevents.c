@@ -182,6 +182,29 @@ void editorProcessKeypress( int fd )
 	    case CTRL_C:        /* Ctrl-c */
 	        /* We ignore ctrl-c, it can't be so simple to lose the changes
 	         * to the edited file. */
+			/* Instead of ignoring Ctrl-C, let's treat it ALMOST like */
+			/*  Ctrl-Q. */
+	        if( E.dirty && quit_times )
+			{
+#warning "Add a dedicated mode-message to msgs.c"
+				msgs_build_alert
+				(
+					(msgs**)0,
+						"WARNING!!! File has unsaved changes. "
+						"To exit, press Ctrl-Q %d times to quit.",
+						quit_times + 1
+				);
+	            return;
+	        }
+				/* Not a real error, but we DO want to prompt proper usage. */
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					"\n\tKilo exited via Ctrl-C.\n"
+					"\t!!! Warning !!!\n"
+						"\t\tKilo is meant to exit via Ctrl-Q, not Ctrl-C!\n"
+			);
+			exit( 0 );
 	        break;
 	    case CTRL_Q:        /* Ctrl-q */
 	        /* Quit if the file was already saved. */
