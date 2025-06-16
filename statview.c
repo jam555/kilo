@@ -62,47 +62,6 @@ struct statstate
 static const size_t allocation = 8 * 1024;
 
 
-static void statview_fetchmsg_inner( void* );
-
-
-
-static statstate* get_stats( corohead *dest )
-{
-	/* printf( "\nEntering get_stats()\n" ); fflush( stdout ); */
-	
-	if( dest )
-	{
-		statstate *stat = (statstate*)( dest->auxiliary );
-		
-		/* printf( "\tSuccess return == %p\n", (void*)stat ); fflush( stdout ); */
-		return( stat );
-	}
-	
-	/* printf( "\tFailure return.\n" ); fflush( stdout ); */
-	return( 0 );
-}
-static void helper( void *ign )
-{
-	(void)ign;
-	
-	if
-	(
-		(statstate*)( coro_getaux() ) &&
-		( (statstate*)( coro_getaux() ) )->func
-	)
-	{
-		statstate *stats = (statstate*)( coro_getaux() );
-		
-		void (*func)( void ) = stats->func;
-		void *data = stats->data;
-		
-		stats->func = 0;
-			func();
-		stats->data = 0;
-	}
-}
-
-
 static void statview_fetchmsg_inner( void *v_ )
 {
 	/* Runs inside the coro. */

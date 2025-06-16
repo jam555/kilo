@@ -628,7 +628,8 @@ msgs_view msgs_peek( void )
 		}
 		if( ( tmp->msgsflags & msgs_flags_fresh ) == msgs_flags_fresh )
 		{
-			tmp->msgsflags &= ~( (unsigned char)msgs_flags_fresh );
+			unsigned char v = msgs_flags_fresh;
+			tmp->msgsflags &= ~v;
 			isfresh = 1;
 		}
 		
@@ -775,7 +776,7 @@ int modemsgs_setmodal( int id )
 		
 			/* Note that the max length for a line is currentlt UINT32_MAX */
 			/*  stored characters (NOT displayed characters). */
-		static const char
+		static char
 			*mainmsg_ = "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find",
 			*findmsg_ = "Search: %s (Use ESC/Arrows/Enter)";
 		
@@ -829,7 +830,7 @@ int modemsgs_setmodal( int id )
 				active = &mainmsg;
 				return( 1 );
 				
-			} else if( mainmsg.msgsflags & msgs_flags_discard == msgs_flags_discard )
+			} else if( ( mainmsg.msgsflags & msgs_flags_discard ) == msgs_flags_discard )
 			{
 				mainmsg.msgsflags ^= msgs_flags_discard;
 			}
@@ -849,7 +850,7 @@ int modemsgs_setmodal( int id )
 				active = &findmsg;
 				return( 1 );
 				
-			} else if( findmsg.msgsflags & msgs_flags_discard == msgs_flags_discard )
+			} else if( ( findmsg.msgsflags & msgs_flags_discard ) == msgs_flags_discard )
 			{
 				findmsg.msgsflags ^= msgs_flags_discard;
 			}

@@ -100,6 +100,9 @@ size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 void main_atexit( void );
 int main_coro( void *ign );
+void main_noargs_print( void );
+void main_args( void );
+
 int argn;
 char **args;
 int main( int argn_, char **args_ )
@@ -127,6 +130,7 @@ int main( int argn_, char **args_ )
 	argn_ = cocontext( (void*)0, &main_coro );
 	/* Let's just trash the return for now. */
 }
+
 const char noaltscr_opt[] = "--no-alt-screen";
 void main_noargs_print( void )
 {
@@ -157,6 +161,7 @@ void main_args( void )
 		E.no_altscr = 0;
 	}
 }
+
 int main_coro( void *ign )
 {
     (void)ign;
