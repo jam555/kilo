@@ -196,15 +196,4 @@ void editorRefreshScreen( void )
     abFree( &ab );
 }
 
-/* Set an editor status message for the second line of the status, at the
- * end of the screen. */
-void editorSetStatusMessage( const char *fmt, ... )
-{
-#warning "Replace this with the msgs.h stuff, the funcs already exist.."
-	va_list ap;
-	va_start( ap,fmt );
-		vsnprintf( E.statusmsg, sizeof( E.statusmsg ), fmt, ap );
-	va_end( ap );
-	E.statusmsg_time = time( NULL );
-}
-
+#warning "editorSetStatusMessage() did E.statusmsg_time = time( NULL ), but is gone."
