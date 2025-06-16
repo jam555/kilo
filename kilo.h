@@ -85,11 +85,14 @@
 		Do this one first!
 	!!!
 	
+	TODO: Try to transform editorProcessKeypress() into a coro system.
 	TODO: Start using the flags returned from the statview stuff to draw "markup text".
 		Note: The markup text is used to mark status line sub-fields, and is mostly important for adaptive layout
 		stuff. There should PROBABLY be a bg/fg swap to distinguish them, AND they should exist at both the start
 		AND end of a sub-field, not just one or the other. They should also be distinctive from each other, as
 		their purpose is mostly to distinguish sub-fields when only a subset can be displayed at a time.
+		This should/will improve the visual quality of the status line.
+	TODO: Merge the status-line file & row info into one section, and use the freed area for a placeholder.
 	TODO: Start using the assert stuff below.
 	TODO: Coroutine-based non-blocking I/O routines.
 	TODO: Seperate code to do updates from code to do renders, for e.g. better marques.
@@ -99,6 +102,7 @@
 	TODO: Build a "metaterm" to represent concepts (e.g. marques, and markup-text surrounding sub-fields).
 	TODO: While testing the status-message stuff, the cursor somehow got stuck inside the status message area:
 		hunt this down asnd fix (entered C-f, then exited, was doing lots of scrolling the whole time).
+	TODO: Figure out why that status message "jiggles".
 */
 /*
 	Wishlist:
@@ -522,11 +526,6 @@ int editorSave(void);
 /* ============================= Terminal update ============================ */
 
 #include "appenbuf.h"
-
-/* Set an editor status message for the second line of the status, at the
- * end of the screen. Note that this will build the "full" message INTO the
- * E.statusmsg[] member: it SHOULD be properly length-restricted. */
-void editorSetStatusMessage(const char *fmt, ...);
 
 /* =============================== Find mode ================================ */
 
