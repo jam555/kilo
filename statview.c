@@ -49,6 +49,7 @@
 struct statstate
 {
 	corohead *head;
+	corohead *volatile ret_dest;
 	size_t off;
 	time_t last_time;
 	
@@ -158,8 +159,6 @@ static void statview_fetchmsg_inner( void *v_ )
 
 static void statview_coromain( corohead *head, void *data )
 {
-	(void)data;
-	
 	/* printf( "\nEntering statview_coromain" );
 	printf
 	(
@@ -171,8 +170,11 @@ static void statview_coromain( corohead *head, void *data )
 	{
 		
 		statstate stats;
+		corohead *tmp = 0;
 		
 		stats.head = head;
+			/* Should this really be 0? Nope, we need to bootstrap. */
+		stats.ret_dest = *( (corohead**)data );
 		stats.last_time = time( (time_t*)0 );
 		head->auxiliary = (uintptr_t)&stats;
 		
@@ -180,7 +182,16 @@ static void statview_coromain( corohead *head, void *data )
 		while( loop == 1 /*CORO_WORKING*/ )
 		{
 			/* printf( "\tcalling coyield()\n" ); fflush( stdout ); */
-			loop = coyield( &main_fiber );
+			tmp = (corohead*)stats.ret_dest;
+			if( !tmp )
+			{
+				printf( "\n\ttmp was null in statview_coromain()!\n" );
+				exit( 1 );
+			}
+			stats.ret_dest = 0;
+				loop = coyield( tmp );
+			tmp = 0;
+			/* stats.ret_dest has already been set elsewhere. */
 		}
 	}
 	/* printf( "\tExiting statview_coromain().\n" ); */
@@ -196,6 +207,7 @@ static int statview_conclude( corohead *head, uintptr_t aux )
 		statstate *stats = (statstate*)( head->auxiliary );
 			head->auxiliary = 0;
 			stats->head = 0;
+			stats->ret_dest = 0;
 			stats->off = 0;
 			stats->data = 0;
 			stats->func = 0;
@@ -217,11 +229,20 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 	
 	if( stats && data )
 	{
-		/* printf( "\tstats && data.\n" ); */
-		fflush( stdout );
-		data->len = usable_width;
+		if( 0 && stats->ret_dest != 0 )
+		{
+			/* Should probably add some error reporting here. */
+			return( -2 );
+		}
 		
-		coyield2( stats->head, (corohead**)0,  (void*)data, &statview_fetchmsg_inner );
+		/* printf( "\tstats && data.\n" );
+		fflush( stdout ); */
+		data->len = usable_width;
+		/*
+		stats.ret_dest = ;
+		*/
+		
+		coyield2( stats->head, &( stats->ret_dest ),  (void*)data, &statview_fetchmsg_inner );
 		
 		/* printf( "\tstatview_fetchmsg() successful exit.\n" ); */
 		return( 1 );
@@ -234,7 +255,7 @@ statstate* statview_build()
 {
 	/* printf( "\nEntering statview_build()\n" ); fflush( stdout ); */
 	
-	corohead *head = 0;
+	corohead *head = 0, *tmp;
 	
 	/* printf
 	(
@@ -256,7 +277,7 @@ statstate* statview_build()
 		cobuild
 		(
 			allocation,
-			(void*)0, &statview_coromain, 0,
+			(void*)&tmp, &statview_coromain, 0,
 			&statview_conclude,
 			
 			&head
@@ -272,31 +293,12 @@ statstate* statview_build()
 		return( 0 );
 	}
 	
-	/* printf
-	(
-		"\t\t&head == %p, head == %p, head->aux == %d;\n\t\tCalling coyield( head ).\n",
-			(void*)&head,
-			(void*)head,
-			(int)( head->auxiliary )
-	); */
-	coyield( head );
-	/* printf
-	(
-		"\t\tstatview_build():coyield() returned.\n"
-	);
-		printf
-		(
-			"\t\t&head == %p, head == %p, &( head->aux ) == %p,",
-				(void*)&head,
-				(void*)head,
-				(void*)&( head->auxiliary )
-		);
-		printf
-		(
-			" head->aux == %d\n",
-				(unsigned)( head->auxiliary )
-		);
-	printf( "\t\tstatview_build() returning.\n" );
+	
+	/* ... Don't we need to store straight into ->ret_dest? */
+	/*  NO, because we hand a pointer to tmp to statview_coromain() via cobuild(). */
+	coyield2( head, &tmp,  0, 0 );
+	
+	/* printf( "\t\tstatview_build() returning.\n" );
 	fflush( stdout ); */
-	return( (statstate*)( head->auxiliary ));
+	return( (statstate*)( head->auxiliary ) );
 }
