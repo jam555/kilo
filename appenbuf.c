@@ -288,7 +288,20 @@ void abStatusLine
 		snprintf
 		(
 			fstatus, (size_t)fstat_len,
-			"%.20s - %zu lines %s",  E.filename, E.numrows, E.dirty ? "(modified)" : ""
+			
+			"%.20s - %zu lines  |  %zu : %zu/%zu  | %s%s",
+				/* File ID. */
+				E.filename,
+				E.numrows,
+				
+				/* Position. */
+				E.cx + 1,
+				E.rowoff + E.cy + 1,
+				E.numrows,
+				
+				/* Edit status. */
+				( E.dirty ? " (modified)" : "" ),
+				( 0 ? " (read-only)" : " (read/write)" )
 		);
 	if( tmp < 0 )
 	{
@@ -312,7 +325,10 @@ void abStatusLine
 		snprintf
 		(
 			rstatus, (size_t)rstat_len,
-			"%zu : %zu/%zu",  E.cx + 1, E.rowoff + E.cy + 1, E.numrows
+			
+			"Text-editor Mode, file: %s ",
+				/* TODO: Change this to include the directory path too. */
+				E.filename
 		);
 	if( tmp < 0 )
 	{
