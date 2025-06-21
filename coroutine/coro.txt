@@ -10,6 +10,18 @@ cobuild(), and coyield(), though coconclude(), coclean(), and coro_getaux() are
 provided for extended functionality. The particular approach used in this system
 is the setjmp()/longjmp() version, as I concluded that t offered the most
 flexibility.
+	As a special note, be aware that the first use of a newly allocated
+coroutine will sometimes be unable to use the ->auxiliary member of the corohead
+structure (and will ALWAYS be unable to use ->auxiliary when that member will be
+set to point to a data structure allocated on the stack within coro_main),
+because coro_main is only executed upon that first use: this is somewhat
+inconvenient when coro_main is intended to loop until it's linked coroutine is
+deallocated, but is none-the-less implemented for the sake of those coro_main
+implementations that are intended to use the coroutine system for some purpose
+other than resumption. The correct solution will often be to pass an alternative
+structure via cobuild()'s coro_data argument, so that the provided coro_main can
+use it to "prime the pump" after setting a valid value for the ->auxiliary
+member. This was first encountered in statview.
 
 	To use this coroutine system reliably, you must restrict your use of all
 other coroutine functions to threads that have called cocontext(), but haven't
