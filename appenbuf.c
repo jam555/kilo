@@ -283,14 +283,14 @@ void abStatusLine
 	(void)util;
 	
 	
-	/* Prepare the file status info. */
+	/* Prepare the editor status info. */
 	int tmp =
 		snprintf
 		(
 			fstatus, (size_t)fstat_len,
 			
 			"%.20s - %zu lines  |  %zu : %zu/%zu  | %s%s",
-				/* File ID. */
+				/* File ID. Should a scrolling directory path be appended? */
 				E.filename,
 				E.numrows,
 				
@@ -320,14 +320,15 @@ void abStatusLine
 	}
 	
 	
-	/* Prepare the row/cursor status info. */
+	/* Prepare the mode info. */
 	tmp =
 		snprintf
 		(
 			rstatus, (size_t)rstat_len,
 			
+			/* Note that this should really indicate the active pane. */
 			"Text-editor Mode, file: %s ",
-				/* TODO: Change this to include the directory path too. */
+				/* TODO: Change this to include the directory path too? Or just remove? */
 				E.filename
 		);
 	if( tmp < 0 )
