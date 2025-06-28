@@ -166,7 +166,7 @@ static void statview_coromain( corohead *head, void *data )
 			(void*)( ( (uintptr_t)head ) - allocation )
 	); */
 	
-	if( head )
+	if( head && data )
 	{
 		
 		statstate stats;
