@@ -36,6 +36,7 @@
 
 
 #include "../kilo.h"
+#include "io.h"
 
 int io_unknownkey_message( const char *func, int key )
 {
