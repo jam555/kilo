@@ -78,13 +78,10 @@
 /* TODO: Find all of the "warning" directives, and fix them. */
 
 /*
-	
-	!!!
-	TODO: Move the "execute inside coroutine" stuff from statview to coro.
 	!!!
 		Do this one first!
 	!!!
-	
+	TODO: Rename the "io" stuff to "galilean", to double-down on pun.
 	TODO: Try to transform editorProcessKeypress() into a coro system.
 	TODO: Start using the flags returned from the statview stuff to draw "markup text".
 		Note: The markup text is used to mark status line sub-fields, and is mostly important for adaptive layout
@@ -92,7 +89,7 @@
 		AND end of a sub-field, not just one or the other. They should also be distinctive from each other, as
 		their purpose is mostly to distinguish sub-fields when only a subset can be displayed at a time.
 		This should/will improve the visual quality of the status line.
-	TODO: Merge the status-line file & row info into one section, and use the freed area for a placeholder.
+	TODO: Revise the status line more.
 	TODO: Start using the assert stuff below.
 	TODO: Coroutine-based non-blocking I/O routines.
 	TODO: Seperate code to do updates from code to do renders, for e.g. better marques.
@@ -102,7 +99,8 @@
 	TODO: Build a "metaterm" to represent concepts (e.g. marques, and markup-text surrounding sub-fields).
 	TODO: While testing the status-message stuff, the cursor somehow got stuck inside the status message area:
 		hunt this down asnd fix (entered C-f, then exited, was doing lots of scrolling the whole time).
-	TODO: Figure out why that status message "jiggles".
+	TODO: Figure out why the status message "jiggles".
+	TODO: Improve the CONTRIBUTORS / MAINTAINERS files to have the full list.
 */
 /*
 	Wishlist:
@@ -115,6 +113,9 @@
 			Better/heavier-duty text-file edit scheme (we aren't using ropes yet, are we?) for Milli & Runes
 		
 		Minesweeper
+		"About" mode: Should list maintainers / contributors entries.
+		Calendar
+			Include Lunar phase (synodic period) and Lunth (sidereal period: lunar day per noon-to-noon on Moon)
 		
 		"Menu/button mode"; configurable, to allow TUI execution of e.g. arbitrary Makefile targets, meant
 			to improve usefullness as IDE/project-manager
@@ -123,12 +124,14 @@
 			If ALN, then BCD/Packed-BCD/ASCII/EBCDIC/Binary conversions.
 			If scriptable, then SEPERATE EXECUTABLE for crash-resistance, and struct{} + C-like operators +
 			Meta-C -like operator-overloading + gc + coroutines; DO NOT attempt to make a "solver")
+			Provide infix & RPN versions.
 		Contacts management
 			Use a common format, use same format for e.g. CONTRIBUTORS
 		
 		Extended keyboard support (XTerm, Kitty, that thing Kitty is based on)
 		Unix-Ed over remote connection as I/O option (to deal with remote servers)
 			Vi-mode for the same?
+			Note: "ganymede" is the name reserved for this.
 		Multi-terminal mode (use a sub-program to simplify I/O, 1 instance per terminal: should be fine to
 			have a variant that uses NCurses, another for PDCurses, maybe another for SDL, maybe another for
 			bare-metal MDA/CGA/EGA/VGA, preferably another for RS-232 character-LCD)
@@ -338,6 +341,34 @@ enum KEY_ACTION{
         PAGE_UP,
         PAGE_DOWN
 };
+
+	/* Note that these modes properly correspond to things like iOS's */
+	/*  applicationDidReceiveMemoryWarning(), it is NOT meant for */
+	/*  sleep/suspend/hibernate/etc. support. */
+typedef enum
+{
+	gaianphase_invalid = -1,
+	
+	gaianphase_night = 0,
+	
+		/* Re/Initializing. */
+	gaianphase_dawn = 1,
+		/* De-hibernating. */
+	gaianphase_morn,
+		/* Refocussing. */
+	gaianphase_brunch,
+		/* Full activity & focus. */
+	gaianphase_noon,
+		/* Defocusing. */
+	gaianphase_tea,
+		/* Hibernating. */
+	gaianphase_eve,
+		/* Shutting down. */
+	gaianphase_dusk,
+	
+	gaianphase__PASTEND
+	
+} gaianphase;
 
 
 
