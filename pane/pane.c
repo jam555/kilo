@@ -39,11 +39,19 @@
 #include "pane.h"
 
 
+
+extern inline int pane_on_resize( pane *pn,  size_t rows, size_t cols );
+extern inline int pane_on_refresh( pane *pn );
+extern inline int pane_on_orphan( pane *pn );
+
+
+
 int pane_init
 (
 	pane *p,
 		size_t start_size,
-		const char *modename
+		const char *modename,
+		const pane_calls *vtab
 )
 {
 	if( p && modename )
@@ -61,6 +69,7 @@ int pane_init
 		p->dest = &( p->a );
 		
 		*( (const char**)&( p->modename ) ) = modename;
+		*( (const pane_calls**)&( p->vtab ) ) = vtab;
 		
 		while( start_size )
 		{
@@ -105,5 +114,54 @@ int pane_init
 	}
 	
 	return( -1 );
+}
+
+int modepane_init
+(
+	modepane *p,
+		size_t start_size,
+		const char *modename,
+		const pane_calls *vtab
+)
+{
+	if( p )
+	{
+		size_t i = 0;
+		while( i < sizeof( p->panenotes ) )
+		{
+			p->panenotes[ i ] = 0;
+			++i;
+		}
+		
+		return
+		(
+			pane_init( &( p->p ),  start_size, modename, vtab )
+		);
+	}
+	
+	return( -1 );
+}
+
+
+
+int dummypane_on_resize( pane *pn,  size_t rows, size_t cols )
+{
+	(void)pn;
+	(void)rows;
+	(void)cols;
+	
+	return( 0 );
+}
+int dummypane_on_refresh( pane *pn )
+{
+	(void)pn;
+	
+	return( 0 );
+}
+int dummypane_on_orphan( pane *pn )
+{
+	(void)pn;
+	
+	return( 0 );
 }
 /*  5    0    5    0    5    0    5    0    5    0    5    0    5    0    5    0 */
