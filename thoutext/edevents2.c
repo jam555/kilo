@@ -60,7 +60,6 @@ TODO:
 	{
 		modepane pane;
 		
-#warning "Do we need to track whether raw-mode is set?"
 			/* All measurements in terms of display cells. */
 		pane_dim
 			cursor, /* Location on screen. */
