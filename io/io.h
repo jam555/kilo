@@ -37,7 +37,11 @@
 #ifndef IO_IO_H
 # define IO_IO_H
 	
-	int io_unknownkey_message( const char *func, int key );
+		/* This needs to become uint32_t at some point in the future. */
+	typedef char io_chara;
+	
+	
+	int io_unknownkey_message( const io_chara *func, int key );
 	
 	
 	typedef struct io io;
@@ -59,18 +63,19 @@
 		
 	} io_flags;
 	
+	/* ... I want 32-bit characters, how am I supposed to get that if "val" is a char? */
 	typedef
 		int (*io_sendchar)
 		(
 			io *stream,
-			char val, io_flags flags,
+			io_chara val, io_flags flags,
 			io_closure *on_err
 		);
 	typedef
 		int (*io_fetchchar)
 		(
 			io *stream,
-			char *dest, io_flags flags,
+			io_chara *dest, io_flags flags,
 			io_closure *on_err
 		);
 	typedef
@@ -109,7 +114,7 @@
 	inline int io_putc
 	(
 		io *stream,
-		char val, io_flags flags,
+		io_chara val, io_flags flags,
 		io_closure *on_err
 	)
 	{
@@ -128,7 +133,7 @@
 	inline int io_getc
 	(
 		io *stream,
-		char *dest, io_flags flags,
+		io_chara *dest, io_flags flags,
 		io_closure *on_err
 	)
 	{

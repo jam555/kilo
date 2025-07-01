@@ -60,7 +60,8 @@ struct europa
 		
 	} size; /* Available terminal area. */
 	
-		/* Will often contain escapes. */
+		/* Will often contain escapes. Eventually needs to be replaced with a */
+		/*  uint32_t-based version. */
 	dynarr
 		*cells,
 /*  5    0    5    0    5    0    5    0    5    0    5    0    5    0    5    0  */
@@ -87,7 +88,7 @@ static europa europa_stdio = { 0 };
 static int europa_sendchar
 (
 	io *stream,
-	char val, io_flags flags,
+	io_chara val, io_flags flags,
 	io_closure *on_err
 )
 {
@@ -116,7 +117,7 @@ static int europa_sendchar
 				
 				if( on_err )
 				{
-					if( !(on_err->func) )
+					if( !( on_err->func ) )
 					{
 						return( -4 );
 					}
@@ -133,7 +134,7 @@ static int europa_sendchar
 				
 				if( on_err )
 				{
-					if( !(on_err->func) )
+					if( !( on_err->func ) )
 					{
 						return( -6 );
 					}
@@ -155,20 +156,76 @@ static int europa_sendchar
 	return( -1 );
 }
 static int europa_fetchchar
-		(
-			io *stream,
-			char *dest, io_flags flags,
-			io_closure *on_err
-		);
-	struct io
+(
+	io *stream,
+	io_chara *dest, io_flags flags,
+	io_closure *on_err
+)
+{
+#warning "europa_fetchchar() needs to pay attention to it's flags!"
+	if( stream && dest )
 	{
-		uintptr_t id;
+		if( stream->id != (uintptr_t)( &id ) )
+		{
+			return( -2 );
+		}
 		
-		io_fetchchar putc;
-		io_sendchar getc;
+		europa *eu = CALCADDR_FROMMEMBER( europa, header, stream );
+		if( !( eu->dest ) )
+		{
+			return( -3 );
+		}
 		
-		io_genericfunc close;
-	};
+		int res = fgetc( eu->dest );
+		if( res == EOF )
+		{
+			res = ferror( eu->dest );
+			if( res != 0 )
+			{
+				/* Yes, an error. */
+				clearerr( eu->dest );
+				
+				if( on_err )
+				{
+					if( !( on_err->func ) )
+					{
+						return( -4 );
+					}
+					on_err->func( on_err, stream,  res );
+				}
+				return( -5 );
+			}
+			/* This shouldn't ever be reached. */
+			
+			res = feof( eu->dest );
+			if( res != 0 )
+			{
+				/* End of file. */
+				
+				if( on_err )
+				{
+					if( !( on_err->func ) )
+					{
+						return( -6 );
+					}
+					on_err->func( on_err, stream,  0 );
+				}
+				
+				clearerr( eu->dest );
+				return( -7 );
+			}
+			/* How? Just how? */
+			
+			clearerr( eu->dest );
+			return( -8 );
+		}
+		
+		*dest = (char)res;
+		return( 1 );
+	}
+	
+	return( -1 );
+}
 io* io_europa1()
 {
 	europa_stdio.header =
@@ -176,19 +233,29 @@ io* io_europa1()
 		{
 			(uintptr_t)( &id ),
 			
-			,
-			,
+			&europa_fetchchar,
+			&europa_sendchar,
 			
 			&io_genericnull
 		};
 	europa_stdio.src = STDIN;
 	europa_stdio.dest = STDOUT;
+	/*
 	europa_stdio.size.width = ??? ;
 	europa_stdio.size.height = ??? ;
-	europa_stdio.cells = (dynarr*){};
+	*/
+	if( !( europa_stdio.cells ) )
+	{
+		europa_stdio.cells = (dynarr*){};
+	}
+	if( !( europa_stdio.title ) )
+	{
 	europa_stdio.title = (dynarr*){};
+	}
+	/*
 	europa_stdio.orig_termios = (termios){};
 	europa_stdio.flags = (io_europa_flags){};
+	*/
 	europa_stdio.deathrattle = (char*)0;
 	
 	return( &europa_stdio );

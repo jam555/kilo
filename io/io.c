@@ -38,9 +38,9 @@
 #include "../kilo.h"
 #include "io.h"
 
-int io_unknownkey_message( const char *func, int key )
+int io_unknownkey_message( const io_chara *func, int key )
 {
-	static const char *unknownfunc = "(unknown func)";
+	static const io_chara *unknownfunc = "(unknown func)";
 	if( !func )
 	{
 		func = unknownfunc;
