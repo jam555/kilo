@@ -64,7 +64,6 @@ struct europa
 		/*  uint32_t-based version. */
 	dynarr
 		*cells,
-/*  5    0    5    0    5    0    5    0    5    0    5    0    5    0    5    0  */
 			/* The terminal should HOPEFULLY have a distinct title bar. Add */
 			/*  something to store it. */
 		*title;
@@ -75,6 +74,8 @@ struct europa
 	
 		/* The last-chanve choice for error messages. */
 	char *deathrattle;
+	
+#warning "europa{} needs to have a target for msgs{} fatal messages to target."
 };
 
 
@@ -250,15 +251,153 @@ io* io_europa1()
 	}
 	if( !( europa_stdio.title ) )
 	{
-	europa_stdio.title = (dynarr*){};
+		europa_stdio.title = (dynarr*){};
 	}
 	/*
 	europa_stdio.orig_termios = (termios){};
-	europa_stdio.flags = (io_europa_flags){};
-	*/
+	europa_stdio.flags = io_europa_null;
 	europa_stdio.deathrattle = (char*)0;
+	*/
+	
+		/* Need to update this bit. */
+	if( !E.altscr && !E.no_altscr )
+	{
+		if( !mila_initterm_xterm() )
+		{
+			msgs_build_fatal
+			(
+				(msgs**)0,
+				"\tXTerm initialization failed. If alt-screen in enabled, use ESC [?1049l.\n"
+			);
+			exit( 1 );
+		}
+	}
+		/* Leandro Pereira */
+	europa_updateWindowSize( &europa_stdio );
+		/* Leandro Pereira */
+	/* signal( SIGWINCH, handleSigWinCh ); */
+#warning "The SIGWINCH handler needs to move into main() or related."
 	
 	return( &europa_stdio );
+}
+
+/* Use the ESC [6n escape sequence to query the horizontal cursor position */
+/*  and return it. On error -1 is returned, on success the position of the */
+/*  cursor is stored at *rows and *cols and 0 is returned. */
+/*  5    0    5    0    5    0    5    0    5    0    5    0    5    0    5    0  */
+int europa_getCursorPosition( europa *eu,  size_t *rows, size_t *cols )
+{
+	char buf[ 32 ];
+	unsigned int i = 0;
+	
+	/* Report cursor location */
+#define THOU_TERMCODES_4 "\x1b[6n"
+	if( write( fileno( eu->dest ), THOU_TERMCODES_4, 4 ) != 4 )
+	{
+		return( -1 );
+	}
+	
+	/* Read the response: ESC [ rows ; cols R */
+	while( i < sizeof( buf ) - 1 )
+	{
+		if( read( fileno( eu->src ), buf + i, 1 ) != 1 )
+		{
+			break;
+		}
+		if( buf[ i ] == 'R')
+		{
+			break;
+		}
+		i++;
+	}
+	buf[ i ] = '\0';
+	
+	/* Parse it. */
+	if( buf[ 0 ] != ESC || buf[ 1 ] != '[' )
+	{
+		return( -1 );
+	}
+	if( sscanf( buf + 2, "%zu;%zu", rows, cols ) != 2 )
+	{
+		return( -1 );
+	}
+	return( 0 );
+}
+	/* Try to get the number of columns in the current terminal. If the */
+	/*  ioctl() * call fails the function will try to query the terminal */
+	/*  itself. Returns 0 on success, -1 on error. */
+int europa_getWindowSize
+(
+	europa *eu,
+	
+	size_t *rows, size_t *cols
+)
+{
+	struct winsize ws;
+	
+	if
+	(
+		ioctl( /* 1 */ fileno( eu->dest ), TIOCGWINSZ, &ws ) == -1 ||
+		ws.ws_col == 0
+	)
+	{
+		/* ioctl() failed. Try to query the terminal directly. */
+		
+		size_t orig_row, orig_col;
+		int retval;
+		
+		/* Get the initial position so we can restore it later. */
+		retval = europa_getCursorPosition( eu,  &orig_row, &orig_col );
+		if( retval == -1 )
+		{
+			goto failed;
+		}
+		
+		/* Go to right/bottom margin and get position. */
+		if( !mila_term_cursseek_finalchar( -1 ) )
+		{
+			goto failed;
+		}
+		retval = europa_getCursorPosition( eu,  rows, cols );
+		if( retval == -1 )
+		{
+			goto failed;
+		}
+		
+		/* Restore position. */
+		mila_term_cursseek_setpos( 0, fileno( eu->dest ), orig_row, orig_col );
+		return( 0 );
+		
+	} else {
+		
+		*cols = ws.ws_col;
+		*rows = ws.ws_row;
+		return( 0 );
+	}
+	
+failed:
+	return( -1 );
+}
+	/* Originally by Leandro Pereira */
+void europa_updateWindowSize( europa *eu )
+{
+    if
+	(
+		europa_getWindowSize
+		(
+			eu,
+			&( eu->size.height ),
+			&( eu->size.width )
+		) == -1
+	)
+	{
+		msgs_build_fatal
+		(
+			(msgs**)0,
+			"\teuropa_updateWindowSize() was unable to query the screen for size (columns / rows)\n"
+		);
+        exit( 1 );
+    }
 }
 
 int io_deathrattle( io *stream,  char *deathrattle )
