@@ -172,7 +172,7 @@ void editorProcessKeypress( int fd )
     /* When the file is modified, requires Ctrl-q to be pressed N times
      * before actually quitting. */
     static int quit_times = KILO_QUIT_TIMES;
-
+	
     int c = editorReadKey( fd );
     switch( c )
 	{
@@ -280,6 +280,7 @@ int editorFileWasModified( void )
     return E.dirty;
 }
 
+	/* Leandro Pereira */
 void updateWindowSize( void )
 {
     if
@@ -298,6 +299,7 @@ void updateWindowSize( void )
 	E.screenrows -= MILA_UTILITYLINES; /* Get room for utility area. */
 }
 
+	/* Leandro Pereira */
 void handleSigWinCh( int unused __attribute__((unused)) )
 {
     updateWindowSize();
@@ -366,7 +368,9 @@ void initEditor( void )
 		msgs_build_fatal( (msgs**)0,  "\tstatview_build() failed in initEditor().\n" );
 		exit( 1 );
 	}
+		/* Leandro Pereira */
     updateWindowSize();
+		/* Leandro Pereira */
     signal( SIGWINCH, handleSigWinCh );
 }
 

@@ -51,7 +51,7 @@ void editorFind( int fd )
 #define FIND_RESTORE_HL do { \
     if( saved_hl ) { \
         memcpy( E.row[ saved_hl_line ].hl,saved_hl, E.row[ saved_hl_line ].rsize ); \
-        free( saved_hl ); \
+        free( saved_hl ); /* Vuong Hoang */ \
         saved_hl = NULL; \
     } \
 } while (0)

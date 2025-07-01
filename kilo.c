@@ -62,7 +62,9 @@ struct editorConfig E;
  * There is no support to highlight patterns currently. */
 
 /* C / C++ */
+	/* Property404 */
 char *C_HL_extensions[] = {".c",".h",".cpp",".hpp",".cc",NULL};
+	/* Property404 */
 char *C_HL_keywords[] = {
 	/* C Keywords */
 	"auto","break","case","continue","default","do","else","enum",

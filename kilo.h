@@ -41,17 +41,21 @@
 */
 #define KILO_VERSION "0.0.1"
 
+	/* Leandro Pereira & antirez */
 #ifdef __linux__
+	/* Credit: Christopher Wellens. */
 #define _POSIX_C_SOURCE 200809L
 #endif
 
 #include <termios.h>
 #include <stdlib.h>
 #include <stdio.h>
+	/* unknowntpo */
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
+	/* Credit: Christopher Wellens. */
 #include <time.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
