@@ -63,7 +63,6 @@
 		
 	} io_flags;
 	
-	/* ... I want 32-bit characters, how am I supposed to get that if "val" is a char? */
 	typedef
 		int (*io_sendchar)
 		(
@@ -105,8 +104,8 @@
 	{
 		uintptr_t id;
 		
-		io_fetchchar putc;
-		io_sendchar getc;
+		io_fetchchar getc;
+		io_sendchar putc;
 		
 		io_genericfunc close;
 	};
