@@ -375,6 +375,18 @@ typedef enum
 } gaianphase;
 
 
+typedef struct signal_links signal_links;
+struct signal_links
+{
+	signal_links *prev, *next;
+	
+	void (*handler)( signal_links*, int );
+};
+
+int register_signallink( int sig, signal_links *link );
+int delink_signallink( signal_links *sl );
+
+
 
 /* MILA_TERMCODES_11 was defined here.*/
 

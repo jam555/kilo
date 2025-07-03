@@ -100,10 +100,76 @@ struct editorSyntax HLDB[] =
 size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 
-void handleSigWinCh( int unused __attribute__((unused)) )
+static signal_links sigWinch_hooks = { 0 };
+int register_signallink( int sig, signal_links *link )
 {
+	if( link )
+	{
+		signal_links *host = 0;
+		
+		switch( sig )
+		{
+			case SIGWINCH:
+				host = &sigWinch_hooks;
+				break;
+			
+			default:
+				return( -2 );
+		}
+		
+		link->next = host->next;
+		link->prev = host;
+		if( link->next )
+		{
+			link->next->prev = link;
+		}
+		host->next = link;
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
+int delink_signallink( signal_links *sl )
+{
+	if( sl )
+	{
+		if( !( sl->prev ) )
+		{
+			return( -2 );
+		}
+		
+		sl->prev->next = sl->next;
+		if( sl->next )
+		{
+			sl->next->prev = sl->prev;
+		}
+		sl->prev = 0;
+		sl->next = 0;
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+}
+void handleSigWinCh( int sig )
+{
+	signal_links *link = sigWinch_hooks.next, *next = 0;
+	
+	while( link )
+	{
+		next = link->next;
+		
+		if( link->handler )
+		{
+			link->handler( link, sig );
+		}
+		
+		link = next;
+	}
+	
 		/* In edevents.c */
-	handleSigWinCh2( unused );
+	handleSigWinCh2( sig );
 }
 
 void main_atexit( void );
