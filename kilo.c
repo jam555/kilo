@@ -100,6 +100,12 @@ struct editorSyntax HLDB[] =
 size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 
+void handleSigWinCh( int unused __attribute__((unused)) )
+{
+		/* In edevents.c */
+	handleSigWinCh2( unused );
+}
+
 void main_atexit( void );
 int main_coro( void *ign );
 void main_noargs_print( void );
@@ -171,6 +177,10 @@ int main_coro( void *ign )
 	main_args();
 
     initEditor();
+		/* Leandro Pereira */
+		/* Was in initEditor() */
+    signal( SIGWINCH, handleSigWinCh );
+	
     editorSelectSyntaxHighlight( args[ 1 ] );
     editorOpen( args[ 1 ] );
     enableRawMode( STDIN_FILENO );

@@ -300,7 +300,7 @@ void updateWindowSize( void )
 }
 
 	/* Leandro Pereira */
-void handleSigWinCh( int unused __attribute__((unused)) )
+void handleSigWinCh2( int unused __attribute__((unused)) )
 {
     updateWindowSize();
     if( E.cy > E.screenrows )
@@ -370,8 +370,6 @@ void initEditor( void )
 	}
 		/* Leandro Pereira */
     updateWindowSize();
-		/* Leandro Pereira */
-    signal( SIGWINCH, handleSigWinCh );
 }
 
 /* Load the specified program in the editor memory and returns 0 on success

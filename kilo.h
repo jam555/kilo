@@ -579,7 +579,11 @@ int editorFileWasModified(void);
 
 void updateWindowSize(void);
 
+	/* Located in kilo.c */
 void handleSigWinCh(int unused __attribute__((unused)));
+	/* Located in edevents.c */
+	/* Leandro Pereira */
+void handleSigWinCh2(int unused __attribute__((unused)));
 
 void initEditor(void);
 
