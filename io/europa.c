@@ -41,6 +41,7 @@
 
 #include "../kilo.h"
 #include "io.h"
+#include "cellarr.h"
 #include "../dynarr.h"
 #include "../utility.h"
 
@@ -60,13 +61,10 @@ struct europa
 		
 	} size; /* Available terminal area. */
 	
-		/* Will often contain escapes. Eventually needs to be replaced with a */
-		/*  uint32_t-based version. */
-	dynarr
-		*cells,
-			/* The terminal should HOPEFULLY have a distinct title bar. Add */
-			/*  something to store it. */
-		*title;
+		/* Will often contain escapes. */
+	cellarr *cells;
+		/* The terminal should HOPEFULLY have a distinct title bar. */
+	dynarr *title;
 	
 	struct termios orig_termios;
 	
@@ -77,6 +75,9 @@ struct europa
 	
 #warning "europa{} needs to have a target for msgs{} fatal messages to target."
 };
+
+	/* Originally by Leandro Pereira */
+void europa_updateWindowSize( europa *eu );
 
 
 
@@ -239,19 +240,19 @@ io* io_europa1()
 			
 			&io_genericnull
 		};
-	europa_stdio.src = STDIN;
-	europa_stdio.dest = STDOUT;
+	europa_stdio.src = stdin;
+	europa_stdio.dest = stdout;
 	/*
 	europa_stdio.size.width = ??? ;
 	europa_stdio.size.height = ??? ;
 	*/
 	if( !( europa_stdio.cells ) )
 	{
-		europa_stdio.cells = (dynarr*){};
+		europa_stdio.cells = (cellarr*){ 0 };
 	}
 	if( !( europa_stdio.title ) )
 	{
-		europa_stdio.title = (dynarr*){};
+		europa_stdio.title = (dynarr*){ 0 };
 	}
 	/*
 	europa_stdio.orig_termios = (termios){};
@@ -278,7 +279,7 @@ io* io_europa1()
 	/* signal( SIGWINCH, handleSigWinCh ); */
 #warning "The SIGWINCH handler needs to move into main() or related."
 	
-	return( &europa_stdio );
+	return( &( europa_stdio.header ) );
 }
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position */
@@ -394,7 +395,8 @@ void europa_updateWindowSize( europa *eu )
 		msgs_build_fatal
 		(
 			(msgs**)0,
-			"\teuropa_updateWindowSize() was unable to query the screen for size (columns / rows)\n"
+			"\n\teuropa_updateWindowSize() was unable to query the screen for "
+				"size (columns / rows)\n"
 		);
         exit( 1 );
     }
@@ -402,9 +404,9 @@ void europa_updateWindowSize( europa *eu )
 
 int io_deathrattle( io *stream,  char *deathrattle )
 {
-	if( io && io->id == (uintptr_t)&id )
+	if( stream && stream->id == (uintptr_t)&id )
 	{
-		( (europa*)io )->deathrattle = deathrattle;
+		( (europa*)stream )->deathrattle = deathrattle;
 		
 		return( 1 );
 	}
