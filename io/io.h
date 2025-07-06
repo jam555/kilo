@@ -206,7 +206,7 @@
 		
 	} io_europa_flags;
 		/* Wraps stdin/stdout. */
-	io* io_europa1();
+	io* io_europa1( void );
 	
 	
 	
@@ -242,6 +242,9 @@
 		io_closure *on_err
 	)
 	{
+		(void)flags;
+		(void)on_err;
+		
 		if( stream )
 		{
 			return( 1 );

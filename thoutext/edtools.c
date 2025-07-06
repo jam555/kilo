@@ -195,5 +195,3 @@ void editorRefreshScreen( void )
     abFree( &util );
     abFree( &ab );
 }
-
-#warning "editorSetStatusMessage() did E.statusmsg_time = time( NULL ), but is gone."
