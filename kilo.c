@@ -171,6 +171,11 @@ void handleSigWinCh( int sig )
 		/* In edevents.c */
 	handleSigWinCh2( sig );
 }
+void signallink_dummyhandler( signal_links *sl, int i )
+{
+	(void)sl;
+	(void)i;
+}
 
 void main_atexit( void );
 int main_coro( void *ign );
@@ -241,7 +246,7 @@ int main_coro( void *ign )
     (void)ign;
 	
 	main_args();
-
+	
     initEditor();
 		/* Leandro Pereira */
 		/* Was in initEditor() */

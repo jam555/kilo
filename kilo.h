@@ -383,8 +383,11 @@ struct signal_links
 	void (*handler)( signal_links*, int );
 };
 
+	/* Only SIGWINCH is currently supported. */
 int register_signallink( int sig, signal_links *link );
 int delink_signallink( signal_links *sl );
+
+void signallink_dummyhandler( signal_links*, int );
 
 
 
