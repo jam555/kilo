@@ -37,11 +37,70 @@
 #ifndef UTILITY_H
 # define UTILITY_H
 	
+	#include <limits.h>
+	
+	/* Calculate the address of a structure instance, based on the address */
+	/*  of one of it's known member elements. */
 #warning "Hunt down other cases where this is relevant, and use it."
 	#define CALCADDR_FROMMEMBER( type, member, refaddr ) \
 		(type*)( \
 			(char*)( refaddr ) + ( \
 				(char*)( &( ( (type*)0 )->member ) ) - \
 				(char*)( (type*)0 ) ) );
+	
+	
+	/* !!!BEWARE!!! Optimizations can absolutely thrash all of this logic!!! */
+	/* Note that much of this was sourced via: */
+		/*
+			https://stackoverflow.com/questions/4514572/
+				c-question-off-t-and-other-signed-integer-
+				types-minimum-and-maximum-values
+		*/
+	
+		/* Calculate the maximum value of an unsigned integer. */
+	#define CALCVAL_UNSIGNEDMAX( type ) ( ( (type)0 ) - 1 )
+	/* The logic for *HIGHBIT() & *GENERICMAX() is apparently credit to */
+	/*  Christian Biere via a nabble.com page that seems non-existent */
+	/*  (couldn't find it on wayback machine). *HASSIGNED() and *GENERICMIN() */
+	/*  are my own formulations. */
+	#define CALCVAL_GENERICHIGHBIT( type ) \
+		( (type)( ( \
+			(uintmax_t)1 ) << \
+			( CHAR_BIT * sizeof( type ) - \
+				( 1 + ( (type)-1 < 1 ) ) ) ) )
+	#define CALCVAL_GENERICMAX( type ) \
+		( ( CALCVAL_GENERICHIGHBIT( type ) - 1 ) + \
+			CALCVAL_GENERICHIGHBIT( type ) )
+	#define CALCVAL_HASSIGNED( type ) \
+		( ( (type)-1 < 1 ) ? 1 : 0 )
+			/* *_GENERICMIN() is expected to work for sign-magnitude, */
+			/*  one's-complement, AND two's-complement. Odder variants of */
+			/*  signed probably WON'T work, but aren't particularly existent */
+			/*  either. */
+	#define CALCVAL_GENERICMIN( type ) \
+		( CALCVAL_HASSIGNED( type ) ? ( 0 ) : \
+			( -CALCVAL_GENERICMAX( type ) + \
+				( ( -CALCVAL_GENERICMAX( type ) ) - 1 < 1 ) ? \
+					( -1 ) : ( 0 ) ) )
+	
+		/* Originally from Hallvard B Furuseth in: */
+			/* https://groups.google.com/g/comp.lang.c/c/NfedEFBFJ0k */
+			/* Note: Usenet comp.lang.c, Dec 30 of 2003, "Portability question" */
+		/* Number of bits in inttype_MAX, or: */
+			/* in any ( (1<<b)-1 ) where: */
+				/* 0 <= b < 3E+10 */
+		/* Apparently covers up to "4-gigabyte integers". */
+	#define CALCVAL_MAXtoBITS( m ) \
+		( ( m ) / \
+			( ( m ) % 0x3fffffffL + 1 ) / \
+			0x3fffffffL % \
+			0x3fffffffL * \
+			30 + ( m ) % \
+			0x3fffffffL / \
+			( ( m ) % 31 + 1 ) / \
+			31 % 31 * 5 + 4 - 12 / \
+			( ( m ) % 31 + 3 ) )
+		/* Note that the original Usenet posting contains a brief commentary on */
+		/*  the algorithm. */
 	
 #endif

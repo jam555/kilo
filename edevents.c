@@ -35,6 +35,14 @@
 
 #include "kilo.h"
 #include "msgs.h"
+#include "utility.h"
+
+#ifndef OFF_T_MAX
+	#define OFF_T_MAX CALCVAL_GENERICMAX( off_t )
+#endif
+#ifndef OFF_T_MIN
+	#define OFF_T_MIN CALCVAL_GENERICMIN( off_t )
+#endif
 
 
 /* ========================= Editor events handling  ======================== */
@@ -355,7 +363,9 @@ void initEditor( void )
 	E.modemsg = 0;
 	E.deathrattle = 0;
 	
-    if( !E.altscr && !E.no_altscr )
+	E.statusmsg_time = time( NULL );
+    
+	if( !E.altscr && !E.no_altscr )
     {
         if( !mila_initterm_xterm() )
 		{
@@ -431,14 +441,9 @@ int editorSave( void )
 
     /* Use truncate + a single write(2) call in order to make saving
      * a bit safer, under the limits of what we can do in a small editor. */
+	if( OFF_T_MAX < len || ftruncate( fd, (off_t)len ) == -1 )
 	{
-		off_t tmp = (off_t)len;
-	/* Maybe https://stackoverflow.com/questions/4514572/c-question-off-t-and-other-signed-integer-types-minimum-and-maximum-values ? */
-#warning "Find a better approach to limits than this."
-		if( (size_t)tmp < len || ftruncate( fd, (off_t)len ) == -1 )
-		{
-			goto writeerr;
-		}
+		goto writeerr;
 	}
 	{
 		ssize_t res = write( fd, buf, len );
