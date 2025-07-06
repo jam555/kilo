@@ -73,8 +73,22 @@ struct europa
 		/* The last-chanve choice for error messages. */
 	char *deathrattle;
 	
+	signal_links onsig;
+	
 #warning "europa{} needs to have a target for msgs{} fatal messages to target."
 };
+/*
+typedef struct signal_links signal_links;
+struct signal_links
+{
+	signal_links *prev, *next;
+	
+	void (*handler)( signal_links*, int );
+};
+
+int register_signallink( int sig, signal_links *link );
+int delink_signallink( signal_links *sl );
+*/
 
 	/* Originally by Leandro Pereira */
 void europa_updateWindowSize( europa *eu );
@@ -275,9 +289,16 @@ io* io_europa1()
 	}
 		/* Leandro Pereira */
 	europa_updateWindowSize( &europa_stdio );
-		/* Leandro Pereira */
-	/* signal( SIGWINCH, handleSigWinCh ); */
-#warning "The SIGWINCH handler needs to move into main() or related."
+	
+	if( !( europa_stdio.onsig.prev ) )
+	{
+		europa_stdio.onsig.handler = &signallink_dummyhandler;
+		
+#warning "SIGWINCH seems to result in simple exit, fix that."
+		int res = register_signallink( SIGWINCH, &( europa_stdio.onsig ) );
+		
+		(void)res;
+	}
 	
 	return( &( europa_stdio.header ) );
 }
