@@ -270,34 +270,37 @@ typedef struct hlcolor {
     int r,g,b;
 } hlcolor;
 
+typedef size_t axis_type;
+
 	/* TODO: Break this into separate window & pane (frame & glass?) */
 	/*  sections, to support multi-document capability. */
 	/* This gets initialized in initEditor() in edevents.c */
-struct editorConfig {
-    int no_altscr;  /* Forbid usage of the alternate-screen. */
-
-    size_t cx,cy;  /* Cursor x and y position in characters */
-    size_t rowoff;     /* Offset of row displayed. */
-    size_t coloff;     /* Offset of column displayed. */
-    size_t screenrows; /* Number of rows that we can show */
-    size_t screencols; /* Number of cols that we can show */
-    size_t numrows;    /* Number of rows */
-    int rawmode;    /* Is terminal raw mode enabled? */
-    int altscr;     /* Is terminal alternate-screen selected? */
-    erow *row;      /* Rows */
-    int dirty;      /* File modified but not saved. */
-    char *filename; /* Currently open filename */
-    char statusmsg[80];
-    time_t statusmsg_time;
+struct editorConfig
+{
+	int no_altscr;  /* Forbid usage of the alternate-screen. */
 	
-    struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
+	axis_type cx,cy;  /* Cursor x and y position in characters */
+	axis_type rowoff;     /* Offset of row displayed. */
+	axis_type coloff;     /* Offset of column displayed. */
+	axis_type screenrows; /* Number of rows that we can show */
+	axis_type screencols; /* Number of cols that we can show */
+	axis_type numrows;    /* Number of rows */
+	int rawmode;    /* Is terminal raw mode enabled? */
+	int altscr;     /* Is terminal alternate-screen selected? */
+	erow *row;      /* Rows */
+	int dirty;      /* File modified but not saved. */
+	char *filename; /* Currently open filename */
+	char statusmsg[80];
+	time_t statusmsg_time;
+	
+	struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
 	
 	
 	/* The things below have been added to convert this into a window-tracker. They are currently unused. */
 	
 	struct termios orig_termios;
 	
-    /* The utility zone currently just holds the status lines. */
+	/* The utility zone currently just holds the status lines. */
 	/*  The "exten" section is for "auxiliary display" options, */
 	/*  like a character LCD hanging off of a serial port. */
 	erow *utilrow;      /* Utility zone rows */
@@ -305,9 +308,9 @@ struct editorConfig {
 	/* Extern x & y specifically is to allow for screen scrolling: */
 	/*  there's no telling if it'll match the terminal size, so */
 	/*  it's better to prepare for a mismatch. */
-    size_t externx, externy;
-	size_t externrows; /* Number of rows that we can show */
-    size_t externcols; /* Number of cols that we can show */
+	axis_type externx, externy;
+	axis_type externrows; /* Number of rows that we can show */
+	axis_type externcols; /* Number of cols that we can show */
 	
 		/* This is where our progress-target currently lies. We need to move the appenbuf.c */
 		/*  stuff to using this instead of accessing the status directly. In particular, it */

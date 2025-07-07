@@ -39,10 +39,12 @@
 
 /* =============================== Find mode ================================ */
 
+#warning "editorFind() needs to roughly be a mode."
+
 void editorFind( int fd )
 {
     char query[ KILO_QUERY_LEN + 1 ] = { 0 };
-    int qlen = 0;
+    axis_type qlen = 0;
     int last_match = -1; /* Last line where a match was found. -1 for none. */
     int find_next = 0; /* if 1 search next, if -1 search prev. */
     int saved_hl_line = -1;  /* No saved HL */
@@ -57,23 +59,14 @@ void editorFind( int fd )
 } while (0)
 
     /* Save the cursor position in order to restore it later. */
-    int saved_cx = E.cx, saved_cy = E.cy;
-    int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
-	msgs *msgtmp = 0;
+    axis_type saved_cx = E.cx, saved_cy = E.cy;
+    axis_type saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+	/* msgs *msgtmp = 0; */ /* Was used to track msgs{} for later deactivation maybe? */
 	
 	while( 1 )
 	{
-        /* editorSetStatusMessage( "Search: %s (Use ESC/Arrows/Enter)", query ); */
-			/* Should this be note, or alert? */
-		/*
-		msgs_build_note( &msgtmp,  "Search: %s (Use ESC/Arrows/Enter)", query );
-		if( E.modemsg )
-		{
-			msgs_mark_discard( E.modemsg );
-		}
-		E.modemsg = msgtmp;
-		*/
 		int res = modemsgs_setmodal( MODEMSGS_MILLI_FIND );
+#warning "Add some method to display the current search string."
 		switch( res )
 		{
 			case 0:
@@ -92,16 +85,10 @@ void editorFind( int fd )
 		editorRefreshScreen();
 		
 		int c = editorReadKey( fd );
-		if( c == DEL_KEY || c == CTRL_H || c == BACKSPACE )
+		if( c == ESC || c == ENTER )
 		{
-			if( qlen != 0 )
-			{
-				query[ --qlen ] = '\0';
-			}
-			last_match = -1;
+			/* Done with find. */
 			
-		} else if( c == ESC || c == ENTER )
-		{
 			if( c == ESC )
 			{
 				E.cx = saved_cx;
@@ -116,9 +103,41 @@ void editorFind( int fd )
 				E.deathrattle = "\neditorFind unforeseen failure 2.\n";
 				exit( 2 );
 			}
-			/* editorSetStatusMessage( "" ); */
 			return;
+			
+			
 
+		} else if( c == DEL_KEY || c == CTRL_H || c == BACKSPACE )
+		{
+			/* Truncate query string. */
+			
+			if( qlen > 0 )
+			{
+				query[ --qlen ] = '\0';
+				
+			} else {
+				
+				/* Throw some sort of error. */
+			}
+			last_match = -1;
+			
+		} else if( isprint( c ) )
+		{
+			/* Grow query string. */
+			
+			if( qlen < KILO_QUERY_LEN )
+			{
+				query[ qlen++ ] = (char)c; /* Trust isprint() */
+				query[ qlen ] = '\0';
+				last_match = -1;
+				
+			} else {
+				
+				/* Throw some sort of error. */
+			}
+			
+			
+			
 		} else if( c == ARROW_RIGHT || c == ARROW_DOWN )
 		{
 			find_next = 1;
@@ -127,70 +146,109 @@ void editorFind( int fd )
 		{
 			find_next = -1;
 			
-		} else if( isprint( c ) )
-		{
-			if( qlen < KILO_QUERY_LEN )
-			{
-				query[ qlen++ ] = (char)c; /* Trust isprint() */
-				query[ qlen ] = '\0';
-				last_match = -1;
-			}
-			
 		} else {
 			
 			io_unknownkey_message( "editorFind", c );
 			continue;
 		}
 		
-		/* Search occurrence. */
+		/* Search for occurrence. */
 		if( last_match == -1 )
 		{
 			find_next = 1;
 		}
 		if( find_next )
 		{
-            char *match = NULL;
-            int match_offset = 0;
-            int i, current = last_match;
-
-            for( i = 0; i < E.numrows; i++ ) {
-                current += find_next;
-                if( current == -1 ) current = E.numrows-1;
-                else if( current == E.numrows ) current = 0;
-                match = strstr( E.row[ current ].render, query );
-                if( match ) {
-                    match_offset = match-E.row[ current ].render;
-                    break;
-                }
-            }
-            find_next = 0;
-
-            /* Highlight */
-            FIND_RESTORE_HL;
-
-            if( match ) {
-                erow *row = &E.row[ current ];
-                last_match = current;
-                if( row->hl ) {
-                    saved_hl_line = current;
-                    saved_hl = malloc( row->rsize );
-                    memcpy( saved_hl, row->hl, row->rsize );
-                    memset( row->hl + match_offset, HL_MATCH, qlen );
-                }
-                E.cy = 0;
-                E.cx = match_offset;
-                E.rowoff = current;
-                E.coloff = 0;
-                /* Scroll horizontally as needed. */
-                if( E.cx > E.screencols ) {
-                    ptrdiff_t diff = (ptrdiff_t)( E.cx - E.screencols );
-                    if( diff && E.cx < (size_t)( diff ) )
+			char *match = NULL;
+			ptrdiff_t match_offset = 0;
+			axis_type
+				i,
+				currow = (axis_type)( last_match >= 0 ? last_match : 0 ),
+				curneg = ( last_match >= 0 ? 0 : 1 );
+			
+			/* Actually search. */
+			for( i = 0; i && (unsigned)i < E.numrows; i++ )
+			{
+				/* The iteration is this ENTIRE conditional cascade. */
+				if( find_next < 0 && currow <= 0 )
+				{
+					if( E.numrows >= 1 )
+					{
+						currow = E.numrows - 1;
+						curneg = 0;
+						
+					} else {
+						
+						currow = 0;
+						curneg = 1;
+					}
+					
+				} else if( find_next > 0 && currow + 1 == E.numrows )
+				{
+					currow = 0;
+					curneg = 0;
+					
+				} else {
+					
+#pragma GCC diagnostic push
+	/* Silence the conversion complaint, we've already verified the range. */
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+					currow += find_next;
+#pragma GCC diagnostic pop
+					curneg = 0;
+				}
+				
+				
+					/* Actual comparison. */
+				match = strstr( E.row[ currow ].render, query );
+				if( match )
+				{
+					match_offset = match - E.row[ currow ].render;
+					if( match_offset < 0 )
+					{
+						/* Throw some sort of error. */
+					}
+					break;
+				}
+			}
+			find_next = 0;
+			
+			/* Highlight */
+			FIND_RESTORE_HL;
+			
+			/* Update position info. */
+			if( match )
+			{
+                /* If we have a match, then ( !curneg ). */
+				
+				erow *row = &E.row[ currow ];
+                last_match = currow;
+				
+				if( row->hl )
+				{
+					saved_hl_line = currow;
+					saved_hl = malloc( row->rsize );
+					memcpy( saved_hl, row->hl, row->rsize );
+					memset( row->hl + match_offset, HL_MATCH, qlen );
+				}
+				
+				E.cy = 0;
+				E.cx = (axis_type)match_offset;
+				E.rowoff = currow;
+				E.coloff = 0;
+				
+				/* Scroll horizontally as needed. */
+				if( E.cx > E.screencols )
+				{
+					ptrdiff_t diff = (ptrdiff_t)( E.cx - E.screencols );
+					
+					if( diff && E.cx < (size_t)( diff ) )
 					{
 						msgs_build_fatal( (msgs**)0,  "\teditorFind() err 1. diff: %d; E.cx: %zu\n", (int)diff, E.cx );
 						exit( 1 );
 					}
-                    E.cx -= (size_t)diff;
-                    if( !diff && E.coloff < (size_t)( -diff ) )
+					E.cx -= (size_t)diff;
+					if( !diff && E.coloff < (size_t)( -diff ) )
 					{
 						msgs_build_fatal( (msgs**)0,  "\teditorFind err 2. diff: $d; E.coloff: %zu\n", (int)diff, E.coloff );
 						exit( 1 );
