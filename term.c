@@ -232,7 +232,7 @@ void mila_term_setcolor
 
 void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 {
-	int res;
+	ssize_t res;
 	char seq[ 32 ];
 	
 #warning "Numeric results haven't been verified: note the \"row < 0\" and \"col < 0 \" cases."
