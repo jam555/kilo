@@ -43,24 +43,26 @@
 
 void editorFind( int fd )
 {
-    char query[ KILO_QUERY_LEN + 1 ] = { 0 };
-    axis_type qlen = 0;
-    int last_match = -1; /* Last line where a match was found. -1 for none. */
-    int find_next = 0; /* if 1 search next, if -1 search prev. */
-    int saved_hl_line = -1;  /* No saved HL */
-    char *saved_hl = NULL;
-
+	char query[ KILO_QUERY_LEN + 1 ] = { 0 };
+	axis_type qlen = 0;
+	axis_type
+		last_match = 0, /* Last line where a match was found. See "has_match" for none. */
+		saved_hl_line = 0;  /* Current highlighted line. See "has_match" for none. */
+	int has_match = 0; /* 0 if there is no match, else 1. */
+	int find_next = 0; /* if 1 search next, if -1 search prev. */
+	char *saved_hl = NULL;
+	
 #define FIND_RESTORE_HL do { \
     if( saved_hl ) { \
-        memcpy( E.row[ saved_hl_line ].hl,saved_hl, E.row[ saved_hl_line ].rsize ); \
+        memcpy( E.row[ saved_hl_line ].hl, saved_hl, E.row[ saved_hl_line ].rsize ); \
         free( saved_hl ); /* Vuong Hoang */ \
         saved_hl = NULL; \
     } \
 } while (0)
-
-    /* Save the cursor position in order to restore it later. */
-    axis_type saved_cx = E.cx, saved_cy = E.cy;
-    axis_type saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+	
+	/* Save the cursor position in order to restore it later. */
+	axis_type saved_cx = E.cx, saved_cy = E.cy;
+	axis_type saved_coloff = E.coloff, saved_rowoff = E.rowoff;
 	/* msgs *msgtmp = 0; */ /* Was used to track msgs{} for later deactivation maybe? */
 	
 	while( 1 )
@@ -119,7 +121,8 @@ void editorFind( int fd )
 				
 				/* Throw some sort of error. */
 			}
-			last_match = -1;
+			last_match = 0;
+			has_match = 0;
 			
 		} else if( isprint( c ) )
 		{
@@ -129,7 +132,8 @@ void editorFind( int fd )
 			{
 				query[ qlen++ ] = (char)c; /* Trust isprint() */
 				query[ qlen ] = '\0';
-				last_match = -1;
+				last_match = 0;
+				has_match = 0;
 				
 			} else {
 				
@@ -153,7 +157,7 @@ void editorFind( int fd )
 		}
 		
 		/* Search for occurrence. */
-		if( last_match == -1 )
+		if( has_match == 0 )
 		{
 			find_next = 1;
 		}
@@ -163,8 +167,8 @@ void editorFind( int fd )
 			ptrdiff_t match_offset = 0;
 			axis_type
 				i,
-				currow = (axis_type)( last_match >= 0 ? last_match : 0 ),
-				curneg = ( last_match >= 0 ? 0 : 1 );
+				currow = (axis_type)( has_match ? last_match : 0 ),
+				curneg = !has_match;
 			
 			/* Actually search. */
 			for( i = 0; i && (unsigned)i < E.numrows; i++ )
@@ -223,6 +227,7 @@ void editorFind( int fd )
 				
 				erow *row = &E.row[ currow ];
                 last_match = currow;
+				has_match = !curneg;
 				
 				if( row->hl )
 				{
