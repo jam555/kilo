@@ -57,6 +57,7 @@ struct statstate
 	void *volatile data;
 	void (*volatile func)( void );
 	
+		/* Both of these are for signal-handler based time tracking. */
 	size_t last_size;
 	signal_links time_hook;
 };
@@ -66,6 +67,8 @@ struct statstate
 	/* Baring strlen() and time(), this should be MORE than needed. */
 static const size_t allocation = 8 * 1024;
 
+
+static void statview_ontime( signal_links *sl, int sig );
 
 int statview_updatetime( statstate *stats )
 {
@@ -78,6 +81,8 @@ int statview_updatetime( statstate *stats )
 		{
 			stats->off += 1;
 			stats->last_time = t;
+			
+			E.dirty = 1;
 		}
 		if( stats->off >= stats->last_size )
 		{
@@ -151,7 +156,7 @@ static void statview_fetchmsg_inner( void *v_ )
 	stats->last_size = slen;
 	
 	/* Increment per time. */
-	if( !loop )
+	if( 0 ) /* !loop ) */
 	{
 		loop = statview_updatetime( stats );
 		if( loop < 0 )
@@ -168,6 +173,11 @@ static void statview_fetchmsg_inner( void *v_ )
 		{
 			goto afterloop;
 		}
+	}
+	if( !loop )
+	{
+		loop = 1;
+		goto afterloop;
 	}
 	
 	/* "Output" the effective string && flags. */
@@ -209,6 +219,9 @@ static void statview_coromain( corohead *head, void *data )
 			/* Should this really be 0? Nope, we need to bootstrap. */
 		stats.ret_dest = *( (corohead**)data );
 		stats.last_time = time( (time_t*)0 );
+		stats.last_size = 0;
+		stats.time_hook = (signal_links){ 0 };
+			stats.time_hook.handler = &statview_ontime;
 		head->auxiliary = (uintptr_t)&stats;
 		
 		int loop = 1 /*CORO_WORKING*/ ;
@@ -284,7 +297,7 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 	/* printf( "\tstatview_fetchmsg() error exit.\n" ); */
 	return( -1 );
 }
-statstate* statview_build()
+statstate* statview_build( signal_links **sl )
 {
 	/* printf( "\nEntering statview_build()\n" ); fflush( stdout ); */
 	
@@ -331,15 +344,27 @@ statstate* statview_build()
 	/*  NO, because we hand a pointer to tmp to statview_coromain() via cobuild(). */
 	coyield2( head, &tmp,  0, 0 );
 	
+	if( sl )
+	{
+		*sl = &( ( (statstate*)( head->auxiliary ) )->time_hook );
+	}
 	/* printf( "\t\tstatview_build() returning.\n" );
 	fflush( stdout ); */
 	return( (statstate*)( head->auxiliary ) );
 }
-void statview_ontime( signal_links *sl, int sig )
+static void statview_ontime( signal_links *sl, int sig )
 {
+	static int been_called = 0;
+	
 	if( sl && sig == SIGVTALRM )
 	{
 		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
+		
+		if( !been_called )
+		{
+			msgs_build_fatal( (msgs**)0,  "\tstatview_ontime() has been called.\n" );
+			been_called = 1;
+		}
 		
 			/* TODO: pay attention to the return type. */
 		statview_updatetime( stats );

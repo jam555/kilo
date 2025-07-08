@@ -54,9 +54,7 @@
 		/* Sets the statview_view according to the state & */
 		/*  usable_width. */
 	int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data );
-		/* Only meant to be used indirectly. */
-	void statview_ontime( signal_links *sl, int sig );
 		/* Builds the statstate that *_fetchmsg() needs. */
-	statstate* statview_build( void );
+	statstate* statview_build( signal_links** );
 	
 #endif
