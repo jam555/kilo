@@ -58,7 +58,7 @@
 #define INNER_STRINGIFY( val ) #val
 #define STRINGIFY( val ) INNER_STRINGIFY( val )
 
-#define CVERSTR( val ) "C standard version # " STRINGIFY( val )
+#define CVERSTR( val ) "C standard version : " STRINGIFY( val )
 #define GCCVERSTR( major, minor, patch ) \
 	"GCC version # " \
 		STRINGIFY( major ) " . " \
@@ -75,12 +75,20 @@
 
 
 char
-	*thou_commithash = STRINGIFY( CHASH ),
-	*thou_commitdate = STRINGIFY( CDATE ),
-	*thou_workdirstate = STRINGIFY( WDIRS ),
+	*const thou_commithash = "Commit hash: " STRINGIFY( CHASH ),
+	*const thou_commitdate = "Commit date: " STRINGIFY( CDATE ),
+	*const thou_workdirstate = "Working directory state: " STRINGIFY( WDIRS ),
 	
-	*thou_buildstamp = "CPP Date: " __DATE__ "; Time: " __TIME__,
-	*thou_stdcver = CVERSTR( __STDC_VERSION__ ),
-	*thou_gccver = GCCVERSTR( __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__ ),
-	*thou_typewidths = WIDTHSSTR( __SCHAR_WIDTH__, __INT_WIDTH__, __LONG_WIDTH__, __INTPTR_WIDTH__, __INTMAX_WIDTH__ ),
-	*thou_filestamp = __TIMESTAMP__;
+	*const thou_buildstamp = "CPP Date: " __DATE__ "; Time: " __TIME__,
+	*const thou_stdcver = CVERSTR( __STDC_VERSION__ ),
+	*const thou_gccver = GCCVERSTR( __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__ ),
+	*const thou_typewidths = WIDTHSSTR( __SCHAR_WIDTH__, __INT_WIDTH__, __LONG_WIDTH__, __INTPTR_WIDTH__, __INTMAX_WIDTH__ ),
+	*const thou_filestamp = __TIMESTAMP__;
+
+#ifndef __STDC_VERSION__
+	#ifdef __cplusplus
+		#error "THis file is being treated as C++, but is C!"
+	#endif
+	
+	#error "__STDC_VERSION__ undefined!"
+#endif

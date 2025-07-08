@@ -35,7 +35,7 @@ COMPOPTS= -ggdb -Wall -W -pedantic -std=c99 \
 
 EDHEADERS= thoutext/edrows.h thoutext/edtools.h
 UTILHEADERS= coroutine/coro.h io/io.h
-ROOTHEADERS= kilo.h appenbuf.h term.h syntax.h edfind.h edevents.h statview.h msgs.h buildid.hpp
+ROOTHEADERS= kilo.h appenbuf.h term.h syntax.h edfind.h edevents.h statview.h msgs.h buildid.inc
 
 EDSRC= thoutext/edrows.c thoutext/edtools.c
 UTILSRC= coroutine/coro.c io/io.c
@@ -54,7 +54,7 @@ headers: $(ROOTHEADERS) $(EDHEADERS) $(UTILHEADERS)
 sources: $(ROOTSRC) $(EDSRC) $(UTILSRC)
 # NOTE! buildid.c is always and only built via preprocessor.
 kilo: headers sources Makefile
-	$(CC) buildid.inc -E -DCHASH="$(HASH)" -DCDATE="$(CDATE)" -DWDIRS="$(STATE)" -o buildid.c
+	gcc -x c buildid.inc -E -DCHASH="$(HASH)" -DCDATE="$(CDATE)" -DWDIRS="$(STATE)" -o buildid.c
 	$(CC) -o kilo $(ROOTSRC) buildid.c $(EDSRC) $(UTILSRC) $(COMPOPTS)
 
 clean:
