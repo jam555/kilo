@@ -375,6 +375,37 @@ void disableRawMode( int fd )
         tcsetattr( fd, TCSAFLUSH, &orig_termios );
         E.rawmode = 0;
     }
+	
+	if( E.didblock )
+	{
+		int res = fcntl( fd, F_GETFL ), tmp;
+		if( res < 0 )
+		{
+			tmp = errno;
+			printf
+			(
+				"\n\tdisableRawMode()::fcntl()1 failed: res == %d, errno == %d.\n",
+					res,
+					tmp
+			);
+			exit( 1 );
+		}
+		
+		E.didblock = 0;
+		
+		res = fcntl( fd, F_SETFL, res & ~O_NONBLOCK );
+		if( res < 0 )
+		{
+			tmp = errno;
+			printf
+			(
+				"\n\tdisableRawMode()::fcntl()2 failed: res == %d, errno == %d.\n",
+					res,
+					tmp
+			);
+			exit( 1 );
+		}
+	}
 }
 void mila_term_altscreen_disable( void )
 {
@@ -436,7 +467,7 @@ int enableRawMode( int fd )
     if( tcgetattr( fd, &orig_termios ) == -1 ) goto fatal;
 		/* To support the move to multi-doc capabilities. */
 	E.orig_termios = orig_termios;
-
+	
     raw = orig_termios;  /* modify the original mode */
     /* input modes: no break, no CR to NL, no parity check, no strip char,
      * no start/stop output control. */
@@ -455,8 +486,50 @@ int enableRawMode( int fd )
     /* put terminal in raw mode after flushing */
     if( tcsetattr( fd, TCSAFLUSH, &raw ) < 0 ) goto fatal;
     E.rawmode = 1;
+	
+	/* Prefer non-blocking behavior. */
+	if( !E.no_nonblock )
+	{
+		int res = fcntl( fd, F_GETFL ), tmp;
+		if( res < 0 )
+		{
+			tmp = errno;
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					
+					"\n\tenableRawMode()::fcntl()1 failed: res == %d, errno == %d.\n",
+					res,
+					tmp
+			);
+			exit( 1 );
+		}
+		
+		if( !( res & O_NONBLOCK ) )
+		{
+			
+			
+			E.didblock = 1;
+		}
+		
+		res = fcntl( fd, F_SETFL, res | O_NONBLOCK );
+		if( res < 0 )
+		{
+			tmp = errno;
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					
+					"\n\tenableRawMode()::fcntl()2 failed: res == %d, errno == %d.\n",
+					res,
+					tmp
+			);
+			exit( 1 );
+		}
+	}
+	
     return 0;
-
+	
 fatal:
     errno = ENOTTY;
     return -1;
@@ -469,16 +542,35 @@ int editorReadKey( int fd )
     ssize_t nread;
     char c, seq[ 3 ];
 #warning "This is a prime candidate for a yield-based IO routine."
-    while
+    int res;
+	errno = 0;
+	while
 	(
 		(
 			nread = read( fd, &c, 1 )
-		) == 0
+		) == 0 ||
+		( res = errno ) == EAGAIN ||
+		( res = errno ) == EWOULDBLOCK
 	)
 	{
-		;
+		errno = 0;
+		if( res == EAGAIN || res == EWOULDBLOCK )
+		{
+			return( KEYBOARD_TIMEOUT );
+		}
 	}
-    if( nread == -1 ) exit( 1 );
+    if( nread == -1 )
+	{
+		int e = errno;
+		msgs_build_fatal
+		(
+			(msgs**)0,
+				
+				"\n\teditorReadKey()::read() failed: res == %d, err == %d.\n",
+				(int)nread, e
+		);
+		exit( 1 );
+	}
 
     while( 1 )
 	{
