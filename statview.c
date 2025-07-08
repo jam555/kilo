@@ -37,6 +37,7 @@
 #include "coroutine/coro.h"
 #include "statview.h"
 #include "msgs.h"
+#include "utility.h"
 
 #include <stddef.h>
 #include <time.h>
@@ -55,6 +56,9 @@ struct statstate
 	
 	void *volatile data;
 	void (*volatile func)( void );
+	
+	size_t last_size;
+	signal_links time_hook;
 };
 
 
@@ -63,6 +67,41 @@ struct statstate
 static const size_t allocation = 8 * 1024;
 
 
+int statview_updatetime( statstate *stats )
+{
+	if( stats )
+	{
+		time_t t = time( (time_t*)0 );
+		double dtime = difftime( t, stats->last_time );
+		
+		if( dtime * 10 >= MILA_MESSAGESLOTH )
+		{
+			stats->off += 1;
+			stats->last_time = t;
+		}
+		if( stats->off >= stats->last_size )
+		{
+			stats->off = 0;
+			
+				/* Cycle to the next message. */
+			if( msgs_rotate() < 0 )
+			{
+				msgs_build_fatal
+				(
+					(msgs**)0,
+						"\tmsgs_rotate() failed in statview_fetchmsg_inner().\n"
+				);
+				exit( 1 );
+			}
+			
+			return( 1 );
+		}
+		
+		return( 0 );
+	}
+	
+	return( -1 );
+}
 static void statview_fetchmsg_inner( void *v_ )
 {
 	/* Runs inside the coro. */
@@ -109,30 +148,24 @@ static void statview_fetchmsg_inner( void *v_ )
 		}
 	}
 	size_t slen = strlen( msgsv.buf->b );
+	stats->last_size = slen;
 	
 	/* Increment per time. */
 	if( !loop )
 	{
-#warning "Move this to it's own function so time tracking can happen independently of display stuff."
-		time_t t = time( (time_t*)0 );
-		double dtime = difftime( t, stats->last_time );
-		if( dtime * 10 >= MILA_MESSAGESLOTH )
+		loop = statview_updatetime( stats );
+		if( loop < 0 )
 		{
-			stats->off += 1;
-			stats->last_time = t;
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					"statview.c : statview_updatetime() returned error: %d",
+					loop
+			);
+			exit( 1 );
 		}
-		if( stats->off >= slen )
+		if( loop == 1 )
 		{
-			stats->off = 0;
-			
-				/* Cycle to the next message. */
-			if( msgs_rotate() < 0 )
-			{
-				msgs_build_fatal( (msgs**)0,  "\tmsgs_rotate() failed in statview_fetchmsg_inner().\n" );
-				exit( 1 );
-			}
-			
-			loop = 1;
 			goto afterloop;
 		}
 	}
@@ -301,4 +334,14 @@ statstate* statview_build()
 	/* printf( "\t\tstatview_build() returning.\n" );
 	fflush( stdout ); */
 	return( (statstate*)( head->auxiliary ) );
+}
+void statview_ontime( signal_links *sl, int sig )
+{
+	if( sl && sig == SIGVTALRM )
+	{
+		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
+		
+			/* TODO: pay attention to the return type. */
+		statview_updatetime( stats );
+	}
 }
