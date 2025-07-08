@@ -251,6 +251,7 @@ int cocontext( void *data, int (*func)( void* ) );
 		size_t stacksize,
 		
 		void *coro_data,
+			/* The corohead* should probably be marked "corohead *volatile". */
 		void (*coro_main)( corohead*, void* ),
 			/* This is optional, as coro_main() can always just set corohead-> */
 			/*  ->auxiliary manually. */
@@ -265,7 +266,7 @@ int cocontext( void *data, int (*func)( void* ) );
 	);
 		uintptr_t coro_getaux( void );
 		int coyield( corohead *dest );
-		int coyield2( corohead *dest, corohead **volatile old,  void *data, void (*func)( void* ) );
+		int coyield2( corohead *dest, corohead *volatile *old,  void *data, void (*func)( void* ) );
 	void coclean( void );
 
 

@@ -397,9 +397,9 @@ uintptr_t coro_getaux( void )
 
 int coyield( corohead *dest )
 {
-	return( coyield2( dest, (corohead**)0,  (void*)0, (void (*)( void* ))0 ) );
+	return( coyield2( dest, (corohead*volatile *)0,  (void*)0, (void (*)( void* ))0 ) );
 }
-int coyield2( corohead *dest, corohead **volatile old,  void *data, void (*func)( void* ) )
+int coyield2( corohead *dest, corohead *volatile *old,  void *data, void (*func)( void* ) )
 {
 	/*
 	printf( "\ncoyield( %p ) entered.\n", (void*)dest );

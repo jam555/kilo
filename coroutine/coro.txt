@@ -8,7 +8,7 @@ Moreover, that multi-tasking can be obtained with relative simplicity: in the
 case of this coroutine system, the only MANDATORY functions are cocontext(),
 cobuild(), and coyield(), though coconclude(), coclean(), and coro_getaux() are
 provided for extended functionality. The particular approach used in this system
-is the setjmp()/longjmp() version, as I concluded that t offered the most
+is the setjmp()/longjmp() version, as I concluded that it offered the most
 flexibility.
 	As a special note, be aware that the first use of a newly allocated
 coroutine will sometimes be unable to use the ->auxiliary member of the corohead
