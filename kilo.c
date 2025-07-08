@@ -304,7 +304,7 @@ int main_coro( void *ign )
 	/* msgs_build_note( &( E.modemsg ),  "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" ); */
 	if( !modemsgs_setmodal( MODEMSGS_MILLI_MAIN ) )
 	{
-		/* Ignore for now. */
+		msgs_build_fatal( (msgs**)0,  "\tmain_coro():modemsgs_setmodal() failed.\n" );
 	}
 	
 	{
@@ -319,11 +319,32 @@ int main_coro( void *ign )
 		if( res != 0 )
 		{
 			/* Pay attention to errno! Will be EFAULT or EINVAL */
+			int e = errno;
+			
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					
+					"\tmain_coro():getitimer( ITIMER_VIRTUAL ) failed with %d.\n",
+					e
+			);
+			exit( 1 );
 		}
 		
 		if( oldSigVtAlrm )
 		{
 #warning "Check to see if the old timer's values are compatible with our own."
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					
+					"\tmain_coro() old timer values: interval( %d . %d ), time( %d . %d ).\n",
+						(int)tsigtime.it_interval.tv_sec,
+						(int)tsigtime.it_interval.tv_usec,
+						
+						(int)tsigtime.it_value.tv_sec,
+						(int)tsigtime.it_value.tv_usec
+			);
 		}
 		
 		tsigtime.it_interval.tv_sec =
@@ -337,13 +358,27 @@ int main_coro( void *ign )
 		if( res != 0 )
 		{
 			/* Pay attention to errno! Will be EFAULT or EINVAL */
+			int e = errno;
+			
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					
+					"\tmain_coro():setitimer( ITIMER_VIRTUAL ) failed with %d.\n",
+					e
+			);
+			exit( 1 );
 		}
 	}
 	
     while( 1 )
 	{
-        editorRefreshScreen();
-#warning "Add a timer-based redraw... somehow. Probably needs coro-IO to stop blocking."
+        	/* For whatever reason, this JUST blocks screen draw. */
+		if( E.dirty )
+		{
+			editorRefreshScreen();
+		}
+		
 			/* TODO: Subject this to a mode switch! */
 			/*  If mode != notepad, then run input through CLI mode! */
 			/*  For CLI mode, try to use "linenoise" from the same author. */

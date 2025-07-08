@@ -35,6 +35,8 @@
 
 
 
+#warning "The message area of the status line jumps around when moving to row 10 from 9: fix that."
+
 /*
 	Interesting key combo: ctrl-/ to turn the current line into a
 	single-line comment.
@@ -321,6 +323,8 @@ struct editorConfig
 		/* Replaces statusmsg. */
 	msgs *modemsg;
 	char *deathrattle;
+	
+	int no_nonblock, didblock;
 };
 
 enum KEY_ACTION{
@@ -347,7 +351,8 @@ enum KEY_ACTION{
         HOME_KEY,
         END_KEY,
         PAGE_UP,
-        PAGE_DOWN
+        PAGE_DOWN,
+		KEYBOARD_TIMEOUT
 };
 
 	/* Note that these modes properly correspond to things like iOS's */
