@@ -43,6 +43,21 @@
 */
 #define KILO_VERSION "0.0.1"
 
+	/* These are from buildid.hpp/.c, the .c is preprocessed from */
+	/*  the .hpp; for correct values, use the makefile. */
+extern char
+	*thou_commithash,
+	*thou_commitdate,
+	*thou_workdirstate,
+	
+	*thou_buildstamp,
+	*thou_stdcver,
+	*thou_gccver,
+	*thou_typewidths,
+	*thou_filestamp;
+
+
+
 	/* Leandro Pereira & antirez */
 #ifdef __linux__
 	/* Credit: Christopher Wellens. */
