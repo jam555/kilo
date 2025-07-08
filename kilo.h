@@ -597,9 +597,8 @@ int editorFileWasModified(void);
 
 void updateWindowSize(void);
 
-	/* Located in kilo.c */
-void handleSigWinCh(int unused __attribute__((unused)));
-	/* Located in edevents.c */
+	/* Located in edevents.c . Note that handleSigWinCh() is in kilo.c, which */
+	/*  is also where it gets used: thus it's declared as static. */
 	/* Leandro Pereira */
 void handleSigWinCh2(int unused __attribute__((unused)));
 

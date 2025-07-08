@@ -32,6 +32,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/time.h>
+#include <signal.h>
+
 #include "kilo.h"
 #include "coroutine/coro.h"
 #include "msgs.h"
@@ -100,7 +103,19 @@ struct editorSyntax HLDB[] =
 size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 
-static signal_links sigWinch_hooks = { 0 };
+typedef void (*sig_handlertype)(int);
+
+static sig_handlertype oldSigVtAlrm = 0;
+static volatile int hadVtAlrm = 0;
+
+
+static void handleSigWinCh( int sig );
+	static void delayedHandleSigVtAlrm( int sig );
+static void handleSigVtAlrm( int sig );
+static signal_links
+	sigVtAlrm_hooks = { 0 }, /* Virtual Alarm, a timer that tracks direct execution time. */
+	sigWinch_hooks = { 0 }; /* Window CHange,m changes to a window. */
+
 int register_signallink( int sig, signal_links *link )
 {
 	if( link )
@@ -111,6 +126,9 @@ int register_signallink( int sig, signal_links *link )
 		{
 			case SIGWINCH:
 				host = &sigWinch_hooks;
+				break;
+			case SIGVTALRM:
+				host = &sigVtAlrm_hooks;
 				break;
 			
 			default:
@@ -152,9 +170,18 @@ int delink_signallink( signal_links *sl )
 	
 	return( -1 );
 }
-void handleSigWinCh( int sig )
+
+void signallink_dummyhandler( signal_links *sl, int i )
 {
-	signal_links *link = sigWinch_hooks.next, *next = 0;
+	(void)sl;
+	(void)i;
+}
+
+
+/* Generic implementation. */
+static void handleSigGeneric( int sig, signal_links *link )
+{
+	signal_links *next = 0;
 	
 	while( link )
 	{
@@ -167,15 +194,32 @@ void handleSigWinCh( int sig )
 		
 		link = next;
 	}
+}
+
+/* Specific implementations. */
+static void handleSigWinCh( int sig )
+{
+	handleSigGeneric( sig, sigWinch_hooks.next );
 	
 		/* In edevents.c */
 	handleSigWinCh2( sig );
 }
-void signallink_dummyhandler( signal_links *sl, int i )
+	static void delayedHandleSigVtAlrm( int sig )
+	{
+		handleSigGeneric( sig, sigVtAlrm_hooks.next );
+	}
+static void handleSigVtAlrm( int sig ) /* sig == SIGVTALRM */
 {
-	(void)sl;
-	(void)i;
+		/* Just mark for later handling. */
+	hadVtAlrm = 1;
+	
+	if( oldSigVtAlrm )
+	{
+		oldSigVtAlrm( sig );
+	}
 }
+
+
 
 void main_atexit( void );
 int main_coro( void *ign );
@@ -250,6 +294,7 @@ int main_coro( void *ign )
     initEditor();
 		/* Leandro Pereira */
 		/* Was in initEditor() */
+#warning "Switch to sigaction() on at least some platforms."
     signal( SIGWINCH, handleSigWinCh );
 	
     editorSelectSyntaxHighlight( args[ 1 ] );
@@ -261,6 +306,40 @@ int main_coro( void *ign )
 	{
 		/* Ignore for now. */
 	}
+	
+	{
+		/* Setup a timer to be delivered via signal(). */
+		
+		oldSigVtAlrm = signal( SIGVTALRM, &handleSigVtAlrm );
+		
+		struct itimerval tsigtime;
+		
+		/* ITIMER_VIRTUAL == Only counts process's direct execution time. */
+		int res = getitimer( ITIMER_VIRTUAL, &tsigtime );
+		if( res != 0 )
+		{
+			/* Pay attention to errno! Will be EFAULT or EINVAL */
+		}
+		
+		if( oldSigVtAlrm )
+		{
+#warning "Check to see if the old timer's values are compatible with our own."
+		}
+		
+		tsigtime.it_interval.tv_sec =
+				/* Remember: MILA_MESSAGESLOTH is in deci-seconds. */
+			( MILA_MESSAGESLOTH - ( MILA_MESSAGESLOTH % 10 ) ) / 10;
+		tsigtime.it_interval.tv_usec = ( MILA_MESSAGESLOTH % 10 ) * 100000;
+		
+		tsigtime.it_value = tsigtime.it_interval;
+		
+		res = setitimer( ITIMER_VIRTUAL, &tsigtime,  (struct itimerval*)0 );
+		if( res != 0 )
+		{
+			/* Pay attention to errno! Will be EFAULT or EINVAL */
+		}
+	}
+	
     while( 1 )
 	{
         editorRefreshScreen();
@@ -269,6 +348,13 @@ int main_coro( void *ign )
 			/*  If mode != notepad, then run input through CLI mode! */
 			/*  For CLI mode, try to use "linenoise" from the same author. */
         editorProcessKeypress( STDIN_FILENO );
+		
+		if( hadVtAlrm )
+		{
+			hadVtAlrm = 0;
+			
+			delayedHandleSigVtAlrm( SIGVTALRM );
+		}
     }
     return 0;
 }
