@@ -53,6 +53,7 @@
 	
 		/* Sets the statview_view according to the state & */
 		/*  usable_width. */
+		/* Only directly called in appenbuf.c:abStatusLine() */
 	int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data );
 		/* Builds the statstate that *_fetchmsg() needs. */
 	statstate* statview_build( signal_links** );

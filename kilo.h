@@ -35,8 +35,6 @@
 
 
 
-#warning "The message area of the status line jumps around when moving to row 10 from 9: fix that."
-
 /*
 	Interesting key combo: ctrl-/ to turn the current line into a
 	single-line comment.

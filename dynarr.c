@@ -123,6 +123,7 @@ int dynarrAppend( dynarr **da,  const char *str, size_t len )
 						(char*)( tmp + 1 )
 					) +
 					(
+#warning "Beware, mark might be out-of-date!"
 						( (unsigned)1 & (uintptr_t)mark ) ?
 							1 :
 							0

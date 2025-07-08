@@ -178,6 +178,8 @@ void abFree( struct abuf *ab )
 		return( -1 );
 	}
 	
+	/* The Progressive/Responsive partitioning code. */
+#warning "The message area of the status line jumps around when moving to row 10 from 9: fix that."
 	int abRespodapt
 	(
 		struct abuf *ab,

@@ -37,8 +37,6 @@
 
 #include "kilo.h"
 #include "coroutine/coro.h"
-
-extern char;
 #include "msgs.h"
 
 
