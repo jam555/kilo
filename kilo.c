@@ -37,7 +37,14 @@
 
 #include "kilo.h"
 #include "coroutine/coro.h"
+
+extern char;
 #include "msgs.h"
+
+
+
+char *const kilodesc_string = "Kilo text-editor version: " KILO_VERSION;
+char *const thoudesc_string = "Thou terminal-environment version: " THOU_VERSION;
 
 
 
@@ -257,7 +264,48 @@ int main( int argn_, char **args_ )
 const char noaltscr_opt[] = "--no-alt-screen";
 void main_noargs_print( void )
 {
+	static char **builddesc_strs;
+	if( !builddesc_strs )
+	{
+		builddesc_strs =
+			(char*[])
+			{
+				kilodesc_string,
+				thoudesc_string,
+				
+			/* These are all from buildid.hpp/.c, and declared in kilo.h. The .c file */
+			/*  is preprocessed from the .hpp; for correct values, use the makefile. */
+				
+				/* Commit-tool info. */
+				thou_commithash,
+				thou_commitdate,
+				thou_workdirstate,
+				
+				/* Build/Compile info. */
+				thou_buildstamp,
+				thou_stdcver,
+				thou_gccver,
+				thou_typewidths,
+				
+				/* Strings-file info. */
+				thou_filestamp,
+				
+				(char*)0
+			};
+	}
+	
+	
 	fprintf( stderr, "Usage: kilo <filename> [%s]\n", noaltscr_opt );
+			
+	fprintf( stderr, "\nKilo / Thou info:\n" );
+	char **iter = builddesc_strs;
+	while( iter && *iter )
+	{
+		fprintf( stderr, "\n\t%s\n", *iter );
+		
+		++iter;
+	}
+	
 	exit( 1 );
 }
 void main_args( void )
@@ -275,6 +323,7 @@ void main_args( void )
 		{
 			perror( "Unfamiliar command-line option:" );
 			fprintf( stderr, "  %s", args[ 2 ] );
+			
 			exit( 1 );
 		}
 		E.no_altscr = 1;

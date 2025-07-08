@@ -42,19 +42,25 @@
 	single-line comment.
 */
 #define KILO_VERSION "0.0.1"
+#define THOU_VERSION "0.0.1 A"
+
+	/* These are defined in kilo.c */
+extern char
+	*const kilodesc_string,
+	*const thoudesc_string;
 
 	/* These are from buildid.hpp/.c, the .c is preprocessed from */
 	/*  the .hpp; for correct values, use the makefile. */
 extern char
-	*thou_commithash,
-	*thou_commitdate,
-	*thou_workdirstate,
+	*const thou_commithash,
+	*const thou_commitdate,
+	*const thou_workdirstate,
 	
-	*thou_buildstamp,
-	*thou_stdcver,
-	*thou_gccver,
-	*thou_typewidths,
-	*thou_filestamp;
+	*const thou_buildstamp,
+	*const thou_stdcver,
+	*const thou_gccver,
+	*const thou_typewidths,
+	*const thou_filestamp;
 
 
 
