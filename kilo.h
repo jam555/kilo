@@ -66,6 +66,7 @@
 #include <signal.h>
 #include <stddef.h>
 
+#include "signallinks.h"
 #include "statview.h"
 #include "appenbuf.h"
 #include "term.h"
@@ -376,21 +377,6 @@ typedef enum
 	gaianphase__PASTEND
 	
 } gaianphase;
-
-
-typedef struct signal_links signal_links;
-struct signal_links
-{
-	signal_links *prev, *next;
-	
-	void (*handler)( signal_links*, int );
-};
-
-	/* Only SIGWINCH is currently supported. */
-int register_signallink( int sig, signal_links *link );
-int delink_signallink( signal_links *sl );
-
-void signallink_dummyhandler( signal_links*, int );
 
 
 
