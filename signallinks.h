@@ -46,7 +46,7 @@
 		void (*handler)( signal_links*, int );
 	};
 	
-		/* Only SIGWINCH is currently supported. */
+		/* Only SIGWINCH & SIGVTALRM are currently supported. */
 	int register_signallink( int sig, signal_links *link );
 	int delink_signallink( signal_links *sl );
 	
