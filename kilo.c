@@ -289,6 +289,8 @@ int main_coro( void *ign )
 {
     (void)ign;
 	
+	int res;
+	
 	main_args();
 	
     initEditor();
@@ -315,7 +317,7 @@ int main_coro( void *ign )
 		struct itimerval tsigtime;
 		
 		/* ITIMER_VIRTUAL == Only counts process's direct execution time. */
-		int res = getitimer( ITIMER_VIRTUAL, &tsigtime );
+		res = getitimer( ITIMER_VIRTUAL, &tsigtime );
 		if( res != 0 )
 		{
 			/* Pay attention to errno! Will be EFAULT or EINVAL */
@@ -371,12 +373,34 @@ int main_coro( void *ign )
 		}
 	}
 	
-    while( 1 )
+	msgs_build_fatal( (msgs**)0,  "\tmain_coro(): about to enter while().\n" );
+    res = 0;
+	while( 1 )
 	{
-        	/* For whatever reason, this JUST blocks screen draw. */
+        if( !res )
+		{
+			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:1 reached.\n" );
+		}
+		
+			/* For whatever reason, this JUST blocks screen draw. */
 		if( E.dirty )
 		{
+	        if( res < 2 )
+			{
+				msgs_build_fatal( (msgs**)0,  "\tmain_coro():editorRefreshScreen() reached.\n" );
+				
+				if( res == 1 )
+				{
+					res = 2;
+				}
+			}
+			
 			editorRefreshScreen();
+		}
+		
+        if( !res )
+		{
+			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:2 reached.\n" );
 		}
 		
 			/* TODO: Subject this to a mode switch! */
@@ -384,11 +408,22 @@ int main_coro( void *ign )
 			/*  For CLI mode, try to use "linenoise" from the same author. */
         editorProcessKeypress( STDIN_FILENO );
 		
+        if( !res )
+		{
+			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:3 reached.\n" );
+		}
+		
 		if( hadVtAlrm )
 		{
 			hadVtAlrm = 0;
 			
 			delayedHandleSigVtAlrm( SIGVTALRM );
+		}
+		
+        if( !res )
+		{
+			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:4 reached.\n" );
+			res = 1;
 		}
     }
     return 0;
