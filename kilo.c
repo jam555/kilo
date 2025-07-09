@@ -425,49 +425,13 @@ int main_coro( void *ign )
 	}
 	
 	E.stale = 1;
-	msgs_build_fatal( (msgs**)0,  "\tmain_coro(): about to enter while().\n" );
-    res = 0;
 	while( 1 )
 	{
-        /* Check to see if the signal handler is changing! */
-		/*
-		rollingtest = signal( SIGVTALRM, &handleSigVtAlrm );
-		if( &handleSigVtAlrm != rollingtest )
-		{
-			msgs_build_fatal
-			(
-				(msgs**)0,
-					
-					"\tmain_coro():signal( SIGVTALRM ) changed handlers without permission!"
-					"\n\t\tFound: %p, Expected: %p.\n",
-					(void*)rollingtest, (void*)&handleSigVtAlrm
-			);
-			exit( 1 );
-		}
-		*/
-		
-		
-		
-		if( !res )
-		{
-			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:1 reached.\n" );
-		}
-		
 			/* For whatever reason, this JUST blocks screen draw. Meanwhile, */
 			/*  with or without there seems to be a soft-crash. */
 		if( E.stale )
 		{
-	        if( res < 2 )
-			{
-				msgs_build_fatal( (msgs**)0,  "\tmain_coro():editorRefreshScreen() reached.\n" );
-				
-				if( res == 1 )
-				{
-					res = 2;
-				}
-			}
-			
-			editorRefreshScreen();
+	        editorRefreshScreen();
 			
 			if( E.stale )
 			{
@@ -476,32 +440,16 @@ int main_coro( void *ign )
 			}
 		}
 		
-        if( !res )
-		{
-			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:2 reached.\n" );
-		}
-		
 			/* TODO: Subject this to a mode switch! */
 			/*  If mode != notepad, then run input through CLI mode! */
 			/*  For CLI mode, try to use "linenoise" from the same author. */
         editorProcessKeypress( STDIN_FILENO );
-		
-        if( !res )
-		{
-			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:3 reached.\n" );
-		}
 		
 		if( hadVtAlrm )
 		{
 			hadVtAlrm = 0;
 			
 			delayedHandleSigVtAlrm( SIGVTALRM );
-		}
-		
-        if( !res )
-		{
-			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:4 reached.\n" );
-			res = 1;
 		}
     }
     return 0;

@@ -360,12 +360,6 @@ static void statview_ontime( signal_links *sl, int sig )
 	{
 		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
 		
-		if( !been_called )
-		{
-			msgs_build_fatal( (msgs**)0,  "\tstatview_ontime() has been called.\n" );
-			been_called = 1;
-		}
-		
 			/* TODO: pay attention to the return type. */
 		statview_updatetime( stats );
 	}
