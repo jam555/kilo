@@ -110,7 +110,7 @@ size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 typedef void (*sig_handlertype)(int);
 
-static sig_handlertype oldSigVtAlrm = 0;
+static sig_handlertype oldSigVtAlrm = 0, rollingtest;
 static volatile int hadVtAlrm = 0;
 
 
@@ -204,6 +204,8 @@ static void handleSigGeneric( int sig, signal_links *link )
 /* Specific implementations. */
 static void handleSigWinCh( int sig )
 {
+	signal( SIGWINCH, &handleSigWinCh );
+	
 	handleSigGeneric( sig, sigWinch_hooks.next );
 	
 		/* In edevents.c */
@@ -215,6 +217,8 @@ static void handleSigWinCh( int sig )
 	}
 static void handleSigVtAlrm( int sig ) /* sig == SIGVTALRM */
 {
+	signal( SIGVTALRM, &handleSigVtAlrm );
+	
 		/* Just mark for later handling. */
 	hadVtAlrm = 1;
 	
@@ -424,12 +428,31 @@ int main_coro( void *ign )
     res = 0;
 	while( 1 )
 	{
-        if( !res )
+        /* Check to see if the signal handler is changing! */
+		rollingtest = signal( SIGVTALRM, &handleSigVtAlrm );
+		if( &handleSigVtAlrm != rollingtest )
+		{
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					
+					"\tmain_coro():signal( SIGVTALRM ) changed handlers without permission!"
+					"\n\t\tFound: %p, Expected: %p.\n",
+					(void*)rollingtest, (void*)&handleSigVtAlrm
+			);
+			exit( 1 );
+		}
+		
+		
+		
+		
+		if( !res )
 		{
 			msgs_build_fatal( (msgs**)0,  "\tmain_coro():while:1 reached.\n" );
 		}
 		
-			/* For whatever reason, this JUST blocks screen draw. */
+			/* For whatever reason, this JUST blocks screen draw. Meanwhile, */
+			/*  with or without there seems to be a soft-crash. */
 		if( E.dirty )
 		{
 	        if( res < 2 )
