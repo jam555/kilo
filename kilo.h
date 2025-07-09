@@ -344,6 +344,7 @@ struct editorConfig
 	char *deathrattle;
 	
 	int no_nonblock, didblock;
+	int stale;
 };
 
 enum KEY_ACTION{

@@ -424,11 +424,13 @@ int main_coro( void *ign )
 		}
 	}
 	
+	E.stale = 1;
 	msgs_build_fatal( (msgs**)0,  "\tmain_coro(): about to enter while().\n" );
     res = 0;
 	while( 1 )
 	{
         /* Check to see if the signal handler is changing! */
+		/*
 		rollingtest = signal( SIGVTALRM, &handleSigVtAlrm );
 		if( &handleSigVtAlrm != rollingtest )
 		{
@@ -442,7 +444,7 @@ int main_coro( void *ign )
 			);
 			exit( 1 );
 		}
-		
+		*/
 		
 		
 		
@@ -453,7 +455,7 @@ int main_coro( void *ign )
 		
 			/* For whatever reason, this JUST blocks screen draw. Meanwhile, */
 			/*  with or without there seems to be a soft-crash. */
-		if( E.dirty )
+		if( E.stale )
 		{
 	        if( res < 2 )
 			{
@@ -466,6 +468,12 @@ int main_coro( void *ign )
 			}
 			
 			editorRefreshScreen();
+			
+			if( E.stale )
+			{
+				msgs_build_fatal( (msgs**)0,  "\tmain_coro():editorRefreshScreen() didn't clear stale flag.\n" );
+				exit( 1 );
+			}
 		}
 		
         if( !res )

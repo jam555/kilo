@@ -194,4 +194,6 @@ void editorRefreshScreen( void )
 	/*  E that we write it to. */
     abFree( &util );
     abFree( &ab );
+	
+	E.stale = 0;
 }

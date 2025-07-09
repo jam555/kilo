@@ -181,7 +181,9 @@ void editorProcessKeypress( int fd )
      * before actually quitting. */
     static int quit_times = KILO_QUIT_TIMES;
 	
-    int c = editorReadKey( fd );
+    int oldstale = E.stale;
+	E.stale = 1;
+	int c = editorReadKey( fd );
     switch( c )
 	{
 	    case ENTER:         /* Enter */
@@ -192,7 +194,7 @@ void editorProcessKeypress( int fd )
 	         * to the edited file. */
 			/* Instead of ignoring Ctrl-C, let's treat it ALMOST like */
 			/*  Ctrl-Q. */
-	        if( E.dirty && quit_times )
+			if( E.dirty && quit_times )
 			{
 #warning "Add a dedicated mode-message to msgs.c"
 				msgs_build_alert
@@ -269,12 +271,15 @@ void editorProcessKeypress( int fd )
 	        editorMoveCursor( c );
 	        break;
 	    case CTRL_L: /* ctrl+l, clear screen */
-	        /* Just refresht the line as side effect. */
+	        /* Just refresh the line as side effect. */
 	        break;
 	    case ESC:
 	        /* Nothing to do for ESC in this mode. */
+			E.stale = oldstale;
 	        break;
 	    case KEYBOARD_TIMEOUT:
+			/* No character, so do nothing. */
+			E.stale = oldstale;
 			return;
 		default:
 	        	/* This alerts for unfamiliar characters. */
