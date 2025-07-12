@@ -73,10 +73,40 @@ static void statview_ontime( signal_links *sl, int sig );
 int statview_updatetime( statstate *stats );
 int statview_updatetime( statstate *stats )
 {
+	/* ( E.display_test = (int)time( 0 )  ); */
+	/* E.display_test = ( !!stats ); */
+	
 	if( stats )
 	{
+		static time_t old_t = 0;
 		time_t t = time( (time_t*)0 );
-		double dtime = difftime( t, stats->last_time );
+		double dtime = difftime( stats->last_time, t );
+			/* ... ->last_time just isn't updating. */
+		/* E.display_test = (int)( stats->last_time ); */
+		/* E.display_test = MILA_MESSAGESLOTH; */
+		/* E.display_test = (int)( t - stats->last_time ); */
+		/*
+		if( 1 )
+		{
+			if( t > stats->last_time )
+			{
+				E.display_test = 1;
+				
+			} else if( t == stats->last_time )
+			{
+				E.display_test = 0;
+				
+			} else {
+				
+				E.display_test = -1;
+			}
+		}
+		if( 0 && old_t > t )
+		{
+			E.display_test = t - old_t;
+		}
+		old_t = t;
+		*/
 		
 		if( dtime * 10 >= MILA_MESSAGESLOTH )
 		{
@@ -85,8 +115,12 @@ int statview_updatetime( statstate *stats )
 			
 			E.dirty = 1;
 		}
+			/* ... WHY does ->off suddenly jump? */
+		/* E.display_test = stats->off; */
 		if( stats->off >= stats->last_size )
 		{
+				/* This never executes... why? */
+			/* E.display_test = 1; */
 			stats->off = 0;
 			
 				/* Cycle to the next message. */
@@ -373,6 +407,9 @@ static void statview_ontime( signal_links *sl, int sig )
 	
 	if( sl && sig == SIGVTALRM )
 	{
+			/* This also gets reliable accessed. */
+		/* E.display_test = (int)time( 0 ); */
+		
 		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
 		
 			/* TODO: pay attention to the return type. */
