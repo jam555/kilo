@@ -221,6 +221,8 @@ static void handleSigVtAlrm( int sig ) /* sig == SIGVTALRM */
 	
 		/* Just mark for later handling. */
 	hadVtAlrm = 1;
+		/* Let's start clearing things for clarity. */
+	E.display_test = 0;
 	
 	if( oldSigVtAlrm )
 	{
