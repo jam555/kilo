@@ -121,6 +121,12 @@ static void statview_fetchmsg_inner( void *v_ )
 	int loop = 0;
 	/* printf( "\tusewid: %zu", usewid ); */
 	
+		/* Mark the progress for debugging. */
+	/* E.display_test =
+		1
+		(int)( stats->off )
+		; */
+	
 	afterloop:
 	while( !( msgsv.buf ) )
 	{
@@ -157,7 +163,7 @@ static void statview_fetchmsg_inner( void *v_ )
 	stats->last_size = slen;
 	
 	/* Increment per time. */
-	if( 0 ) /* !loop ) */
+	if( 0 /* !loop */ )
 	{
 		loop = statview_updatetime( stats );
 		if( loop < 0 )
@@ -181,9 +187,12 @@ static void statview_fetchmsg_inner( void *v_ )
 		goto afterloop;
 	}
 	
+	
 	/* "Output" the effective string && flags. */
 	if( slen <= usewid )
 	{
+		/* Never currently happens. */
+		
 		sv->start = msgsv.buf->b;
 		sv->len = msgsv.buf->len;
 		

@@ -180,7 +180,7 @@ void editorRefreshScreen( void )
 	
 	
 	struct abuf util = ABUF_INIT;
-
+	
 		/* Render the utility area. */
 	editorUtilityArea( &ab, &util );
 

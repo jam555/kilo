@@ -57,7 +57,6 @@ void editorMoveCursor( int key )
     switch( key )
 	{
 	    case ARROW_LEFT:
-	        E.display_test = 1;
 			if( E.cx == 0 )
 			{
 	            if( E.coloff )
@@ -86,7 +85,6 @@ void editorMoveCursor( int key )
 	        break;
 			
 	    case ARROW_RIGHT:
-	        E.display_test = 2;
 			if( row && filecol < row->size )
 			{
 	            if( E.cx == E.screencols - 1 )
@@ -114,7 +112,6 @@ void editorMoveCursor( int key )
 	        break;
 			
 	    case ARROW_UP:
-	        E.display_test = 3;
 			if( E.cy == 0 )
 			{
 	            if( E.rowoff )
@@ -129,7 +126,6 @@ void editorMoveCursor( int key )
 	        break;
 			
 	    case ARROW_DOWN:
-	        E.display_test = 4;
 			if( filerow < E.numrows )
 			{
 	            if( E.cy == E.screenrows - 1 )
@@ -181,7 +177,7 @@ void editorMoveCursor( int key )
  * is typing stuff on the terminal. */
 void editorProcessKeypress( int fd )
 {
-    /* When the file is modified, requires Ctrl-q to be pressed N times
+	/* When the file is modified, requires Ctrl-q to be pressed N times
      * before actually quitting. */
     static int quit_times = KILO_QUIT_TIMES;
 	
@@ -283,7 +279,7 @@ void editorProcessKeypress( int fd )
 	        break;
 	    case KEYBOARD_TIMEOUT:
 			/* No character, so do nothing. */
-			E.stale = oldstale;
+			/* E.stale = oldstale; */
 			return;
 		default:
 	        	/* This alerts for unfamiliar characters. */

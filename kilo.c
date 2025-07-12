@@ -429,7 +429,8 @@ int main_coro( void *ign )
 	{
 			/* For whatever reason, this JUST blocks screen draw. Meanwhile, */
 			/*  with or without there seems to be a soft-crash. */
-		if( E.stale )
+			/* CORRECTION, it PROBABLY isn't a soft-crash, just bad lag. */
+		if( 1 /* E.stale */ )
 		{
 	        editorRefreshScreen();
 			
