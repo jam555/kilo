@@ -38,6 +38,18 @@
 
 
 
+int abRespodapt_fullinner
+(
+	struct abuf *buf,
+	size_t extra,
+	
+	char **stati,
+	size_t *lens,
+	size_t count
+);
+
+
+
 void abAppend( struct abuf *ab, const char *s, size_t len )
 {
     char *new = realloc( ab->b, ab->len + len );
@@ -99,7 +111,10 @@ void abFree( struct abuf *ab )
 						tmp += 1;
 					}
 					
-					if( ( extra - ( step * ( count - 1 ) ) ) / 2.0 >= 0.4999 )
+					if
+					(
+						(double)( extra - ( step * ( count - 1 ) ) ) / 2.0 >= 0.4999
+					)
 					{
 						abAppend( buf,  " ", 1 );
 						extra -= 1;
@@ -381,13 +396,11 @@ void editorStatusLine
 	/* See editorStatusLine() for argument info. */
 void abMessageLine( struct abuf *ab, struct abuf *util )
 {
-	int loop = 0;
-	afterloop:
 	(void)util;
 	
 	abAppend( ab,  " ", 1 );
 	abAppend( util,  " ", 1 );
-	return;
+	/* return; */
 	
 	size_t msglen;
 	msgs_view msgsv = msgs_peek();
@@ -401,7 +414,42 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 	}
 	
 	
-	if
+	if( MILA_DISPLAYTEST_MESSAGE )
+	{
+		/*
+		typedef struct statview_view
+		{
+			char *start;
+			size_t len;
+			unsigned char msgsflags;
+			
+		} statview_view;
+		*/
+		
+		char status[ 80 ];
+		int tmp;
+		size_t len;
+		
+		/* Prepare the test info. */
+		tmp =
+			snprintf
+			(
+				status, sizeof( status ),
+				
+				/* Note that this should really indicate the active pane. */
+				"E.display_test == %d.",
+					(int)( E.display_test )
+			);
+		if( tmp < 0 )
+		{
+			msgs_build_fatal( (msgs**)0, "snprintf() in abMessageLine() failed." );
+			exit( 1 );
+		}
+		len = (size_t)tmp;
+		
+		abAppend( ab, status, len );
+		
+	} else if
 	(
 		MILA_MESSAGETIMEOUTS ?
 			( time( NULL ) - E.statusmsg_time < 5 ) :
