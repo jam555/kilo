@@ -117,6 +117,8 @@ int statview_updatetime( statstate *stats )
 		}
 			/* ... WHY does ->off suddenly jump? */
 		/* E.display_test = stats->off; */
+			/* ... WHY IS THIS CHANGING? */
+		/* E.display_test = stats->last_size; */
 		if( stats->off >= stats->last_size )
 		{
 				/* This never executes... why? */
