@@ -110,7 +110,7 @@ size_t HLBD_entrycount = ( sizeof( HLDB ) / sizeof( HLDB[ 0 ] ) );
 
 typedef void (*sig_handlertype)(int);
 
-static sig_handlertype oldSigVtAlrm = 0, rollingtest;
+static sig_handlertype oldSigVtAlrm = 0 /* , rollingtest */ ;
 static volatile int hadVtAlrm = 0;
 
 

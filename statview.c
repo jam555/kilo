@@ -70,6 +70,7 @@ static const size_t allocation = 8 * 1024;
 
 static void statview_ontime( signal_links *sl, int sig );
 
+int statview_updatetime( statstate *stats );
 int statview_updatetime( statstate *stats )
 {
 	if( stats )
@@ -354,8 +355,6 @@ statstate* statview_build( signal_links **sl )
 }
 static void statview_ontime( signal_links *sl, int sig )
 {
-	static int been_called = 0;
-	
 	if( sl && sig == SIGVTALRM )
 	{
 		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
