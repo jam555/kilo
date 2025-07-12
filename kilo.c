@@ -427,6 +427,10 @@ int main_coro( void *ign )
 	E.stale = 1;
 	while( 1 )
 	{
+		time_t t = time( (time_t*)0 );
+			/* This advances, BUT the statview doesn't. */
+		/* E.display_test = (int)t; */
+		
 			/* For whatever reason, this JUST blocks screen draw. Meanwhile, */
 			/*  with or without there seems to be a soft-crash. */
 			/* CORRECTION, it PROBABLY isn't a soft-crash, just bad lag. */

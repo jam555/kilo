@@ -364,6 +364,13 @@ statstate* statview_build( signal_links **sl )
 }
 static void statview_ontime( signal_links *sl, int sig )
 {
+		/* We DO reliably reach here. */
+	/* E.display_test = (int)time( 0 ); */
+		/* ... and this is true from very early. */
+	/* E.display_test = ( sig == SIGVTALRM ); */
+		/* ... and so is this. */
+	/* E.display_test = ( !!sl ); */
+	
 	if( sl && sig == SIGVTALRM )
 	{
 		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
