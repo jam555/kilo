@@ -57,7 +57,8 @@ void editorMoveCursor( int key )
     switch( key )
 	{
 	    case ARROW_LEFT:
-	        if( E.cx == 0 )
+	        E.display_test = 1;
+			if( E.cx == 0 )
 			{
 	            if( E.coloff )
 				{
@@ -85,7 +86,8 @@ void editorMoveCursor( int key )
 	        break;
 			
 	    case ARROW_RIGHT:
-	        if( row && filecol < row->size )
+	        E.display_test = 2;
+			if( row && filecol < row->size )
 			{
 	            if( E.cx == E.screencols - 1 )
 				{
@@ -112,7 +114,8 @@ void editorMoveCursor( int key )
 	        break;
 			
 	    case ARROW_UP:
-	        if( E.cy == 0 )
+	        E.display_test = 3;
+			if( E.cy == 0 )
 			{
 	            if( E.rowoff )
 				{
@@ -126,7 +129,8 @@ void editorMoveCursor( int key )
 	        break;
 			
 	    case ARROW_DOWN:
-	        if( filerow < E.numrows )
+	        E.display_test = 4;
+			if( filerow < E.numrows )
 			{
 	            if( E.cy == E.screenrows - 1 )
 				{

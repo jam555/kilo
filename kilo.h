@@ -250,6 +250,7 @@ extern char
 #define MILA_UTILITYLINES 2
 	/* Whether the utility-area messages should timeout or not. */
 #define MILA_MESSAGETIMEOUTS ( 0 )
+#define MILA_DISPLAYTEST_MESSAGE ( 1 )
 	/* In deci-seconds. The time to scroll by one character. */
 #define MILA_MESSAGESLOTH ( 3 )
 
@@ -345,6 +346,9 @@ struct editorConfig
 	
 	int no_nonblock, didblock;
 	int stale;
+	
+		/* Print this to the CLI line of the utility area, so that it can be used to debug the status line display. */
+	int display_test;
 };
 
 enum KEY_ACTION{
