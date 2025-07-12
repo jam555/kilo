@@ -184,6 +184,29 @@
 	/**************************************************************************/
 	
 	
+	/* term{} and the *N1() funcs are a reminder of how I should transition */
+	/*  stuff. Eventually term{} needs to be redefined, and implement control */
+	/*  codes, while *europa*()/{} needs to implement low-level terminal */
+	/*  access (e.g. using a serial port, using PTY funcs, etc.), SO europa{} */
+	/*  (implemented inside it's own .c file) can validly be treated as a */
+	/*  io{} instance. */
+	inline io* io_callistoN1( void )
+	{
+		return( 0 );
+	}
+	inline io* io_ganymedeN1( void )
+	{
+		return( 0 );
+	}
+	
+	typedef io term;
+	inline term* io_europaN1( void )
+	{
+		return( 0 );
+	}
+	
+	
+	
 		/* Wraps fopen(). */
 	io* io_callisto1
 	(
@@ -206,7 +229,7 @@
 		
 	} io_europa_flags;
 		/* Wraps stdin/stdout. */
-	io* io_europa1( void );
+	term* io_europa1( void );
 	
 	
 	
