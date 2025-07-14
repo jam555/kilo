@@ -440,11 +440,13 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 				"E.display_test == %d; "
 				/* "E.display_pointer = %jx, " */
 				"E.vptr = %p; "
-				"*( E.vptr ) == %d;",
+				/* "*( E.vptr ) == %d;" */
+				"E.vptr(string) == %s",
 					(int)( E.display_test ),
 					/* (intmax_t)( E.display_pointer ), */
 					(void*)( E.vptr ),
-					*( (int*)E.vptr )
+					/* *( (int*)E.vptr ) */
+					(void*)( E.vptr )
 			);
 		if( tmp < 0 )
 		{

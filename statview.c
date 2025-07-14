@@ -80,7 +80,6 @@ int statview_updatetime( statstate *stats )
 	
 	if( last_time > t || last_time + 3 <=  t )
 	{
-		E.display_test = 1;
 		/* THIS WORKS, so why isn't the text scrolling? */
 		
 		last_time = t;
@@ -326,6 +325,7 @@ static int statview_conclude( corohead *head, uintptr_t aux )
 
 int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
 {
+	E.vptr = (void*)( debug_text + debug_off );
 	if( data )
 	{
 		if( sizeof( debug_text ) > usable_width )
@@ -336,6 +336,7 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 					( data->len ) :
 					usable_width;
 			data->start = debug_text + debug_off;
+			E.vptr = (void*)( debug_text /* + debug_off */ );
 			
 		} else {
 			
@@ -430,7 +431,7 @@ statstate* statview_build( signal_links **sl )
 	/* printf( "\t\tstatview_build() returning.\n" );
 	fflush( stdout ); */
 	E.display_pointer = head->auxiliary;
-	E.vptr = (void*)&( ( (statstate*)( head->auxiliary ) )->off );
+	/* E.vptr = (void*)&( ( (statstate*)( head->auxiliary ) )->off ); */
 	return( (statstate*)( head->auxiliary ) );
 }
 static void statview_ontime( signal_links *sl, int sig )
