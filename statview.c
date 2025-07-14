@@ -333,13 +333,13 @@ static void statview_fetchmsg_inner_test( void *v_ )
 	/* E.vptr = (void*)( debug_text + debug_off ); */
 	if( data )
 	{
-		if( strlen( debug_text ) > usable_width /* 8 */ )
+		if( strlen( debug_text ) > 12 )
 		{
 			data->len = strlen( debug_text ) - debug_off;
 			data->len =
-				( data->len <= usable_width ) ?
+				( data->len <= 12 ) ?
 					( data->len ) :
-					usable_width;
+					12;
 			data->start = debug_text + debug_off;
 			/* E.vptr = (void*)( debug_text / * + debug_off * / ); */
 			
@@ -350,7 +350,7 @@ static void statview_fetchmsg_inner_test( void *v_ )
 		}
 		
 		/* E.display_test = data->len; */
-		E.display_test = !!stats;
+		E.display_test = 0;
 		E.vptr = (void*)( data->start );
 	}
 }
@@ -361,6 +361,13 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 	/* E.vptr = (void*)( debug_text + debug_off ); */
 	if( data )
 	{
+		/* Note: THIS TEST WORKS. */
+		
+		coyield2( stats->head, &( stats->ret_dest ),  (void*)data, &statview_fetchmsg_inner_test );
+		return( 1 );
+		
+		
+		
 		if( strlen( debug_text ) > usable_width /* 8 */ )
 		{
 			data->len = strlen( debug_text ) - debug_off;
