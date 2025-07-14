@@ -59,11 +59,12 @@ struct statstate
 	
 		/* Both of these are for signal-handler based time tracking. */
 	size_t volatile last_size;
+#warning "Adding a single extra element BEFORE HERE causes a segfault, but adding two doesn't!"
 	signal_links time_hook;
 };
 static size_t debug_off;
 static char *debug_text = "DEBUG debug DEBUG";
-static time_t last_time = 0;
+static time_t last_time = 0, test_time = 0;
 
 
 
@@ -90,11 +91,18 @@ int statview_updatetime( statstate *stats )
 			debug_off = 0;
 		}
 	}
+		/* Let's just turn this off for now. */
+	if( 0 )
+	{
+		return( 1 );
+	}
 	
-	return( 1 );
 	
 	
-	/* ( E.display_test = (int)time( 0 )  ); */
+	
+	
+	
+	
 	/* E.display_test = ( !!stats ); */
 	
 	if( stats )
@@ -107,6 +115,7 @@ int statview_updatetime( statstate *stats )
 		{
 			dtime = -dtime;
 		}
+		test_time = t;
 		
 		/* E.display_test = dtime; */
 		if( dtime * 1 >= MILA_MESSAGESLOTH )
@@ -145,6 +154,12 @@ int statview_updatetime( statstate *stats )
 	
 	return( -1 );
 }
+/*
+	!!!
+		Let's break statview_fetchmsg_inner() into multiple pieces, according to purpose!
+		Why doesn't stats->off change? Why does it stay as 0?
+	!!!
+*/
 static void statview_fetchmsg_inner( void *v_ )
 {
 	/* Runs inside the coro. */
@@ -249,6 +264,7 @@ static void statview_fetchmsg_inner( void *v_ )
 		
 			slen -= /* stats->off */ debug_off ;
 		sv->len = ( slen > usewid ) ? usewid : slen ;
+		E.display_test = /* ( slen - usewid ) */ test_time /* off */ ;
 	}
 	sv->msgsflags = msgsv.msgsflags;
 	
