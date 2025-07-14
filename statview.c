@@ -51,14 +51,14 @@ struct statstate
 {
 	corohead *head;
 	corohead *volatile ret_dest;
-	size_t off;
-	time_t last_time;
+	size_t volatile off;
+	time_t volatile last_time;
 	
 	void *volatile data;
 	void (*volatile func)( void );
 	
 		/* Both of these are for signal-handler based time tracking. */
-	size_t last_size;
+	size_t volatile last_size;
 	signal_links time_hook;
 };
 static size_t debug_off;
@@ -243,9 +243,11 @@ static void statview_fetchmsg_inner( void *v_ )
 		
 	} else {
 		
-		sv->start = ( msgsv.buf->b ) + stats->off;
+		/* Using debug_off instead of stats->off works. */
 		
-			slen -= stats->off;
+		sv->start = ( msgsv.buf->b ) + /* stats->off */ debug_off ;
+		
+			slen -= /* stats->off */ debug_off ;
 		sv->len = ( slen > usewid ) ? usewid : slen ;
 	}
 	sv->msgsflags = msgsv.msgsflags;
@@ -356,42 +358,48 @@ static void statview_fetchmsg_inner_test( void *v_ )
 }
 int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
 {
-	E.vptr = (void*)"statview_fetchmsg() default text.";
-	E.display_test = 2;
-	/* E.vptr = (void*)( debug_text + debug_off ); */
-	if( data )
+	if( 0 )
 	{
-		/* Note: THIS TEST WORKS. */
-		
-		coyield2( stats->head, &( stats->ret_dest ),  (void*)data, &statview_fetchmsg_inner_test );
-		return( 1 );
-		
-		
-		
-		if( strlen( debug_text ) > usable_width /* 8 */ )
+		E.vptr = (void*)"statview_fetchmsg() default text.";
+		E.display_test = 2;
+		/* E.vptr = (void*)( debug_text + debug_off ); */
+		if( data )
 		{
-			data->len = strlen( debug_text ) - debug_off;
-			data->len =
-				( data->len <= usable_width ) ?
-					( data->len ) :
-					usable_width;
-			data->start = debug_text + debug_off;
-			/* E.vptr = (void*)( debug_text / * + debug_off * / ); */
+			/* Note: THIS TEST WORKS. */
 			
-		} else {
+			coyield2( stats->head, &( stats->ret_dest ),  (void*)data, &statview_fetchmsg_inner_test );
+			return( 1 );
 			
-			data->len = strlen( debug_text );
-			data->start = debug_text;
+			
+			
+			if( strlen( debug_text ) > usable_width /* 8 */ )
+			{
+				data->len = strlen( debug_text ) - debug_off;
+				data->len =
+					( data->len <= usable_width ) ?
+						( data->len ) :
+						usable_width;
+				data->start = debug_text + debug_off;
+				/* E.vptr = (void*)( debug_text / * + debug_off * / ); */
+				
+			} else {
+				
+				data->len = strlen( debug_text );
+				data->start = debug_text;
+			}
+			
+			/* E.display_test = data->len; */
+			E.display_test = !!stats;
+			E.vptr = (void*)( data->start );
+			
+			return( 1 );
 		}
 		
-		/* E.display_test = data->len; */
-		E.display_test = !!stats;
-		E.vptr = (void*)( data->start );
-		
-		return( 1 );
+		return( -1 );
 	}
 	
-	return( -1 );
+	
+	
 	
 	
 	/* Runs outside the coro. */
