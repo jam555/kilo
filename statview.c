@@ -61,6 +61,9 @@ struct statstate
 	size_t last_size;
 	signal_links time_hook;
 };
+static size_t debug_off;
+static char *debug_text = "DEBUG debug DEBUG";
+static time_t last_time = 0;
 
 
 
@@ -73,6 +76,25 @@ static void statview_ontime( signal_links *sl, int sig );
 int statview_updatetime( statstate *stats );
 int statview_updatetime( statstate *stats )
 {
+	time_t t = time( (time_t*)0 );
+	
+	if( last_time > t || last_time + 3 <=  t )
+	{
+		E.display_test = 1;
+		/* THIS WORKS, so why isn't the text scrolling? */
+		
+		last_time = t;
+		
+		++debug_off;
+		if( debug_off >= sizeof( debug_text ) )
+		{
+			debug_off = 0;
+		}
+	}
+	
+	return( 1 );
+	
+	
 	/* ( E.display_test = (int)time( 0 )  ); */
 	/* E.display_test = ( !!stats ); */
 	
@@ -304,6 +326,29 @@ static int statview_conclude( corohead *head, uintptr_t aux )
 
 int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
 {
+	if( data )
+	{
+		if( sizeof( debug_text ) > usable_width )
+		{
+			data->len = sizeof( debug_text ) - debug_off;
+			data->len =
+				( data->len <= usable_width ) ?
+					( data->len ) :
+					usable_width;
+			data->start = debug_text + debug_off;
+			
+		} else {
+			
+			data->len = sizeof( debug_text );
+			data->start = debug_text;
+		}
+		
+		return( 1 );
+	}
+	
+	return( -1 );
+	
+	
 	/* Runs outside the coro. */
 	/* printf( "\nEntering statview_fetchmsg()\n" ); */
 	
