@@ -436,6 +436,9 @@ int main_coro( void *ign )
 			/* For whatever reason, this JUST blocks screen draw. Meanwhile, */
 			/*  with or without there seems to be a soft-crash. */
 			/* CORRECTION, it PROBABLY isn't a soft-crash, just bad lag. */
+			/* NOPE, the damned thing is just halucinating a modification. */
+			/* WRONG, I forgot that I had been setting "E.dirty" to control */
+			/*  screen redraw. */
 		if( 1 /* E.stale */ )
 		{
 	        editorRefreshScreen();
