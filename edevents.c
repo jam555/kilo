@@ -368,6 +368,8 @@ void initEditor( void )
 	E.externy = 0;
 	E.externrows = 0;
 	E.externcols = 0;
+		/* !!! Trap this, so we can grab the value of .statusinterface->last_size !!! */
+			/* Set a watchpoint, it's the trick! */
 	E.statusinterface = statview_build( &sl );
 	E.modemsg = 0;
 	E.deathrattle = 0;

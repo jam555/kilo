@@ -349,6 +349,8 @@ struct editorConfig
 	
 		/* Print this to the CLI line of the utility area, so that it can be used to debug the status line display. */
 	int display_test;
+	intmax_t display_pointer;
+	void *vptr;
 };
 
 enum KEY_ACTION{
