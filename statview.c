@@ -323,26 +323,63 @@ static int statview_conclude( corohead *head, uintptr_t aux )
 
 
 
-int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
+static void statview_fetchmsg_inner_test( void *v_ )
 {
-	E.vptr = (void*)( debug_text + debug_off );
+	statview_view *data = (statview_view*)v_;
+	
+	
+	E.vptr = (void*)"statview_fetchmsg() default text.";
+	E.display_test = 2;
+	/* E.vptr = (void*)( debug_text + debug_off ); */
 	if( data )
 	{
-		if( sizeof( debug_text ) > usable_width )
+		if( strlen( debug_text ) > usable_width /* 8 */ )
 		{
-			data->len = sizeof( debug_text ) - debug_off;
+			data->len = strlen( debug_text ) - debug_off;
 			data->len =
 				( data->len <= usable_width ) ?
 					( data->len ) :
 					usable_width;
 			data->start = debug_text + debug_off;
-			E.vptr = (void*)( debug_text /* + debug_off */ );
+			/* E.vptr = (void*)( debug_text / * + debug_off * / ); */
 			
 		} else {
 			
-			data->len = sizeof( debug_text );
+			data->len = strlen( debug_text );
 			data->start = debug_text;
 		}
+		
+		/* E.display_test = data->len; */
+		E.display_test = !!stats;
+		E.vptr = (void*)( data->start );
+	}
+}
+int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
+{
+	E.vptr = (void*)"statview_fetchmsg() default text.";
+	E.display_test = 2;
+	/* E.vptr = (void*)( debug_text + debug_off ); */
+	if( data )
+	{
+		if( strlen( debug_text ) > usable_width /* 8 */ )
+		{
+			data->len = strlen( debug_text ) - debug_off;
+			data->len =
+				( data->len <= usable_width ) ?
+					( data->len ) :
+					usable_width;
+			data->start = debug_text + debug_off;
+			/* E.vptr = (void*)( debug_text / * + debug_off * / ); */
+			
+		} else {
+			
+			data->len = strlen( debug_text );
+			data->start = debug_text;
+		}
+		
+		/* E.display_test = data->len; */
+		E.display_test = !!stats;
+		E.vptr = (void*)( data->start );
 		
 		return( 1 );
 	}
