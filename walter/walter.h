@@ -1,7 +1,7 @@
-/* Thou -- A very simple editor derived from Salvatore Sanfilippo's Kilo,
- *         a text editor in less than 1-kilo lines of code (as counted
- *         by "cloc"). Does not depend on libcurses, directly emits VT100
- *         escapes on the terminal.
+/* Thou:Milli -- A very simple editor derived from Salvatore Sanfilippo's
+ *         Kilo, a text editor in less than 1-kilo lines of code (as
+ *         counted by "cloc"). Does not depend on libcurses, directly
+ *         emits VT100 escapes on the terminal.
  *
  * -----------------------------------------------------------------------
  *
@@ -59,11 +59,11 @@
 	
 	typedef struct walter_handler walter_handler;
 	
-		/* The first time is the PLANNED time, the second is the MEASURED time. */
-	typedef void (*walter_handlertype)( walter_handler*,  time_t, time_t, uintmax_t );
+		/* The first double is the PLANNED time, the second is the MEASURED time. */
+	typedef void (*walter_handlertype)( walter_handler*,  double, double, uintmax_t );
 	typedef void (*walter_cleanertype)( walter_handler* );
 	
-	void walter_dummyhandler( walter_handler *link,  time_t plan, time_t act, uintmax_t count );
+	void walter_dummyhandler( walter_handler *link,  double plan, double act, uintmax_t count );
 	void walter_dummycleaner( walter_handler *link );
 	
 	/* These initialize & deinitialize the walter system. Note that they */
@@ -83,29 +83,104 @@
 		walter_handlertype handler;
 		walter_cleanertype destructor;
 		walter_flags flags;
-		time_t
-				/* A time for *_dontrepeat, a time difference for *_dorepeat. */
-			time_measure;
+		
+			/* A time for *_dontrepeat, a time difference for *_dorepeat. */
+		double time_measure;
 	};
+	
+	
+		/* 1 == success, -1 == null arg, all others check errno. */
+	int walter_doubletime( double *t_ );
 	
 #endif
 #if 0
 	
 	#include <sys/time.h>
 	#include <signal.h>
+	#include <errno.h>
+	#include <math.h>
 	
 	typedef void (*walter_signalhandlertype)( int );
+	
+	int walter_doubletime( double *t_ )
+	{
+		if( t_ )
+		{
+			/* Catch-all. Requires C99/C++11. */
+			*t_ = nan( "" );
+			
+			struct timespec t;
+			int res = clock_gettime( CLOCK_MONOTONIC, &t );
+			if( res == -1 )
+			{
+				if( errno != EINVAL )
+				{
+					return( -2 );
+				}
+				res = clock_gettime( CLOCK_REALTIME, &t );
+			}
+			if( res == -1 )
+			{
+				return( -3 );
+			}
+			
+			double ret = t.tv_sec;
+				/* Frankly, even milli-seconds is enough for me. */
+			t.tv_nsec /= 1000;
+			ret += 
+				(double)( t.tv_nsec ) \
+				(double)( 1000 * 1000 );
+			
+			*t_ = ret;
+			return( 1 );
+		}
+		
+		return( -1 );
+	}
+	
 	
 	
 #warning "This may require some threading/interrupt protection."
 	
 	
 	
+	static int volatile sig_val = 0;
 	static walter_handler volatile head = { 0 };
-	static walter_signalhandlertype old_handler = 0;
-	static struct itimerval tsigtime;
 	
-	void walter_dummyhandler( walter_handler *link,  time_t plan, time_t act, uintmax_t count )
+	static walter_handler legacy_head = { 0 };
+	static struct itimerval old_time;
+	static walter_signalhandlertype old_handler = 0;
+	
+	static void walter_legacyhandler
+	(
+		walter_handler *link,
+		
+		double plan,
+		double act,
+		uintmax_t count
+	)
+	{
+		if( old_handler )
+		{
+			res = walter_doubletime( &( head.time_measure ) );
+			if( !res )
+			{
+				/* Just ignore it. */
+			}
+			
+			old_handler( sig_val );
+			
+			legacy_head.time_measure += old_time.it_interval.tv_sec;
+			legacy_head.time_measure +=
+				(double)( old_time.it_interval.tv_usec ) \
+				(double)( 1000 * 1000 );
+			
+			/* We need to reenlist or something! */
+		}
+	}
+	
+	
+	void walter_dummyhandler( walter_handler *link,  double plan, double act, uintmax_t count )
 	{
 		(void)link;
 		(void)plan;
@@ -121,10 +196,17 @@
 	/* Specific implementations. */
 	static void walter_timesig( int sig )
 	{
-		time_t
-			plan = head.time_measure,
-			act = time( (time_t*)0 );
+		int sig_tmp = sig_val;
+		double plan = head.time_measure, act;
 		walter_handler *cur = &head, *next = head.next;
+		sig_val = sig;
+		
+		int res = walter_doubletime( act );
+		if( !res )
+		{
+				/* Let's play pretend... */
+			act = plan;
+		}
 		
 		
 		/* Visit ALL registered handlers. */
@@ -132,7 +214,7 @@
 		{
 			if( cur->handler )
 			{
-				cur->handler( cur, plan, act, 1 );
+				cur->handler( cur,  plan, act,  1 );
 			}
 			
 			cur = next;
@@ -149,6 +231,7 @@
 			/*  REGARDLESS, as the registered signal handler is always */
 			/*  unregistered by the signal() system when called anyways. */
 		old_handler = signal( sig, &walter_timesig );
+		sig_val = sig_tmp;
 	}
 	int walter_init( walter_handlertype pulse, walter_cleanertype conclude )
 	{
@@ -164,7 +247,10 @@
 		}
 		
 		
+		
 		/* Basic head initialization. */
+		legacy_head.handler = &walter_legacyhandler;
+		legacy_head.flags = walter_flag_dontrepeat;
 		head.handler = pulse;
 		head.destructor = conclude;
 		head.flags = walter_flag_head;
@@ -182,34 +268,67 @@
 		
 		{
 			/* ITIMER_VIRTUAL == Only counts process's direct execution time. */
-			int res = getitimer( ITIMER_VIRTUAL, &tsigtime );
+			int res = getitimer( ITIMER_VIRTUAL, &old_time );
 			if( res != 0 )
 			{
 				/* Pay attention to errno! Will be EFAULT or EINVAL */
 				return( -4 );
 			}
+			struct itimerval tsigtime = old_time;
+			legacy_head.time_measure += old_time.it_interval.tv_sec;
+			legacy_head.time_measure +=
+				(double)( old_time.it_interval.tv_usec ) \
+				(double)( 1000 * 1000 );
 			
 			if( old_handler )
 			{
-	#warning "Check to see if the old timer's values are compatible with our own."
-				/* ??? ; */
+				/* Just use the old timer values. */
+				
+				if( tsigtime.it_interval.tv_sec > 1 )
+				{
+					/* Do nothing for now. */
+					
+					/* ??? ; */
+				}
+				
+			} else {
+				
+				/* Schedule time. */
+				tsigtime.it_interval.tv_sec = 1;
+					/* Micro-seconds, so 1s == 1000 * 1000 */
+				tsigtime.it_interval.tv_usec = 0;
+				tsigtime.it_value = tsigtime.it_interval;
 			}
 			
-			tsigtime.it_interval.tv_sec = 1;
-				/* Micro-seconds, so 1s == 1000 * 1000 */
-			tsigtime.it_interval.tv_usec = 0;
-			tsigtime.it_value = tsigtime.it_interval;
 			
-			head.time_measure = time( (time_t*)0 );
-				/* FIX THIS! time_t might not measure seconds! */
+			/* Record EXPECTED signal time. */
+			res = walter_doubletime( &( head.time_measure ) );
+			if( !res )
+			{
+				return( -5 );
+			}
+				/* This MUST happen before adjusting legacy_head.time_measure ! */
+			legacy_head.time_measure += head.time_measure;
 			head.time_measure += tsigtime.it_interval.tv_sec;
+			head.time_measure +=
+				(double)( tsigtime.it_interval.tv_usec ) \
+				(double)( 1000 * 1000 );
+			
+			
 			res = setitimer( ITIMER_VIRTUAL, &tsigtime,  (struct itimerval*)0 );
 			if( res != 0 )
 			{
 				/* Pay attention to errno! Will be EFAULT or EINVAL */
-				return( -5 );
+				return( -6 );
 			}
 		}
+		
+		
+		if( old_handler )
+		{
+			res = walter_addlink( &legacy_head );
+		}
+		
 		
 		return( 1 );
 	}
