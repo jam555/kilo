@@ -48,9 +48,19 @@
 		walter_flag_null = 0,
 		
 		walter_flag_repeatmask = 3,
+			/* Causes the walter_handler{} to be dropped THEN called: if it */
+			/*  just wants EXPLICIT times, then it should call *_addlink() */
+			/*  from inside it's HANDLER. NEVER attempt to re-add from inside */
+			/*  the DESTRUCTOR. Note that if the handler re-adds the */
+			/*  instance, then the destructor won't even be called. */
 		walter_flag_dontrepeat = 1,
 		walter_flag_dorepeat = 2,
-		walter_flag_illegalrepeat = 3,,
+		walter_flag_illegalrepeat = 3,
+		
+			/* Used solely inside walter, to protect against infinite loops. */
+			/*  NEVER set this manually, it is STRICTLY for use inside walter */
+			/*  only. */
+		walter_flag_dontadd = 4,
 		
 		walter_flag__PASTEND
 		
@@ -151,6 +161,8 @@
 	static struct itimerval old_time;
 	static walter_signalhandlertype old_handler = 0;
 	
+	
+	
 	static void walter_legacyhandler
 	(
 		walter_handler *link,
@@ -179,7 +191,6 @@
 		}
 	}
 	
-	
 	void walter_dummyhandler( walter_handler *link,  double plan, double act, uintmax_t count )
 	{
 		(void)link;
@@ -189,7 +200,10 @@
 		
 		/* This is just a dummy, so do nothing. */
 	}
-	void walter_dummycleaner( walter_handler *link );
+	void walter_dummycleaner( walter_handler *link )
+	{
+		(void)link;
+	}
 	
 	
 	
@@ -212,9 +226,27 @@
 		/* Visit ALL registered handlers. */
 		while( cur )
 		{
-			if( cur->handler )
+			if( cur->flags & walter_flag_repeatmask == walter_flag_dontrepeat )
 			{
-				cur->handler( cur,  plan, act,  1 );
+				cur->flags |= walter_flag_dontadd;
+				walter_droplink( cur );
+			}
+				if( cur->handler )
+				{
+					cur->handler( cur,  plan, act,  1 );
+				}
+			if( cur->flags & walter_flag_dontadd == walter_flag_dontadd )
+			{
+				cur->flags ^= walter_flag_dontadd;
+				
+				if
+				(
+					cur->destructor &&
+					!( cur->prev )
+				)
+				{
+					( cur->destructor )( cur );
+				}
 			}
 			
 			cur = next;
@@ -424,7 +456,7 @@
 			link->prev = 0;
 			link->next = 0;
 			
-			if( link->destructor )
+			if( link->destructor && link->flags & walter_flag_dontadd != walter_flag_dontadd )
 			{
 				( link->destructor )( link );
 			}
