@@ -47,21 +47,6 @@
 
 
 
-struct statstate
-{
-	corohead *head;
-	corohead *volatile ret_dest;
-	size_t volatile off;
-	time_t volatile last_time;
-	
-	void *volatile data;
-	void (*volatile func)( void );
-	
-		/* Both of these are for signal-handler based time tracking. */
-	size_t volatile last_size;
-#warning "Adding a single extra element BEFORE HERE causes a segfault, but adding two doesn't!"
-	signal_links time_hook;
-};
 static size_t debug_off;
 static char *debug_text = "DEBUG debug DEBUG";
 static time_t last_time = 0, test_time = 0;
@@ -77,7 +62,10 @@ static void statview_ontime( signal_links *sl, int sig );
 int statview_updatetime( statstate *stats );
 int statview_updatetime( statstate *stats )
 {
+	E.display_pointer = stats;
 	time_t t = time( (time_t*)0 );
+	/* Using stats->last_time doesn't work. It runs once, and never again. */
+	E.display_time = *localtime( &( t /* stats->last_time */ ) );
 	
 	if( last_time > t || last_time + 3 <=  t )
 	{
@@ -116,17 +104,33 @@ int statview_updatetime( statstate *stats )
 			dtime = -dtime;
 		}
 		test_time = t;
+		E.old_time = *localtime( &( dtime ) );
 		
 		/* E.display_test = dtime; */
+		/* E.display_test = dtime * 1 >= MILA_MESSAGESLOTH; */
 		if( dtime * 1 >= MILA_MESSAGESLOTH )
 		{
 			stats->off += 1;
 			stats->last_time = t;
 		}
+		/* E.display_test = stats->off; */
+		
 			/* ... WHY does ->off suddenly jump? */
 		/* E.display_test = stats->off; */
 			/* ... WHY IS THIS CHANGING? */
 		/* E.display_test = stats->last_size; */
+		/*
+		E.display_test =
+			( &( stats ) == E.statusinterface ) ?
+				1 : -1;
+		*/
+		/*
+		E.vptr = stats;
+		E.display_test = E.statusinterface;
+		*/
+			/* No, not "why is this changing?", instead "what are we touching?" */
+		
+		/* E.display_test = E.statusinterface->last_size; */
 		if( stats->off >= stats->last_size )
 		{
 			/* Note: forcing this to run does nothing useful. */
@@ -172,6 +176,7 @@ static void statview_fetchmsg_inner( void *v_ )
 	size_t usewid = sv->len;
 	int loop = 0;
 	/* printf( "\tusewid: %zu", usewid ); */
+	/* E.display_test = E.statusinterface->last_size; */
 	
 		/* Mark the progress for debugging. */
 	/* E.display_test =
@@ -211,8 +216,11 @@ static void statview_fetchmsg_inner( void *v_ )
 			}
 		}
 	}
+	/* E.display_test = E.statusinterface->last_size; */
 	size_t slen = strlen( msgsv.buf->b );
-	E.display_test = slen;
+		/* This makes the screen jiggle a lot? */
+	/* E.display_test = E.statusinterface->last_size; */
+	/* E.display_test = slen; */
 		/* Ok, ->last_size is being modified anomylously... */
 	/*
 	if( slen != stats->last_size )
@@ -221,10 +229,13 @@ static void statview_fetchmsg_inner( void *v_ )
 	}
 	*/
 	stats->last_size = slen;
+	/* E.display_test = stats->last_size; */
+	/* E.display_test = E.statusinterface->last_size; */
 	
 	/* Increment per time. */
 	if( 0 /* !loop */ )
 	{
+		/* E.display_test = stats->last_size; */
 		loop = statview_updatetime( stats );
 		if( loop < 0 )
 		{
@@ -241,6 +252,7 @@ static void statview_fetchmsg_inner( void *v_ )
 			goto afterloop;
 		}
 	}
+	/* E.display_test = stats->last_size; */
 	if( !loop )
 	{
 		loop = 1;
@@ -264,8 +276,9 @@ static void statview_fetchmsg_inner( void *v_ )
 		
 			slen -= /* stats->off */ debug_off ;
 		sv->len = ( slen > usewid ) ? usewid : slen ;
-		E.display_test = /* ( slen - usewid ) */ test_time /* off */ ;
+		/* E.display_test = test_time */ /* ( slen - usewid ) */ /* off */ ;
 	}
+	/* E.display_test = stats->last_size; */
 	sv->msgsflags = msgsv.msgsflags;
 	
 	/* printf( "\tstatview_fetchmsg_inner() returning.\n" ); */
@@ -300,6 +313,7 @@ static void statview_coromain( corohead *head, void *data )
 		int loop = 1 /*CORO_WORKING*/ ;
 		while( loop == 1 /*CORO_WORKING*/ )
 		{
+			/* E.display_test = stats.last_size; */
 			/* printf( "\tcalling coyield()\n" ); fflush( stdout ); */
 			tmp = (corohead*)stats.ret_dest;
 			if( !tmp )
@@ -310,6 +324,7 @@ static void statview_coromain( corohead *head, void *data )
 			stats.ret_dest = 0;
 				loop = coyield( tmp );
 			tmp = 0;
+			/* E.display_test = E.statusinterface->last_size; */
 			/* stats.ret_dest has already been set elsewhere. */
 		}
 	}
@@ -347,8 +362,9 @@ static void statview_fetchmsg_inner_test( void *v_ )
 	
 	
 	E.vptr = (void*)"statview_fetchmsg() default text.";
-	E.display_test = 2;
+	/* E.display_test = 2; */
 	/* E.vptr = (void*)( debug_text + debug_off ); */
+	/* E.display_test = ( (statstate*)( coro_getaux() ) )->last_size; */
 	if( data )
 	{
 		if( strlen( debug_text ) > 12 )
@@ -368,16 +384,21 @@ static void statview_fetchmsg_inner_test( void *v_ )
 		}
 		
 		/* E.display_test = data->len; */
-		E.display_test = 0;
+		/* E.display_test = 0; */
+		/* E.display_test = stats->last_size; */
 		E.vptr = (void*)( data->start );
 	}
 }
+#warning "Remove all the debug cruft from statview_fetchmsg()."
 int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
 {
+	/* Using stats->last_time doesn't work. It runs once, and never again. */
+	/* E.display_time = *localtime( &( stats->last_time ) ); */
+	/* E.display_test = stats->last_size; */
 	if( 0 )
 	{
 		E.vptr = (void*)"statview_fetchmsg() default text.";
-		E.display_test = 2;
+		/* E.display_test = 2; */
 		/* E.vptr = (void*)( debug_text + debug_off ); */
 		if( data )
 		{
@@ -405,7 +426,7 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 			}
 			
 			/* E.display_test = data->len; */
-			E.display_test = !!stats;
+			/* E.display_test = !!stats; */
 			E.vptr = (void*)( data->start );
 			
 			return( 1 );
@@ -436,7 +457,9 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 		stats.ret_dest = ;
 		*/
 		
+		/* E.display_test = stats->last_size; */
 		coyield2( stats->head, &( stats->ret_dest ),  (void*)data, &statview_fetchmsg_inner );
+		/* E.display_test = stats->last_size; */
 		
 		/* printf( "\tstatview_fetchmsg() successful exit.\n" ); */
 		return( 1 );
@@ -491,6 +514,7 @@ statstate* statview_build( signal_links **sl )
 	/* ... Don't we need to store straight into ->ret_dest? */
 	/*  NO, because we hand a pointer to tmp to statview_coromain() via cobuild(). */
 	coyield2( head, &tmp,  0, 0 );
+	/* E.display_test = ( (statstate*)( head->auxiliary ) )->last_size; */
 	
 	if( sl )
 	{
@@ -499,6 +523,7 @@ statstate* statview_build( signal_links **sl )
 	/* printf( "\t\tstatview_build() returning.\n" );
 	fflush( stdout ); */
 	E.display_pointer = head->auxiliary;
+	E.vptr = head->auxiliary;
 	/* E.vptr = (void*)&( ( (statstate*)( head->auxiliary ) )->off ); */
 	return( (statstate*)( head->auxiliary ) );
 }
@@ -516,9 +541,17 @@ static void statview_ontime( signal_links *sl, int sig )
 			/* This also gets reliable accessed. */
 		/* E.display_test = (int)time( 0 ); */
 		
+		/* E.display_test = E.statusinterface->last_size; */
 		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
+		/* E.display_test = stats->last_size; */
+		/* E.display_test = E.statusinterface->last_size; */
 		
 			/* TODO: pay attention to the return type. */
+		E.display_pointer = stats;
+		E.display_test = E.display_pointer & 0xFFFFFFFF;
 		statview_updatetime( stats );
+			/* This DOES show the bad value. */
+		/* E.display_test = stats->last_size; */
+		/* E.display_test = E.statusinterface->last_size; */
 	}
 }

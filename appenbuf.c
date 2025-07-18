@@ -394,6 +394,7 @@ void editorStatusLine
 
 	/* Renders the message line. The message will eventually move to the status line, and be replaced with a CLI area. */
 	/* See editorStatusLine() for argument info. */
+#warning "Remove all the debug cruft from abMessageLine()."
 void abMessageLine( struct abuf *ab, struct abuf *util )
 {
 	(void)util;
@@ -436,17 +437,31 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 			(
 				status, sizeof( status ),
 				
+				/* "time == %d:%d; " */
+				/* "old time == %d:%d; " */
 				/* Note that this should really indicate the active pane. */
-				"E.display_test == %d; "
-				/* "E.display_pointer = %jx, " */
+				/* "E.d test == %d; " */
+				"E.d test == 0x%x; "
+				"E.display_pointer = %jx, "
 				"E.vptr = %p; "
 				/* "*( E.vptr ) == %d;" */
-				"E.vptr(string) == %s",
+				/* "E.vptr(string) == %s" */
+				,
+					/* E.display_time.tm_min, */
+					/* E.display_time.tm_sec, */
+					/* E.old_time.tm_min, */
+					/* E.old_time.tm_sec, */
+					/* E.old_time */
+					/* struct tm display_time;
+						E.display_time
+					*/
+					/* (int)( E.display_test ), */
 					(int)( E.display_test ),
-					/* (intmax_t)( E.display_pointer ), */
+					(intmax_t)( E.display_pointer ),
 					(void*)( E.vptr ),
 					/* *( (int*)E.vptr ) */
-					(void*)( E.vptr )
+					/* (void*)( E.vptr ) */
+					(int)0 /* Dummy arg, scares away comma errors. */
 			);
 		if( tmp < 0 )
 		{

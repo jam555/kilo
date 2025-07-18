@@ -97,13 +97,14 @@ void editorRefreshScreen( void )
     size_t y;
     erow *r;
     struct abuf ab = ABUF_INIT;
-
+	/* E.display_test = E.statusinterface->last_size; */
+	
     mila_ab_curvis_hide( &ab );
     mila_ab_curseek_home( &ab );
     for( y = 0; y < E.screenrows; y++ )
 	{
         size_t filerow = E.rowoff + y;
-
+		
         if( filerow >= E.numrows )
 		{
             if( E.numrows == 0 && y == E.screenrows / 3 )

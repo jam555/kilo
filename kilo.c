@@ -206,10 +206,13 @@ static void handleSigWinCh( int sig )
 {
 	signal( SIGWINCH, &handleSigWinCh );
 	
+	/* E.display_test = E.statusinterface->last_size; */
 	handleSigGeneric( sig, sigWinch_hooks.next );
+	/* E.display_test = E.statusinterface->last_size; */
 	
 		/* In edevents.c */
 	handleSigWinCh2( sig );
+	/* E.display_test = E.statusinterface->last_size; */
 }
 	static void delayedHandleSigVtAlrm( int sig )
 	{
@@ -222,12 +225,14 @@ static void handleSigVtAlrm( int sig ) /* sig == SIGVTALRM */
 		/* Just mark for later handling. */
 	hadVtAlrm = 1;
 		/* Let's start clearing things for clarity. */
-	E.display_test = 0;
+	/* E.display_test = 0; */
 	
+	/* E.display_test = E.statusinterface->last_size; */
 	if( oldSigVtAlrm )
 	{
 		oldSigVtAlrm( sig );
 	}
+	/* E.display_test = E.statusinterface->last_size; */
 }
 
 
@@ -433,6 +438,7 @@ int main_coro( void *ign )
 			/* This advances, BUT the statview doesn't. */
 		/* E.display_test = (int)t; */
 		
+		/* E.display_test = E.statusinterface->last_size; */
 			/* For whatever reason, this JUST blocks screen draw. Meanwhile, */
 			/*  with or without there seems to be a soft-crash. */
 			/* CORRECTION, it PROBABLY isn't a soft-crash, just bad lag. */
@@ -449,11 +455,13 @@ int main_coro( void *ign )
 				exit( 1 );
 			}
 		}
+		/* E.display_test = E.statusinterface->last_size; */
 		
 			/* TODO: Subject this to a mode switch! */
 			/*  If mode != notepad, then run input through CLI mode! */
 			/*  For CLI mode, try to use "linenoise" from the same author. */
         editorProcessKeypress( STDIN_FILENO );
+		/* E.display_test = E.statusinterface->last_size; */
 		
 		if( hadVtAlrm )
 		{
