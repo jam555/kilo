@@ -427,7 +427,7 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 		} statview_view;
 		*/
 		
-		char status[ 80 ];
+		char status[ 160 ];
 		int tmp;
 		size_t len;
 		
@@ -441,9 +441,9 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 				/* "old time == %d:%d; " */
 				/* Note that this should really indicate the active pane. */
 				/* "E.d test == %d; " */
-				"E.d test == 0x%x; "
-				"E.display_pointer = %jx, "
-				"E.vptr = %p; "
+				"E.d test (off) == 0x%x; "
+				"E.d ptr (base) = 0x%jx, "
+				"E.vptr (memb&) = %p; "
 				/* "*( E.vptr ) == %d;" */
 				/* "E.vptr(string) == %s" */
 				,

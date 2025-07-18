@@ -62,29 +62,31 @@ static void statview_ontime( signal_links *sl, int sig );
 int statview_updatetime( statstate *stats );
 int statview_updatetime( statstate *stats )
 {
-	E.display_pointer = stats;
+	/* E.display_pointer = stats; */
 	time_t t = time( (time_t*)0 );
 	/* Using stats->last_time doesn't work. It runs once, and never again. */
 	E.display_time = *localtime( &( t /* stats->last_time */ ) );
 	
-	if( last_time > t || last_time + 3 <=  t )
+	if( 1 )
 	{
-		/* THIS WORKS, so why isn't the text scrolling? */
-		
-		last_time = t;
-		
-		++debug_off;
-		if( debug_off >= sizeof( debug_text ) )
+		if( last_time > t || last_time + 3 <=  t )
 		{
-			debug_off = 0;
+			/* THIS WORKS, so why isn't the text scrolling? */
+			
+			last_time = t;
+			
+			++debug_off;
+			if( debug_off >= sizeof( debug_text ) )
+			{
+				debug_off = 0;
+			}
+		}
+			/* Let's just turn this off for now. */
+		if( 0 )
+		{
+			return( 1 );
 		}
 	}
-		/* Let's just turn this off for now. */
-	if( 0 )
-	{
-		return( 1 );
-	}
-	
 	
 	
 	
@@ -522,8 +524,8 @@ statstate* statview_build( signal_links **sl )
 	}
 	/* printf( "\t\tstatview_build() returning.\n" );
 	fflush( stdout ); */
-	E.display_pointer = head->auxiliary;
-	E.vptr = head->auxiliary;
+	/* E.display_pointer = head->auxiliary; */
+	/* E.vptr = head->auxiliary; */
 	/* E.vptr = (void*)&( ( (statstate*)( head->auxiliary ) )->off ); */
 	return( (statstate*)( head->auxiliary ) );
 }
@@ -547,8 +549,63 @@ static void statview_ontime( signal_links *sl, int sig )
 		/* E.display_test = E.statusinterface->last_size; */
 		
 			/* TODO: pay attention to the return type. */
+		/*
 		E.display_pointer = stats;
 		E.display_test = E.display_pointer & 0xFFFFFFFF;
+		*/
+		/*
+		E.display_test = (char*)( &( stats->time_hook ) ) - (char*)stats;
+		E.display_pointer = &( stats->time_hook );
+		*/
+		/*
+		E.vptr =
+			&(
+				( (statstate*)0 )[ 1 ].time_hook
+			);
+		E.display_pointer =
+			CALCADDR_FROMMEMBER( statstate, time_hook, E.vptr );
+		E.display_test =
+			&(
+				( (statstate*)(E.display_pointer) )->time_hook
+			);
+		*/
+		
+		/*
+			(
+				(dest_type*)
+				(
+					(char*)( refaddr ) +
+					(
+						(char*)
+						(
+							&( ( (dest_type*)0 )->member )
+						) -
+						(char*)( (dest_type*)0 )
+					)
+				)
+			)
+		*/
+		/*
+		E.vptr = &( ( ( (statstate*)0 )[ 1 ] ).time_hook );
+		E.display_pointer = &( ( (statstate*)0 )[ 1 ] );
+		E.display_test =
+			( (char*)E.display_pointer ) +
+			(
+				( (char*)E.vptr ) - ( (char*)E.display_pointer )
+			);
+		*/
+		
+		/*
+		E.vptr = &( ( ( (statstate*)0 )[ 1 ] ).time_hook );
+		E.display_pointer = &( ( (statstate*)0 )[ 1 ] );
+		E.display_test =
+			( (char*)E.vptr ) - ( (char*)E.display_pointer );
+		*/
+		/* Calc display values. */
+			/* The sign was wrong, it was adding when it needed to be subtracting! */
+		/* E.display_pointer = stats */ /* ( (char*)sl ) - E.display_test */ ;
+		/* E.vptr = E.statusinterface */ /* &( E.statusinterface->time_hook ) */ ;
+		
 			/* THIS IS PROVIDING THE WRONG ARGUMENT VALUE! */
 		statview_updatetime( stats );
 			/* This DOES show the bad value. */
