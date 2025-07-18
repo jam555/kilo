@@ -549,6 +549,7 @@ static void statview_ontime( signal_links *sl, int sig )
 			/* TODO: pay attention to the return type. */
 		E.display_pointer = stats;
 		E.display_test = E.display_pointer & 0xFFFFFFFF;
+			/* THIS IS PROVIDING THE WRONG ARGUMENT VALUE! */
 		statview_updatetime( stats );
 			/* This DOES show the bad value. */
 		/* E.display_test = stats->last_size; */
