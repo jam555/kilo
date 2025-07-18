@@ -380,6 +380,8 @@ int dynarrFree( dynarr *da )
 	if( da )
 	{
 		free( da );
+		
+		return( 1 );
 	}
 	
 	return( -1 );
