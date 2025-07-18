@@ -43,10 +43,10 @@
 	/*  of one of it's known member elements. */
 #warning "Hunt down other cases where this is relevant, and use it."
 	#define CALCADDR_FROMMEMBER( dest_type, member, refaddr ) \
-		(dest_type*)( \
-			(char*)( refaddr ) + ( \
+		( (dest_type*)( \
+			(char*)( refaddr ) - ( \
 				(char*)( &( ( (dest_type*)0 )->member ) ) - \
-				(char*)( (dest_type*)0 ) ) );
+				(char*)( (dest_type*)0 ) ) ) )
 	
 	
 	/* !!!BEWARE!!! Optimizations can absolutely thrash all of this logic!!! */
