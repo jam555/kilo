@@ -78,7 +78,6 @@ int statview_updatetime( statstate *stats )
 	
 	if( stats )
 	{
-		static time_t old_t = 0;
 		time_t t = time( (time_t*)0 );
 		double dtime = difftime( t, stats->last_time );
 		if( dtime < 0.0 )
@@ -292,7 +291,6 @@ static int statview_conclude( corohead *head, uintptr_t aux )
 
 
 
-#warning "Remove all the debug cruft from statview_fetchmsg()."
 int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
 {
 	/* Runs outside the coro. */
