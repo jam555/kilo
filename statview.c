@@ -47,9 +47,11 @@
 
 
 
+/*
 static size_t debug_off;
 static char *debug_text = "DEBUG debug DEBUG";
 static time_t last_time = 0, test_time = 0;
+*/
 
 
 
@@ -63,17 +65,17 @@ int statview_updatetime( statstate *stats );
 int statview_updatetime( statstate *stats )
 {
 	/* E.display_pointer = stats; */
-	time_t t = time( (time_t*)0 );
+	// time_t t = time( (time_t*)0 );
 	/* Using stats->last_time doesn't work. It runs once, and never again. */
-	E.display_time = *localtime( &( t /* stats->last_time */ ) );
+	// E.display_time = *localtime( &( t /* stats->last_time */ ) );
 	
 	
-	if( 1 )
+	if( 0 )
 	{
-		if( last_time > t || last_time + 3 <=  t )
+		if( 0 /* last_time > t || last_time + 3 <=  t */ )
 		{
 			/* THIS WORKS, so why isn't the text scrolling? */
-			
+			/*
 			last_time = t;
 			
 			++debug_off;
@@ -81,6 +83,7 @@ int statview_updatetime( statstate *stats )
 			{
 				debug_off = 0;
 			}
+			*/
 		}
 			/* Let's just turn this off for now. */
 		if( 0 )
@@ -101,16 +104,18 @@ int statview_updatetime( statstate *stats )
 	{
 		static time_t old_t = 0;
 		time_t t = time( (time_t*)0 );
-		time_t dtime = stats->last_time - t;
-		/* double dtime = difftime( stats->last_time, t ); */
+		/* time_t dtime = stats->last_time - t; */
+			/* difftime() seems to return nonsensical results. */
+		double dtime = difftime( t, stats->last_time );
 		if( dtime < 0.0 )
 		{
 			dtime = -dtime;
 		}
-		test_time = t;
-		E.old_time = *localtime( &( dtime ) );
+		/* test_time = t; */
+		/* E.old_time = *localtime( &( dtime ) ); */
 		
 		/* E.display_test = dtime; */
+		E.display_test = /* (int)difftime( t, stats->last_time ) */ dtime;
 		/* E.display_test = dtime * 1 >= MILA_MESSAGESLOTH; */
 		if( dtime * 1 >= MILA_MESSAGESLOTH )
 		{
@@ -276,9 +281,9 @@ static void statview_fetchmsg_inner( void *v_ )
 		
 		/* Using debug_off instead of stats->off works. */
 		
-		sv->start = ( msgsv.buf->b ) + /* stats->off */ debug_off ;
+		sv->start = ( msgsv.buf->b ) + stats->off /* debug_off */ ;
 		
-			slen -= /* stats->off */ debug_off ;
+			slen -= stats->off /* debug_off */ ;
 		sv->len = ( slen > usewid ) ? usewid : slen ;
 		/* E.display_test = test_time */ /* ( slen - usewid ) */ /* off */ ;
 	}
@@ -360,89 +365,9 @@ static int statview_conclude( corohead *head, uintptr_t aux )
 
 
 
-static void statview_fetchmsg_inner_test( void *v_ )
-{
-	statview_view *data = (statview_view*)v_;
-	
-	
-	E.vptr = (void*)"statview_fetchmsg() default text.";
-	/* E.display_test = 2; */
-	/* E.vptr = (void*)( debug_text + debug_off ); */
-	/* E.display_test = ( (statstate*)( coro_getaux() ) )->last_size; */
-	if( data )
-	{
-		if( strlen( debug_text ) > 12 )
-		{
-			data->len = strlen( debug_text ) - debug_off;
-			data->len =
-				( data->len <= 12 ) ?
-					( data->len ) :
-					12;
-			data->start = debug_text + debug_off;
-			/* E.vptr = (void*)( debug_text / * + debug_off * / ); */
-			
-		} else {
-			
-			data->len = strlen( debug_text );
-			data->start = debug_text;
-		}
-		
-		/* E.display_test = data->len; */
-		/* E.display_test = 0; */
-		/* E.display_test = stats->last_size; */
-		E.vptr = (void*)( data->start );
-	}
-}
 #warning "Remove all the debug cruft from statview_fetchmsg()."
 int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *data )
 {
-	/* Using stats->last_time doesn't work. It runs once, and never again. */
-	/* E.display_time = *localtime( &( stats->last_time ) ); */
-	/* E.display_test = stats->last_size; */
-	if( 0 )
-	{
-		E.vptr = (void*)"statview_fetchmsg() default text.";
-		/* E.display_test = 2; */
-		/* E.vptr = (void*)( debug_text + debug_off ); */
-		if( data )
-		{
-			/* Note: THIS TEST WORKS. */
-			
-			coyield2( stats->head, &( stats->ret_dest ),  (void*)data, &statview_fetchmsg_inner_test );
-			return( 1 );
-			
-			
-			
-			if( strlen( debug_text ) > usable_width /* 8 */ )
-			{
-				data->len = strlen( debug_text ) - debug_off;
-				data->len =
-					( data->len <= usable_width ) ?
-						( data->len ) :
-						usable_width;
-				data->start = debug_text + debug_off;
-				/* E.vptr = (void*)( debug_text / * + debug_off * / ); */
-				
-			} else {
-				
-				data->len = strlen( debug_text );
-				data->start = debug_text;
-			}
-			
-			/* E.display_test = data->len; */
-			/* E.display_test = !!stats; */
-			E.vptr = (void*)( data->start );
-			
-			return( 1 );
-		}
-		
-		return( -1 );
-	}
-	
-	
-	
-	
-	
 	/* Runs outside the coro. */
 	/* printf( "\nEntering statview_fetchmsg()\n" ); */
 	
