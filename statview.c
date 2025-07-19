@@ -47,11 +47,21 @@
 
 
 
-/*
-static size_t debug_off;
-static char *debug_text = "DEBUG debug DEBUG";
-static time_t last_time = 0, test_time = 0;
-*/
+struct statstate
+{
+	corohead *head;
+	corohead *volatile ret_dest;
+	size_t volatile off;
+	time_t volatile last_time;
+	
+	void *volatile data;
+	void (*volatile func)( void );
+	
+		/* Both of these are for signal-handler based time tracking. */
+	size_t volatile last_size;
+#warning "Adding a single extra element BEFORE HERE causes a segfault, but adding two doesn't!"
+	signal_links time_hook;
+};
 
 
 
