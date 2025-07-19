@@ -65,10 +65,11 @@ void editorFind( int fd )
 	axis_type saved_coloff = E.coloff, saved_rowoff = E.rowoff;
 	/* msgs *msgtmp = 0; */ /* Was used to track msgs{} for later deactivation maybe? */
 	
+	E.display_text = query;
+	
 	while( 1 )
 	{
 		int res = modemsgs_setmodal( MODEMSGS_MILLI_FIND );
-#warning "Add some method to display the current search string."
 		switch( res )
 		{
 			case 0:
@@ -267,4 +268,6 @@ void editorFind( int fd )
             }
         }
     }
+
+	E.display_text = 0;
 }

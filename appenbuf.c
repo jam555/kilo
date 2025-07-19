@@ -437,16 +437,18 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 			(
 				status, sizeof( status ),
 				
+				" text: %s "
 				/* "time == %d:%d; " */
 				/* "old time == %d:%d; " */
 				/* Note that this should really indicate the active pane. */
 				/* "E.d test == %d; " */
-				"E.d test (off) == 0x%x; "
-				"E.d ptr (base) = 0x%jx, "
-				"E.vptr (memb&) = %p; "
+				// "E.d test (off) == 0x%x; "
+				// "E.d ptr (base) = 0x%jx, "
+				// "E.vptr (memb&) = %p; "
 				/* "*( E.vptr ) == %d;" */
 				/* "E.vptr(string) == %s" */
 				,
+					E.display_text,
 					/* E.display_time.tm_min, */
 					/* E.display_time.tm_sec, */
 					/* E.old_time.tm_min, */
@@ -456,11 +458,13 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 						E.display_time
 					*/
 					/* (int)( E.display_test ), */
-					(int)( E.display_test ),
-					(intmax_t)( E.display_pointer ),
-					(void*)( E.vptr ),
+					// (int)( E.display_test ),
+					// (intmax_t)( E.display_pointer ),
+					// (void*)( E.vptr ),
 					/* *( (int*)E.vptr ) */
 					/* (void*)( E.vptr ) */
+					
+					
 					(int)0 /* Dummy arg, scares away comma errors. */
 			);
 		if( tmp < 0 )

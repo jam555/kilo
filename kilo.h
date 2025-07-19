@@ -352,6 +352,7 @@ struct editorConfig
 	intmax_t display_pointer;
 	void *vptr;
 	struct tm display_time, old_time;
+	char *display_text;
 };
 
 enum KEY_ACTION{
