@@ -64,82 +64,30 @@ static void statview_ontime( signal_links *sl, int sig );
 int statview_updatetime( statstate *stats );
 int statview_updatetime( statstate *stats )
 {
-	/* E.display_pointer = stats; */
-	// time_t t = time( (time_t*)0 );
-	/* Using stats->last_time doesn't work. It runs once, and never again. */
-	// E.display_time = *localtime( &( t /* stats->last_time */ ) );
-	
-	
-	if( 0 )
-	{
-		if( 0 /* last_time > t || last_time + 3 <=  t */ )
-		{
-			/* THIS WORKS, so why isn't the text scrolling? */
-			/*
-			last_time = t;
-			
-			++debug_off;
-			if( debug_off >= sizeof( debug_text ) )
-			{
-				debug_off = 0;
-			}
-			*/
-		}
-			/* Let's just turn this off for now. */
-		if( 0 )
-		{
-			return( 1 );
-		}
-	}
-	/* Fix this function so that we can deactivate the debugging code above. */
-	
-	
-	
-	
-	
-	
 	/* E.display_test = ( !!stats ); */
 	
 	if( stats )
 	{
 		static time_t old_t = 0;
 		time_t t = time( (time_t*)0 );
-		/* time_t dtime = stats->last_time - t; */
-			/* difftime() seems to return nonsensical results. */
 		double dtime = difftime( t, stats->last_time );
 		if( dtime < 0.0 )
 		{
 			dtime = -dtime;
 		}
-		/* test_time = t; */
-		/* E.old_time = *localtime( &( dtime ) ); */
 		
 		/* E.display_test = dtime; */
-		E.display_test = /* (int)difftime( t, stats->last_time ) */ dtime;
-		/* E.display_test = dtime * 1 >= MILA_MESSAGESLOTH; */
 		if( dtime * 1 >= MILA_MESSAGESLOTH )
 		{
 			stats->off += 1;
 			stats->last_time = t;
 		}
-		/* E.display_test = stats->off; */
 		
-			/* ... WHY does ->off suddenly jump? */
-		/* E.display_test = stats->off; */
 			/* ... WHY IS THIS CHANGING? */
 		/* E.display_test = stats->last_size; */
-		/*
-		E.display_test =
-			( &( stats ) == E.statusinterface ) ?
-				1 : -1;
-		*/
-		/*
-		E.vptr = stats;
-		E.display_test = E.statusinterface;
-		*/
 			/* No, not "why is this changing?", instead "what are we touching?" */
+			/* "The wrong side of stats->time_hook" is what we were touching. */
 		
-		/* E.display_test = E.statusinterface->last_size; */
 		if( stats->off >= stats->last_size )
 		{
 			/* Note: forcing this to run does nothing useful. */
@@ -170,7 +118,6 @@ int statview_updatetime( statstate *stats )
 /*
 	!!!
 		Let's break statview_fetchmsg_inner() into multiple pieces, according to purpose!
-		Why doesn't stats->off change? Why does it stay as 0?
 	!!!
 */
 static void statview_fetchmsg_inner( void *v_ )
@@ -184,14 +131,6 @@ static void statview_fetchmsg_inner( void *v_ )
 	statview_view *sv = (statview_view*)v_;
 	size_t usewid = sv->len;
 	int loop = 0;
-	/* printf( "\tusewid: %zu", usewid ); */
-	/* E.display_test = E.statusinterface->last_size; */
-	
-		/* Mark the progress for debugging. */
-	/* E.display_test =
-		1
-		(int)( stats->off )
-		; */
 	
 	afterloop:
 	while( !( msgsv.buf ) )
@@ -225,26 +164,12 @@ static void statview_fetchmsg_inner( void *v_ )
 			}
 		}
 	}
-	/* E.display_test = E.statusinterface->last_size; */
 	size_t slen = strlen( msgsv.buf->b );
-		/* This makes the screen jiggle a lot? */
-	/* E.display_test = E.statusinterface->last_size; */
-	/* E.display_test = slen; */
-		/* Ok, ->last_size is being modified anomylously... */
-	/*
-	if( slen != stats->last_size )
-	{
-		E.display_test = stats->last_size;
-	}
-	*/
 	stats->last_size = slen;
-	/* E.display_test = stats->last_size; */
-	/* E.display_test = E.statusinterface->last_size; */
 	
 	/* Increment per time. */
 	if( 0 /* !loop */ )
 	{
-		/* E.display_test = stats->last_size; */
 		loop = statview_updatetime( stats );
 		if( loop < 0 )
 		{
@@ -261,7 +186,6 @@ static void statview_fetchmsg_inner( void *v_ )
 			goto afterloop;
 		}
 	}
-	/* E.display_test = stats->last_size; */
 	if( !loop )
 	{
 		loop = 1;
@@ -279,15 +203,11 @@ static void statview_fetchmsg_inner( void *v_ )
 		
 	} else {
 		
-		/* Using debug_off instead of stats->off works. */
+		sv->start = ( msgsv.buf->b ) + stats->off;
 		
-		sv->start = ( msgsv.buf->b ) + stats->off /* debug_off */ ;
-		
-			slen -= stats->off /* debug_off */ ;
+			slen -= stats->off;
 		sv->len = ( slen > usewid ) ? usewid : slen ;
-		/* E.display_test = test_time */ /* ( slen - usewid ) */ /* off */ ;
 	}
-	/* E.display_test = stats->last_size; */
 	sv->msgsflags = msgsv.msgsflags;
 	
 	/* printf( "\tstatview_fetchmsg_inner() returning.\n" ); */
@@ -322,8 +242,6 @@ static void statview_coromain( corohead *head, void *data )
 		int loop = 1 /*CORO_WORKING*/ ;
 		while( loop == 1 /*CORO_WORKING*/ )
 		{
-			/* E.display_test = stats.last_size; */
-			/* printf( "\tcalling coyield()\n" ); fflush( stdout ); */
 			tmp = (corohead*)stats.ret_dest;
 			if( !tmp )
 			{
@@ -333,7 +251,6 @@ static void statview_coromain( corohead *head, void *data )
 			stats.ret_dest = 0;
 				loop = coyield( tmp );
 			tmp = 0;
-			/* E.display_test = E.statusinterface->last_size; */
 			/* stats.ret_dest has already been set elsewhere. */
 		}
 	}
@@ -379,16 +296,9 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 			return( -2 );
 		}
 		
-		/* printf( "\tstats && data.\n" );
-		fflush( stdout ); */
 		data->len = usable_width;
-		/*
-		stats.ret_dest = ;
-		*/
 		
-		/* E.display_test = stats->last_size; */
 		coyield2( stats->head, &( stats->ret_dest ),  (void*)data, &statview_fetchmsg_inner );
-		/* E.display_test = stats->last_size; */
 		
 		/* printf( "\tstatview_fetchmsg() successful exit.\n" ); */
 		return( 1 );
@@ -402,22 +312,6 @@ statstate* statview_build( signal_links **sl )
 	/* printf( "\nEntering statview_build()\n" ); fflush( stdout ); */
 	
 	corohead *head = 0, *tmp;
-	
-	/* printf
-	(
-		"\nstatview(): calling cobuild(\n"
-				"\t\t%zu,\n"
-				"\t\t%p, %p, %d\n"
-				"\t\t%p\n\n"
-				"\t\t%p\n"
-			")\n",
-		
-			allocation,
-			(void*)0, (void*)&statview_coromain, 0,
-			(void*)&statview_conclude,
-			
-			(void*)&head
-	); */
 	
 	int res =
 		cobuild
@@ -443,7 +337,6 @@ statstate* statview_build( signal_links **sl )
 	/* ... Don't we need to store straight into ->ret_dest? */
 	/*  NO, because we hand a pointer to tmp to statview_coromain() via cobuild(). */
 	coyield2( head, &tmp,  0, 0 );
-	/* E.display_test = ( (statstate*)( head->auxiliary ) )->last_size; */
 	
 	if( sl )
 	{
@@ -451,94 +344,16 @@ statstate* statview_build( signal_links **sl )
 	}
 	/* printf( "\t\tstatview_build() returning.\n" );
 	fflush( stdout ); */
-	/* E.display_pointer = head->auxiliary; */
-	/* E.vptr = head->auxiliary; */
-	/* E.vptr = (void*)&( ( (statstate*)( head->auxiliary ) )->off ); */
 	return( (statstate*)( head->auxiliary ) );
 }
 static void statview_ontime( signal_links *sl, int sig )
 {
-		/* We DO reliably reach here. */
-	/* E.display_test = (int)time( 0 ); */
-		/* ... and this is true from very early. */
-	/* E.display_test = ( sig == SIGVTALRM ); */
-		/* ... and so is this. */
-	/* E.display_test = ( !!sl ); */
-	
 	if( sl && sig == SIGVTALRM )
 	{
-			/* This also gets reliable accessed. */
-		/* E.display_test = (int)time( 0 ); */
-		
-		/* E.display_test = E.statusinterface->last_size; */
 			/* This was counting the wrong direction, so stats pointed on */
 			/*  the opposite side of sl from where it should have. */
 		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
-		/* E.display_test = stats->last_size; */
-		/* E.display_test = E.statusinterface->last_size; */
 		
-			/* TODO: pay attention to the return type. */
-		/*
-		E.display_pointer = stats;
-		E.display_test = E.display_pointer & 0xFFFFFFFF;
-		*/
-		/*
-		E.display_test = (char*)( &( stats->time_hook ) ) - (char*)stats;
-		E.display_pointer = &( stats->time_hook );
-		*/
-		/*
-		E.vptr =
-			&(
-				( (statstate*)0 )[ 1 ].time_hook
-			);
-		E.display_pointer =
-			CALCADDR_FROMMEMBER( statstate, time_hook, E.vptr );
-		E.display_test =
-			&(
-				( (statstate*)(E.display_pointer) )->time_hook
-			);
-		*/
-		
-		/*
-			(
-				(dest_type*)
-				(
-					(char*)( refaddr ) +
-					(
-						(char*)
-						(
-							&( ( (dest_type*)0 )->member )
-						) -
-						(char*)( (dest_type*)0 )
-					)
-				)
-			)
-		*/
-		/*
-		E.vptr = &( ( ( (statstate*)0 )[ 1 ] ).time_hook );
-		E.display_pointer = &( ( (statstate*)0 )[ 1 ] );
-		E.display_test =
-			( (char*)E.display_pointer ) +
-			(
-				( (char*)E.vptr ) - ( (char*)E.display_pointer )
-			);
-		*/
-		
-		/*
-		E.vptr = &( ( ( (statstate*)0 )[ 1 ] ).time_hook );
-		E.display_pointer = &( ( (statstate*)0 )[ 1 ] );
-		E.display_test =
-			( (char*)E.vptr ) - ( (char*)E.display_pointer );
-		*/
-		/* Calc display values. */
-			/* The sign was wrong, it was adding when it needed to be subtracting! */
-		/* E.display_pointer = stats */ /* ( (char*)sl ) - E.display_test */ ;
-		/* E.vptr = E.statusinterface */ /* &( E.statusinterface->time_hook ) */ ;
-		
-			/* THIS IS PROVIDING THE WRONG ARGUMENT VALUE! */
 		statview_updatetime( stats );
-			/* This DOES show the bad value. */
-		/* E.display_test = stats->last_size; */
-		/* E.display_test = E.statusinterface->last_size; */
 	}
 }
