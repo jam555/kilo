@@ -41,6 +41,10 @@
 
 
 
+#warning "Hunt down cases where utility.h : CALCADDR_FROMMEMBER() is useful."
+
+
+
 char *const kilodesc_string = "Kilo text-editor version: " KILO_VERSION;
 char *const thoudesc_string = "Thou terminal-environment version: " THOU_VERSION;
 
@@ -434,18 +438,7 @@ int main_coro( void *ign )
 	E.stale = 1;
 	while( 1 )
 	{
-		time_t t = time( (time_t*)0 );
-			/* This advances, BUT the statview doesn't. */
-		/* E.display_test = (int)t; */
-		
-		/* E.display_test = E.statusinterface->last_size; */
-			/* For whatever reason, this JUST blocks screen draw. Meanwhile, */
-			/*  with or without there seems to be a soft-crash. */
-			/* CORRECTION, it PROBABLY isn't a soft-crash, just bad lag. */
-			/* NOPE, the damned thing is just halucinating a modification. */
-			/* WRONG, I forgot that I had been setting "E.dirty" to control */
-			/*  screen redraw. */
-		if( 1 /* E.stale */ )
+		if( /* 1 */ E.stale )
 		{
 	        editorRefreshScreen();
 			

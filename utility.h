@@ -41,7 +41,6 @@
 	
 	/* Calculate the address of a structure instance, based on the address */
 	/*  of one of it's known member elements. */
-#warning "Hunt down other cases where this is relevant, and use it."
 	#define CALCADDR_FROMMEMBER( dest_type, member, refaddr ) \
 		( (dest_type*)( \
 			(char*)( refaddr ) - ( \
