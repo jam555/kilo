@@ -67,6 +67,7 @@ int statview_updatetime( statstate *stats )
 	/* Using stats->last_time doesn't work. It runs once, and never again. */
 	E.display_time = *localtime( &( t /* stats->last_time */ ) );
 	
+	
 	if( 1 )
 	{
 		if( last_time > t || last_time + 3 <=  t )
@@ -87,6 +88,7 @@ int statview_updatetime( statstate *stats )
 			return( 1 );
 		}
 	}
+	/* Fix this function so that we can deactivate the debugging code above. */
 	
 	
 	
@@ -544,6 +546,8 @@ static void statview_ontime( signal_links *sl, int sig )
 		/* E.display_test = (int)time( 0 ); */
 		
 		/* E.display_test = E.statusinterface->last_size; */
+			/* This was counting the wrong direction, so stats pointed on */
+			/*  the opposite side of sl from where it should have. */
 		statstate *stats = CALCADDR_FROMMEMBER( statstate, time_hook, sl );
 		/* E.display_test = stats->last_size; */
 		/* E.display_test = E.statusinterface->last_size; */
