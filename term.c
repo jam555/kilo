@@ -540,14 +540,51 @@ fatal:
 int editorReadKey( int fd )
 {
     ssize_t nread;
-    char c, seq[ 3 ];
+    char c, seq[ 4 ];
+	static char altseq[ 5 ] = { 'N', 'U', 'L', 'L', '\0' };
 #warning "This is a prime candidate for a yield-based IO routine."
-    int res;
+    int res, ret = EOF;
+#define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
 	errno = 0;
+	
+	seq[ 0 ] = '\0';
+	seq[ 1 ] = '\0';
+	
+	if( ret != EOF )
+	{
+		onret:
+		
+		res = 0;
+		E.display_text = altseq;
+		while( !isprint( seq[ res ] ) && res < 4 )
+		{
+			++res;
+		}
+		if( ret != KEYBOARD_TIMEOUT )
+		{
+			E.display_pointer = seq[ 0 ];
+			E.display_test = ret;
+		}
+		if( 0 && res < 4 )
+		{
+			E.display_test = res;
+		}
+		while( res < 4 )
+		{
+			if( isprint( seq[ res ] ) )
+			{
+				altseq[ res ] = seq[ res ];
+				altseq[ res + 1 ] = '\0';
+			}
+			++res;
+		}
+		return( ret );
+	}
+	
 	while
 	(
 		(
-			nread = read( fd, &c, 1 )
+			nread = read( fd, seq, 1 )
 		) == 0 ||
 		( res = errno ) == EAGAIN ||
 		( res = errno ) == EWOULDBLOCK
@@ -556,7 +593,7 @@ int editorReadKey( int fd )
 		errno = 0;
 		if( res == EAGAIN || res == EWOULDBLOCK )
 		{
-			return( KEYBOARD_TIMEOUT );
+			editorReadKey_ONRET( KEYBOARD_TIMEOUT );
 		}
 	}
     if( nread == -1 )
@@ -571,36 +608,51 @@ int editorReadKey( int fd )
 		);
 		exit( 1 );
 	}
-
+	
     while( 1 )
 	{
-        switch( c )
+        switch( seq[ 0 ] )
 		{
 	        case ESC:    /* escape sequence */
+				seq[ 2 ] = '\0';
+				seq[ 3 ] = '\0';
+				
 	            /* If this is just an ESC, we'll timeout here. */
-	            if( read( fd, seq, 1 ) == 0 ) return ESC;
-	            if( read( fd, seq + 1, 1 ) == 0 ) return ESC;
-	
-	            /* ESC [ sequences. */
-	            if( seq[ 0 ] == '[' )
+	            if( read( fd, seq + 1, 1 ) == 0 )
 				{
-	                if( seq[ 1 ] >= '0' && seq[ 1 ] <= '9' )
+					editorReadKey_ONRET( ESC );
+				}
+	            if( read( fd, seq + 2, 1 ) == 0 )
+				{
+					editorReadKey_ONRET( ESC );
+				}
+				
+	            /* ESC [ sequences. */
+	            if( seq[ 1 ] == '[' )
+				{
+	                if( seq[ 2 ] >= '0' && seq[ 1 ] <= '9' )
 					{
 	                    /* Extended escape, read additional byte. */
-	                    if( read( fd, seq + 2, 1 ) == 0 ) return ESC;
-	                    if( seq[ 2 ] == '~')
+	                    if( read( fd, seq + 3, 1 ) == 0 )
 						{
-	                        switch( seq[ 1 ] )
+							editorReadKey_ONRET( ESC );
+						}
+	                    if( seq[ 3 ] == '~')
+						{
+	                        switch( seq[ 2 ] )
 							{
-		                        case '3': return DEL_KEY;
-		                        case '5': return PAGE_UP;
-		                        case '6': return PAGE_DOWN;
+		                        case '3':
+									editorReadKey_ONRET( DEL_KEY );
+		                        case '5':
+									editorReadKey_ONRET( PAGE_UP );
+		                        case '6':
+									editorReadKey_ONRET( PAGE_DOWN );
 								default:
 									msgs_build_fatal
 									(
 										(msgs**)0,
 											"\tNumeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
-											seq[ 1 ]
+											seq[ 2 ]
 									);
 									exit( 1 );
 	                        }
@@ -608,46 +660,54 @@ int editorReadKey( int fd )
 						
 	                } else {
 	                    
-						switch( seq[ 1 ] )
+						switch( seq[ 2 ] )
 						{
-		                    case 'A': return ARROW_UP;
-		                    case 'B': return ARROW_DOWN;
-		                    case 'C': return ARROW_RIGHT;
-		                    case 'D': return ARROW_LEFT;
-		                    case 'H': return HOME_KEY;
-		                    case 'F': return END_KEY;
+		                    case 'A':
+								editorReadKey_ONRET( ARROW_UP );
+		                    case 'B':
+								editorReadKey_ONRET( ARROW_DOWN );
+		                    case 'C':
+								editorReadKey_ONRET( ARROW_RIGHT );
+		                    case 'D':
+								editorReadKey_ONRET( ARROW_LEFT );
+		                    case 'H':
+								editorReadKey_ONRET( HOME_KEY );
+		                    case 'F':
+								editorReadKey_ONRET( END_KEY );
 							default:
 								msgs_build_fatal
 								(
 									(msgs**)0,
 										"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
-										seq[ 1 ]
+										seq[ 2 ]
 								);
 								exit( 1 );
 	                    }
 	                }
-	            }
-	
-	            /* ESC O sequences. */
-	            else if( seq[ 0 ] == 'O' )
+					
+	            } else if( seq[ 1 ] == 'O' )
 				{
-	                switch( seq[ 1 ] )
+	            	/* ESC O sequences. */
+	                
+					switch( seq[ 2 ] )
 					{
-		                case 'H': return HOME_KEY;
-		                case 'F': return END_KEY;
+		                case 'H':
+							editorReadKey_ONRET( HOME_KEY );
+		                case 'F':
+							editorReadKey_ONRET( END_KEY );
 		                default:
 							msgs_build_fatal
 							(
 								(msgs**)0,
 									"\t\"ESC O\" in editorReadKey() had a strange value: %c\n",
-									seq[ 1 ]
+									seq[ 2 ]
 							);
 							exit( 1 );
 	                }
 	            }
 	            break;
 	        default:
-	            return c;
+	            editorReadKey_ONRET( c );
         }
     }
 }
