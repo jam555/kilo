@@ -67,9 +67,9 @@ void editorFind( int fd )
 	/* msgs *msgtmp = 0; */ /* Was used to track msgs{} for later deactivation maybe? */
 	
 	// E.display_text = query;
-		E.display_test = 0;
-		E.display_pointer = 0;
-		E.display_text = 0;
+	E.display_test = 0;
+	E.display_pointer = 0;
+	E.display_text = "Keyboard test";
 	
 	while( 1 )
 	{
@@ -94,11 +94,13 @@ void editorFind( int fd )
 		res = editorReadKey( fd );
 		if( res != c )
 		{
-				/* WHY does c always == 1009? */
+			if( res != KEYBOARD_TIMEOUT )
+			{
+				E.display_text = "No timeout!";
+			}
 			c = res;
 			E.display_test = res;
 			E.display_pointer += 1;
-			E.display_text = 0;
 		}
 		if( c == ESC || c == ENTER )
 		{
