@@ -94,13 +94,13 @@ void editorFind( int fd )
 		res = editorReadKey( fd );
 		if( res != c )
 		{
-			if( res != KEYBOARD_TIMEOUT )
+			if( 0 && res != KEYBOARD_TIMEOUT )
 			{
 				E.display_text = "No timeout!";
 			}
 			c = res;
-			E.display_test = res;
-			E.display_pointer += 1;
+			// E.display_test = res;
+			// E.display_pointer += 1;
 		}
 		if( c == ESC || c == ENTER )
 		{
@@ -112,7 +112,14 @@ void editorFind( int fd )
 				E.cy = saved_cy;
 				E.coloff = saved_coloff;
 				E.rowoff = saved_rowoff;
+				
+				E.display_text = "ESC key.";
+				
+			} else {
+				
+				E.display_text = "ENTER key.";
 			}
+			
 			FIND_RESTORE_HL;
 			if( modemsgs_setmodal( MODEMSGS_MILLI_MAIN ) < 0 )
 			{
@@ -139,6 +146,8 @@ void editorFind( int fd )
 			last_match = 0;
 			has_match = 0;
 			
+			E.display_text = "Removal key.";
+			
 		} else if( isprint( c ) )
 		{
 			/* Grow query string. */
@@ -150,9 +159,13 @@ void editorFind( int fd )
 				last_match = 0;
 				has_match = 0;
 				
+				E.display_text = "Printable key.";
+				
 			} else {
 				
 				/* Throw some sort of error. */
+				E.display_text = "Printable error.";
+				E.display_test = qlen;
 			}
 			
 			
@@ -160,14 +173,24 @@ void editorFind( int fd )
 		} else if( c == ARROW_RIGHT || c == ARROW_DOWN )
 		{
 			find_next = 1;
+			E.display_text = "Right/Down key.";
 			
 		} else if( c == ARROW_LEFT || c == ARROW_UP )
 		{
 			find_next = -1;
+			E.display_text = "Left/Up key.";
+			
+		} else if( c == KEYBOARD_TIMEOUT )
+		{
+			/* Nothing much to do. */
+			continue;
 			
 		} else {
 			
 			io_unknownkey_message( "editorFind", c );
+			E.display_text = "Unknown key.";
+				/* 0x3f1 */
+			E.display_pointer = c;
 			continue;
 		}
 		
