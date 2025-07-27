@@ -438,6 +438,16 @@ int main_coro( void *ign )
 	E.stale = 1;
 	while( 1 )
 	{
+		if( 0 )
+		{
+			E.display_test = 7;
+			E.display_pointer = 3;
+			E.display_text = "dummy text";
+		}
+		
+		
+		
+		
 		if( /* 1 */ E.stale )
 		{
 	        editorRefreshScreen();
