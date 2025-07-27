@@ -554,29 +554,32 @@ int editorReadKey( int fd )
 	{
 		onret:
 		
-		res = 0;
-		E.display_text = altseq;
-		while( !isprint( seq[ res ] ) && res < 4 )
+		if( 1 )
 		{
-			++res;
-		}
-		if( ret != KEYBOARD_TIMEOUT )
-		{
-			E.display_pointer = seq[ 0 ];
-			E.display_test = ret;
-		}
-		if( 0 && res < 4 )
-		{
-			E.display_test = res;
-		}
-		while( res < 4 )
-		{
-			if( isprint( seq[ res ] ) )
+			res = 0;
+			E.display_text = altseq;
+			while( !isprint( seq[ res ] ) && res < 4 )
 			{
-				altseq[ res ] = seq[ res ];
-				altseq[ res + 1 ] = '\0';
+				++res;
 			}
-			++res;
+			if( ret != KEYBOARD_TIMEOUT )
+			{
+				E.display_pointer = seq[ 0 ];
+				E.display_test = ret;
+			}
+			if( 0 && res < 4 )
+			{
+				E.display_test = res;
+			}
+			while( res < 4 )
+			{
+				if( isprint( seq[ res ] ) )
+				{
+					altseq[ res ] = seq[ res ];
+					altseq[ res + 1 ] = '\0';
+				}
+				++res;
+			}
 		}
 		return( ret );
 	}
@@ -618,6 +621,7 @@ int editorReadKey( int fd )
 				seq[ 3 ] = '\0';
 				
 	            /* If this is just an ESC, we'll timeout here. */
+					/* This DOESN'T seem to timeout. */
 	            if( read( fd, seq + 1, 1 ) == 0 )
 				{
 					editorReadKey_ONRET( ESC );
