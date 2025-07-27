@@ -113,11 +113,11 @@ void editorFind( int fd )
 				E.coloff = saved_coloff;
 				E.rowoff = saved_rowoff;
 				
-				E.display_text = "ESC key.";
+				// E.display_text = "ESC key.";
 				
 			} else {
 				
-				E.display_text = "ENTER key.";
+				// E.display_text = "ENTER key.";
 			}
 			
 			FIND_RESTORE_HL;
@@ -146,7 +146,7 @@ void editorFind( int fd )
 			last_match = 0;
 			has_match = 0;
 			
-			E.display_text = "Removal key.";
+			// E.display_text = "Removal key.";
 			
 		} else if( isprint( c ) )
 		{
@@ -159,13 +159,13 @@ void editorFind( int fd )
 				last_match = 0;
 				has_match = 0;
 				
-				E.display_text = "Printable key.";
+				// E.display_text = "Printable key.";
 				
 			} else {
 				
 				/* Throw some sort of error. */
-				E.display_text = "Printable error.";
-				E.display_test = qlen;
+				// E.display_text = "Printable error.";
+				// E.display_test = qlen;
 			}
 			
 			
@@ -173,23 +173,23 @@ void editorFind( int fd )
 		} else if( c == ARROW_RIGHT || c == ARROW_DOWN )
 		{
 			find_next = 1;
-			E.display_text = "Right/Down key.";
+			// E.display_text = "Right/Down key.";
 			
 		} else if( c == ARROW_LEFT || c == ARROW_UP )
 		{
 			find_next = -1;
-			E.display_text = "Left/Up key.";
+			// E.display_text = "Left/Up key.";
 			
-		} else if( c == KEYBOARD_TIMEOUT )
+		} else if( c == KEYBOARD_TIMEOUT /* == 0x3f1 == 1009 */ )
 		{
 			/* Nothing much to do. */
+			/* Note: this silences some nonsense messaging. */
 			continue;
 			
 		} else {
 			
 			io_unknownkey_message( "editorFind", c );
 			E.display_text = "Unknown key.";
-				/* 0x3f1 */
 			E.display_pointer = c;
 			continue;
 		}
@@ -308,5 +308,5 @@ void editorFind( int fd )
 	
 	E.display_test = 0;
 	E.display_pointer = 0;
-	E.display_text = 0;
+	// E.display_text = 0;
 }
