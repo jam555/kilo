@@ -85,7 +85,6 @@ int statview_updatetime( statstate *stats )
 			dtime = -dtime;
 		}
 		
-		/* E.display_test = dtime; */
 		if( dtime * 1 >= MILA_MESSAGESLOTH )
 		{
 			stats->off += 1;
@@ -102,7 +101,6 @@ int statview_updatetime( statstate *stats )
 			/* Note: forcing this to run does nothing useful. */
 			
 				/* This never executes... why? */
-			/* E.display_test = 1; */
 			stats->off = 0;
 			
 				/* Cycle to the next message. */
@@ -171,6 +169,7 @@ static void statview_fetchmsg_inner( void *v_ )
 				);
 				exit( 1 );
 			}
+			msgsv = (msgs_view){ 0 };
 		}
 	}
 	size_t slen = strlen( msgsv.buf->b );
@@ -202,7 +201,7 @@ static void statview_fetchmsg_inner( void *v_ )
 	}
 	
 	
-	/* "Output" the effective string && flags. */
+	/* "Output" the effective string. */
 	if( slen <= usewid )
 	{
 		/* Never currently happens. */
@@ -307,6 +306,13 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 		data->len = usable_width;
 		
 		coyield2( stats->head, &( stats->ret_dest ),  (void*)data, &statview_fetchmsg_inner );
+		
+		if( 0 )
+		{
+			E.display_test = data->len;
+			E.display_pointer = data->start;
+			E.display_text = data->start;
+		}
 		
 		/* printf( "\tstatview_fetchmsg() successful exit.\n" ); */
 		return( 1 );

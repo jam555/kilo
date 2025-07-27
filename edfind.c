@@ -51,6 +51,7 @@ void editorFind( int fd )
 	int has_match = 0; /* 0 if there is no match, else 1. */
 	int find_next = 0; /* if 1 search next, if -1 search prev. */
 	char *saved_hl = NULL;
+	int res = 0, c = 0;
 	
 #define FIND_RESTORE_HL do { \
     if( saved_hl ) { \
@@ -65,11 +66,14 @@ void editorFind( int fd )
 	axis_type saved_coloff = E.coloff, saved_rowoff = E.rowoff;
 	/* msgs *msgtmp = 0; */ /* Was used to track msgs{} for later deactivation maybe? */
 	
-	E.display_text = query;
+	// E.display_text = query;
+		E.display_test = 0;
+		E.display_pointer = 0;
+		E.display_text = 0;
 	
 	while( 1 )
 	{
-		int res = modemsgs_setmodal( MODEMSGS_MILLI_FIND );
+		res = modemsgs_setmodal( MODEMSGS_MILLI_FIND );
 		switch( res )
 		{
 			case 0:
@@ -87,7 +91,15 @@ void editorFind( int fd )
 		}
 		editorRefreshScreen();
 		
-		int c = editorReadKey( fd );
+		res = editorReadKey( fd );
+		if( res != c )
+		{
+				/* WHY does c always == 1009? */
+			c = res;
+			E.display_test = res;
+			E.display_pointer += 1;
+			E.display_text = 0;
+		}
 		if( c == ESC || c == ENTER )
 		{
 			/* Done with find. */
@@ -268,6 +280,8 @@ void editorFind( int fd )
             }
         }
     }
-
+	
+	E.display_test = 0;
+	E.display_pointer = 0;
 	E.display_text = 0;
 }
