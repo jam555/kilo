@@ -437,8 +437,8 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 			(
 				status, sizeof( status ),
 				
-				// "time == %d:%d; "
-				// "old time == %d:%d; "
+				"time == %d:%d; "
+				"old time == %d:%d; "
 				
 				"E.d test == %d; "
 				// "E.d test (off) == 0x%x; "
@@ -450,10 +450,10 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 				
 				" text: %20.20s "
 				,
-					// E.display_time.tm_min,
-					// E.display_time.tm_sec,
-					// E.old_time.tm_min,
-					// E.old_time.tm_sec,
+					E.display_time.tm_min,
+					E.display_time.tm_sec,
+					E.old_time.tm_min,
+					E.old_time.tm_sec,
 					
 					(int)( E.display_test ),
 					// (int)( E.display_test ),

@@ -539,12 +539,14 @@ fatal:
  * escape sequences. */
 int editorReadKey( int fd )
 {
+#warning "This is a prime candidate for a yield-based IO routine."
+	static char altseq[ 5 ] = { 'N', 'U', 'L', 'L', '\0' };
     ssize_t nread;
     char c, seq[ 4 ];
-	static char altseq[ 5 ] = { 'N', 'U', 'L', 'L', '\0' };
-#warning "This is a prime candidate for a yield-based IO routine."
+	time_t t;
     int res, ret = EOF;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
+	
 	errno = 0;
 	
 	seq[ 0 ] = '\0';
@@ -565,11 +567,11 @@ int editorReadKey( int fd )
 			if( ret != KEYBOARD_TIMEOUT )
 			{
 				E.display_pointer = seq[ 0 ];
-				E.display_test = ret;
+				// E.display_test = ret;
 			}
 			if( 0 && res < 4 )
 			{
-				E.display_test = res;
+				// E.display_test = res;
 			}
 			while( res < 4 )
 			{
@@ -584,6 +586,11 @@ int editorReadKey( int fd )
 		return( ret );
 	}
 	
+	if( 1 )
+	{
+		t = time( (time_t*)0 );
+		E.old_time = *localtime( &t );
+	}
 	while
 	(
 		(
@@ -611,6 +618,10 @@ int editorReadKey( int fd )
 		);
 		exit( 1 );
 	}
+	if( 0 )
+	{
+		E.old_time = E.display_time;
+	}
 	
     while( 1 )
 	{
@@ -622,9 +633,58 @@ int editorReadKey( int fd )
 				
 	            /* If this is just an ESC, we'll timeout here. */
 					/* This DOESN'T seem to timeout. */
-	            if( read( fd, seq + 1, 1 ) == 0 )
+					/*
+						Do we want a wrapper for the character read? Use w/ the first while?
+					*/
+				/* Timeout seems random? And some key presses seem to get missed? */
+				/*
+					One or another of these read()s causes a lock-up, figure out how to hunt for it.
+				*/
+				if( 0 )
 				{
+					t = time( (time_t*)0 );
+				}
+				if( 0 )
+				{
+					E.display_time = *localtime( &t );
+				}
+				if( 0 )
+				{
+					E.old_time = E.display_time;
+				}
+				if( 0 )
+				{
+					t = time( (time_t*)0 );
+					E.display_time = *localtime( &t );
+				}
+				if( read( fd, seq + 1, 1 ) == 0 || seq[ 1 ] == ESC )
+				{
+					if( 1 )
+					{
+						t = time( (time_t*)0 );
+						E.display_time = *localtime( &t );
+					}
+					
+					if( seq[ 1 ] == ESC )
+					{
+						// E.display_test = 1;
+						
+					} else {
+						
+						// E.display_test = 2;
+					}
+					
 					editorReadKey_ONRET( ESC );
+					
+				} else {
+					
+					if( 1 )
+					{
+						t = time( (time_t*)0 );
+						E.display_time = *localtime( &t );
+					}
+					
+					// E.display_test = 3;
 				}
 	            if( read( fd, seq + 2, 1 ) == 0 )
 				{
