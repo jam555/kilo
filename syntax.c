@@ -51,11 +51,25 @@ int is_separator( int c )
 /* Return true if the specified row last char is part of a multi line comment
  * that starts at this row or at one before, and does not end at the end
  * of the row but spawns to the next row. */
-int editorRowHasOpenComment(erow *row) {
-    if (row->hl && row->rsize && row->hl[row->rsize-1] == HL_MLCOMMENT &&
-        (row->rsize < 2 || (row->render[row->rsize-2] != '*' ||
-                            row->render[row->rsize-1] != '/'))) return 1;
-    return 0;
+int editorRowHasOpenComment( erow *row )
+{
+	if
+	(
+		row->hl &&
+		row->rsize &&
+		row->hl[row->rsize-1] == HL_MLCOMMENT &&
+		(
+			row->rsize < 2 ||
+			(
+				row->render[row->rsize-2] != '*' ||
+				row->render[row->rsize-1] != '/'
+			)
+		)
+	)
+	{
+		return 1;
+	}
+	return 0;
 }
 
 /* Set every byte of row->hl (that corresponds to every character in the line)
@@ -184,8 +198,15 @@ void editorUpdateSyntax( erow *row )
         /* Handle numbers */
         if
 		(
-			( isdigit( *p ) && ( prev_sep || row->hl[ i - 1 ] == HL_NUMBER ) ) ||
-            ( *p == '.' && i > 0 && row->hl[ i - 1 ] == HL_NUMBER )
+			(
+				isdigit( *p ) &&
+				( prev_sep || row->hl[ i - 1 ] == HL_NUMBER )
+			) ||
+            (
+				*p == '.' &&
+				i > 0 &&
+				row->hl[ i - 1 ] == HL_NUMBER
+			)
 		)
 		{
             row->hl[ i ] = HL_NUMBER;
