@@ -125,7 +125,7 @@ enum KEY_ACTION{
 int fd = STDIN_FILENO, display_test;
 intptr_t display_pointer;
 struct termios raw, orig_termios;
-struct tm old_time, display_time;
+struct tm display_time, t2, t3;
 
 
 /* Raw mode: 1960 magic shit. */
@@ -239,7 +239,7 @@ int editorReadKey()
     ssize_t nread;
     char c, seq[ 4 ] = { '\0', '\0', '\0', '\0' };
 	time_t t;
-    int res, ret = EOF;
+    int res, ret = EOF, e;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
 	
 	errno = 0;
@@ -247,6 +247,12 @@ int editorReadKey()
 	if( ret != EOF )
 	{
 		onret:
+		
+		if( 1 )
+		{
+			t = time( (time_t*)0 );
+			t3 = *localtime( &t );
+		}
 		
 		if( seq[ res ] != 0 )
 		{
@@ -275,16 +281,34 @@ int editorReadKey()
 		{
 			print_tool
 			(
-				"\ttime == %2.2d:%2.2d; editorReadKey(): %s; ret: %x",
+				"\ttime == %2.2d:%2.2d, %2.2d:%2.2d, %2.2d:%2.2d; "
+				"editorReadKey(): %s; ret: %x; "
+				"d test: %d; nread: %d; errno: %d",
 					display_time.tm_min,
 					display_time.tm_sec,
+					
+					t2.tm_min,
+					t2.tm_sec,
+					
+					t3.tm_min,
+					t3.tm_sec,
+					
 					text,
-					ret
+					ret,
+					
+					display_test,
+					nread,
+					e
 			);
 		}
 		return( ret );
 	}
 	
+	if( 1 )
+	{
+		t = time( (time_t*)0 );
+		display_time = *localtime( &t );
+	}
 	while
 	(
 		(
@@ -310,10 +334,12 @@ int editorReadKey()
 		);
 		exit( 1 );
 	}
+	// display_test = nread;
+	
 	if( 0 )
 	{
 		t = time( (time_t*)0 );
-		display_time = *localtime( &t );
+		t2 = *localtime( &t );
 	}
 	
     while( 1 )
@@ -343,38 +369,48 @@ int editorReadKey()
 				/*
 					One or another of these read()s causes a lock-up, figure out how to hunt for it.
 				*/
-				if( 0 )
+				if( 1 )
 				{
 					t = time( (time_t*)0 );
-					display_time = *localtime( &t );
+					t2 = *localtime( &t );
 				}
-				if( read( fd, seq + 1, 1 ) == 0 || seq[ 1 ] == ESC )
+				errno = 0;
+				if( ( nread = read( fd, seq + 1, 1 ) ) == 0 || seq[ 1 ] == ESC )
 				{
-					if( 0 )
+					e = errno;
+					
+					if( 1 )
 					{
 						t = time( (time_t*)0 );
-						display_time = *localtime( &t );
+						t3 = *localtime( &t );
 					}
 					
 					display_test = 1;
 					
 					editorReadKey_ONRET( ESC );
 					
-				} else if( read( fd, seq + 2, 1 ) == 0 )
+				} else if( ( nread = read( fd, seq + 1, 1 ) ) == 0 )
 				{
+					e = errno;
 					display_test = 2;
 					
-					if( 0 )
+					if( 1 )
 					{
 						t = time( (time_t*)0 );
-						display_time = *localtime( &t );
+						t3 = *localtime( &t );
 					}
 					
 					/* Do we REALLY want multiple read()s? Should we have ALL of them be the same in the coroutine version? */
 					
 					editorReadKey_ONRET( ESC );
 				}
+				e = errno;
 				display_test = 3;
+				if( 1 )
+				{
+					t = time( (time_t*)0 );
+					t3 = *localtime( &t );
+				}
 				
 	            /* ESC [ sequences. */
 	            if( seq[ 1 ] == '[' )
