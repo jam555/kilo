@@ -382,6 +382,7 @@ void disableRawMode( int fd )
 		if( res < 0 )
 		{
 			tmp = errno;
+#warning "Start using msgs here."
 			printf
 			(
 				"\n\tdisableRawMode()::fcntl()1 failed: res == %d, errno == %d.\n",
@@ -507,8 +508,6 @@ int enableRawMode( int fd )
 		
 		if( !( res & O_NONBLOCK ) )
 		{
-			
-			
 			E.didblock = 1;
 		}
 		
@@ -540,7 +539,7 @@ fatal:
 int editorReadKey( int fd )
 {
 #warning "This is a prime candidate for a yield-based IO routine."
-	static char altseq[ 5 ] = { 'N', 'U', 'L', 'L', '\0' };
+	static char text[ 14 ] = { '\0', '\0', ' ', '\0', '\0', ' ',  '\0', '\0', ' ', '\0', '\0', ' ',  '\0', '\0' };
     ssize_t nread;
     char c, seq[ 4 ];
 	time_t t;
@@ -556,31 +555,33 @@ int editorReadKey( int fd )
 	{
 		onret:
 		
-		if( 1 )
+		if( seq[ res ] != 0 )
 		{
+			E.display_text = text;
+			text[ 12 ] = '\0';
+			
 			res = 0;
-			E.display_text = altseq;
-			while( !isprint( seq[ res ] ) && res < 4 )
-			{
-				++res;
-			}
-			if( ret != KEYBOARD_TIMEOUT )
-			{
-				E.display_pointer = seq[ 0 ];
-				// E.display_test = ret;
-			}
-			if( 0 && res < 4 )
-			{
-				// E.display_test = res;
-			}
 			while( res < 4 )
 			{
-				if( isprint( seq[ res ] ) )
-				{
-					altseq[ res ] = seq[ res ];
-					altseq[ res + 1 ] = '\0';
-				}
+				text[ ( res * 3 ) + 1 ] =
+					"0123456789ABCDEF"[ seq[ res ] & 15 ];
+				text[ res * 3 ] =
+					"0123456789ABCDEF"[ ( ( seq[ res ] & ~(char)15 ) / 16 ) & 15 ];
+				
 				++res;
+			}
+			if( isprint( seq[ 0 ] ) )
+			{
+				text[ 12 ] = seq[ 0 ];
+				
+			} else if( isprint( seq[ 1 ] ) )
+			{
+				text[ 12 ] = seq[ 1 ];
+				
+			} else if( isprint( seq[ 2 ] ) )
+			{
+				text[ 12 ] = seq[ 2 ];
+				
 			}
 		}
 		return( ret );
@@ -665,18 +666,13 @@ int editorReadKey( int fd )
 						E.display_time = *localtime( &t );
 					}
 					
-					if( seq[ 1 ] == ESC )
-					{
-						// E.display_test = 1;
-						
-					} else {
-						
-						// E.display_test = 2;
-					}
+					E.display_test = 1;
 					
 					editorReadKey_ONRET( ESC );
 					
-				} else {
+				} else if( read( fd, seq + 2, 1 ) == 0 )
+				{
+					E.display_test = 2;
 					
 					if( 1 )
 					{
@@ -684,12 +680,11 @@ int editorReadKey( int fd )
 						E.display_time = *localtime( &t );
 					}
 					
-					// E.display_test = 3;
-				}
-	            if( read( fd, seq + 2, 1 ) == 0 )
-				{
+					/* Do we REALLY want multiple read()s? Should we have ALL of them be the same in the coroutine version? */
+					
 					editorReadKey_ONRET( ESC );
 				}
+				E.display_test = 3;
 				
 	            /* ESC [ sequences. */
 	            if( seq[ 1 ] == '[' )
