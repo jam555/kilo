@@ -766,7 +766,7 @@ int editorReadKey( int fd )
 	            }
 	            break;
 	        default:
-	            editorReadKey_ONRET( c );
+	            editorReadKey_ONRET( seq[ 0 ] );
         }
     }
 }
