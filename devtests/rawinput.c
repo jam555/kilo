@@ -238,7 +238,7 @@ int editorReadKey()
 		};
     ssize_t nread;
     char c, seq[ 4 ] = { '\0', '\0', '\0', '\0' };
-	time_t t;
+	time_t t, ref;
     int res, ret = EOF, e;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
 	
@@ -334,6 +334,7 @@ int editorReadKey()
 		);
 		exit( 1 );
 	}
+	ref = time( (time_t*)0 );
 	// display_test = nread;
 	
 	if( 0 )
@@ -352,6 +353,7 @@ int editorReadKey()
         switch( seq[ 0 ] )
 		{
 	        case ESC:    /* escape sequence */
+				
 				if( 0 )
 				{
 					t = time( (time_t*)0 );
@@ -375,6 +377,12 @@ int editorReadKey()
 					t2 = *localtime( &t );
 				}
 				errno = 0;
+				if( ref + 1 < time( (time_t*)0 ) )
+				{
+					display_test = 3;
+					
+					editorReadKey_ONRET( ESC );
+				}
 				if( ( nread = read( fd, seq + 1, 1 ) ) == 0 || seq[ 1 ] == ESC )
 				{
 					/* For some reason it's ALWAYS this that provides ESC... */
