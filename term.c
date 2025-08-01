@@ -542,7 +542,7 @@ int editorReadKey( int fd )
 	static char text[ 14 ] = { '\0', '\0', ' ', '\0', '\0', ' ',  '\0', '\0', ' ', '\0', '\0', ' ',  '\0', '\0' };
     ssize_t nread;
     char c, seq[ 4 ];
-	time_t t;
+	time_t t, ref;
     int res, ret = EOF;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
 	
@@ -619,6 +619,8 @@ int editorReadKey( int fd )
 		);
 		exit( 1 );
 	}
+		/* Required for ESC key handling, NEVER gate this. */
+	ref = time( (time_t*)0 );
 	if( 0 )
 	{
 		E.old_time = E.display_time;
@@ -657,6 +659,14 @@ int editorReadKey( int fd )
 				{
 					t = time( (time_t*)0 );
 					E.display_time = *localtime( &t );
+				}
+				if( ref + 1 < time( (time_t*)0 ) )
+				{
+					/* Detect lone ESC key via time-out. */
+					
+					E.display_test = 4;
+					
+					editorReadKey_ONRET( ESC );
 				}
 				if( read( fd, seq + 1, 1 ) == 0 || seq[ 1 ] == ESC )
 				{
