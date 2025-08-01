@@ -379,14 +379,19 @@ int editorReadKey()
 				errno = 0;
 				if( ref + 1 < time( (time_t*)0 ) )
 				{
+					e = errno;
+					
 					display_test = 3;
 					
 					editorReadKey_ONRET( ESC );
 				}
-				if( ( nread = read( fd, seq + 1, 1 ) ) == 0 || seq[ 1 ] == ESC )
+				if
+				(
+					( nread = read( fd, seq + 1, 1 ) ) == 0 ||
+					( nread == -1 && ( errno == EAGAIN || errno == EAGAIN ) ) ||
+					seq[ 1 ] == ESC
+				)
 				{
-					/* For some reason it's ALWAYS this that provides ESC... */
-					/* How ARE we supposed to do single-escape detection? */
 					e = errno;
 					
 					if( 1 )
@@ -527,6 +532,7 @@ int main( int argn, char *args[] )
 	
 	printf( "\n" );
 	print_tool( "Entering kilo::rawinput.c" );
+	print_tool( "\tEAGAIN: %d, EWOULDBLOCK: %d",  EAGAIN, EWOULDBLOCK );
 	print_tool( "\tTo exit, press q.\n" );
 	
 	while( 1 && res != 'q' && res != 'Q' )
