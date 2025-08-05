@@ -647,6 +647,9 @@ int editorReadKey( int fd )
 					
 					editorReadKey_ONRET( ESC );
 				}
+				/*
+					This completely breaks e.g. arrow keys.
+				*/
 				if
 				(
 					( nread = read( fd, seq + 1, 1 ) ) == 0 ||
