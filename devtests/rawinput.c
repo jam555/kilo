@@ -55,6 +55,19 @@
 
 
 
+long long nanotime()
+{
+	struct timespec ts;
+	
+	int res = timespec_get( &ts, TIME_UTC );
+	if( res == TIME_UTC )
+	{
+		return( -1 );
+	}
+	
+	return( ts.tv_nsec );
+}
+
 size_t tablen = 8;
 void print_tool( char *text, ... )
 {
@@ -236,11 +249,12 @@ int editorReadKey()
 			
 			'\0', '\0'
 		};
+	long long ntime;
     ssize_t nread;
-    char c, seq[ 4 ] = { '\0', '\0', '\0', '\0' };
 	time_t t, ref;
     int res, ret = EOF, e;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
+    char c, seq[ 4 ] = { '\0', '\0', '\0', '\0' };
 	
 	errno = 0;
 	
@@ -335,30 +349,15 @@ int editorReadKey()
 		exit( 1 );
 	}
 	ref = time( (time_t*)0 );
+	ntime = nanotime();
 	// display_test = nread;
-	
-	if( 0 )
-	{
-		t = time( (time_t*)0 );
-		t2 = *localtime( &t );
-	}
 	
     while( 1 )
 	{
-		if( 0 )
-		{
-			t = time( (time_t*)0 );
-			display_time = *localtime( &t );
-		}
         switch( seq[ 0 ] )
 		{
 	        case ESC:    /* escape sequence */
 				
-				if( 0 )
-				{
-					t = time( (time_t*)0 );
-					display_time = *localtime( &t );
-				}
 				seq[ 2 ] = '\0';
 				seq[ 3 ] = '\0';
 				
@@ -377,48 +376,67 @@ int editorReadKey()
 					t2 = *localtime( &t );
 				}
 				errno = 0;
-				if( ref + 1 < time( (time_t*)0 ) )
+				if
+				(
+					ref + 1 < time( (time_t*)0 )
+				)
 				{
+					/* This no longer triggers. */
+					
 					e = errno;
 					
 					display_test = 3;
 					
 					editorReadKey_ONRET( ESC );
 				}
+#warning "Throw some time-tracking into the following if() in case of subsystem delays."
 				if
 				(
-					( nread = read( fd, seq + 1, 1 ) ) == 0 ||
-					( nread == -1 && ( errno == EAGAIN || errno == EAGAIN ) ) ||
-					seq[ 1 ] == ESC
+					ntime +
+					1 *
+					(
+						/* 999,999,999 */
+						1 /*000*/ /* * 1000 */ /* Millisecs. */
+						
+					) >=
+					nanotime()
 				)
 				{
-					e = errno;
-					
-					if( 1 )
-					{
-						t = time( (time_t*)0 );
-						t3 = *localtime( &t );
-					}
-					
-					display_test = 1;
-					
-					editorReadKey_ONRET( ESC );
-					
-				} else if( ( nread = read( fd, seq + 1, 1 ) ) == 0 )
-				{
-					e = errno;
-					display_test = 2;
-					
-					if( 1 )
-					{
-						t = time( (time_t*)0 );
-						t3 = *localtime( &t );
-					}
-					
-					/* Do we REALLY want multiple read()s? Should we have ALL of them be the same in the coroutine version? */
-					
-					editorReadKey_ONRET( ESC );
 				}
+					if
+					(
+						( nread = read( fd, seq + 1, 1 ) ) == 0 ||
+						( nread == -1 && ( errno == EAGAIN || errno == EWOULDBLOCK ) ) ||
+						seq[ 1 ] == ESC
+					)
+					{
+						e = errno;
+						
+						if( 1 )
+						{
+							t = time( (time_t*)0 );
+							t3 = *localtime( &t );
+						}
+						
+						display_test = 1;
+						
+						editorReadKey_ONRET( ESC );
+						
+					} else if( ( nread = read( fd, seq + 1, 1 ) ) == 0 )
+					{
+						e = errno;
+						display_test = 2;
+						
+						if( 1 )
+						{
+							t = time( (time_t*)0 );
+							t3 = *localtime( &t );
+						}
+						
+						/* Do we REALLY want multiple read()s? Should we have ALL of them be the same in the coroutine version? */
+						
+						editorReadKey_ONRET( ESC );
+					}
 				e = errno;
 				display_test = 3;
 				if( 1 )
