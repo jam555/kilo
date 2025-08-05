@@ -543,7 +543,7 @@ int editorReadKey( int fd )
     ssize_t nread;
     char c, seq[ 4 ];
 	time_t t, ref;
-    int res, ret = EOF;
+    int res, ret = EOF, e;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
 	
 	errno = 0;
@@ -609,7 +609,7 @@ int editorReadKey( int fd )
 	}
     if( nread == -1 )
 	{
-		int e = errno;
+		e = errno;
 		msgs_build_fatal
 		(
 			(msgs**)0,
@@ -621,10 +621,6 @@ int editorReadKey( int fd )
 	}
 		/* Required for ESC key handling, NEVER gate this. */
 	ref = time( (time_t*)0 );
-	if( 0 )
-	{
-		E.old_time = E.display_time;
-	}
 	
     while( 1 )
 	{
@@ -643,23 +639,6 @@ int editorReadKey( int fd )
 				/*
 					One or another of these read()s causes a lock-up, figure out how to hunt for it.
 				*/
-				if( 0 )
-				{
-					t = time( (time_t*)0 );
-				}
-				if( 0 )
-				{
-					E.display_time = *localtime( &t );
-				}
-				if( 0 )
-				{
-					E.old_time = E.display_time;
-				}
-				if( 0 )
-				{
-					t = time( (time_t*)0 );
-					E.display_time = *localtime( &t );
-				}
 				if( ref + 1 < time( (time_t*)0 ) )
 				{
 					/* Detect lone ESC key via time-out. */
@@ -668,8 +647,15 @@ int editorReadKey( int fd )
 					
 					editorReadKey_ONRET( ESC );
 				}
-				if( read( fd, seq + 1, 1 ) == 0 || seq[ 1 ] == ESC )
+				if
+				(
+					( nread = read( fd, seq + 1, 1 ) ) == 0 ||
+					( nread == -1 && ( errno == EAGAIN || errno == EWOULDBLOCK ) ) ||
+					seq[ 1 ] == ESC
+				)
 				{
+					e = errno;
+					
 					if( 1 )
 					{
 						t = time( (time_t*)0 );
@@ -680,8 +666,9 @@ int editorReadKey( int fd )
 					
 					editorReadKey_ONRET( ESC );
 					
-				} else if( read( fd, seq + 2, 1 ) == 0 )
+				} else if( ( nread = read( fd, seq + 1, 1 ) ) == 0 )
 				{
+					e = errno;
 					E.display_test = 2;
 					
 					if( 1 )
