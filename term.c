@@ -539,7 +539,20 @@ fatal:
 int editorReadKey( int fd )
 {
 #warning "This is a prime candidate for a yield-based IO routine."
-	static char text[ 14 ] = { '\0', '\0', ' ', '\0', '\0', ' ',  '\0', '\0', ' ', '\0', '\0', ' ',  '\0', '\0' };
+	static char
+		text[ 23 ] =
+		{
+			'\0', '\0', ' ',
+			'\0', '\0', ' ',
+			'\0', '\0', ' ',
+			'\0', '\0', ' ' /* 11, 0xB */,
+			
+			'\0', '\0', ' ',
+			'\0', '\0', ' ',
+			'\0', '\0', ' ' /* 20, 0x14 */,
+			
+			'\0', '\0'
+		};
 	ssize_t nread;
 	size_t off = 0;
 	char c, seq[ 6 ];
@@ -560,30 +573,33 @@ int editorReadKey( int fd )
 		if( seq[ res ] != 0 )
 		{
 			E.display_text = text;
-			text[ 12 ] = '\0';
 			
-			res = 0;
-			while( res < 4 )
+			if( ret != KEYBOARD_TIMEOUT )
 			{
-				text[ ( res * 3 ) + 1 ] =
-					"0123456789ABCDEF"[ seq[ res ] & 15 ];
-				text[ res * 3 ] =
-					"0123456789ABCDEF"[ ( ( seq[ res ] & ~(char)15 ) / 16 ) & 15 ];
-				
-				++res;
-			}
-			if( isprint( seq[ 0 ] ) )
-			{
-				text[ 12 ] = seq[ 0 ];
-				
-			} else if( isprint( seq[ 1 ] ) )
-			{
-				text[ 12 ] = seq[ 1 ];
-				
-			} else if( isprint( seq[ 2 ] ) )
-			{
-				text[ 12 ] = seq[ 2 ];
-				
+				off = 0;
+				while( off < 6 && seq[ off ] != '\0' )
+				{
+					text[ ( off * 3 ) + 1 ] =
+						"0123456789ABCDEF"[ seq[ off ] & 15 ];
+					text[ off * 3 ] =
+						"0123456789ABCDEF"[ ( ( seq[ off ] & ~(char)15 ) / 16 ) & 15 ];
+					
+					++off;
+				}
+				text[ off * 3 ] = '\0';
+				if( isprint( seq[ 0 ] ) )
+				{
+					text[ 18 ] = seq[ 0 ];
+					
+				} else if( isprint( seq[ 1 ] ) )
+				{
+					text[ 18 ] = seq[ 1 ];
+					
+				} else if( isprint( seq[ 2 ] ) )
+				{
+					text[ 18 ] = seq[ 2 ];
+					
+				}
 			}
 		}
 		return( ret );
@@ -717,7 +733,6 @@ int editorReadKey( int fd )
 						
 						;
 					}
-					
 				}
 				
 	            
