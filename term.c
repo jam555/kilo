@@ -643,179 +643,215 @@ int editorReadKey( int fd )
 				/*
 					It's probably time to consolidate reads in this loop into just one.
 				*/
-				if( 0 )
+				if( 1 )
 				{
-					/*
-						/ * size_t off - 0; * /
+					E.display_test = 0;
+					
+					/* size_t off - 0; */
+					
+					if( sizeof( seq ) <= off )
+					{
+						/* Array overrun error. */
 						
-						if( off >= sizeof( seq ) )
-						{
-							/ * Array overrun error. * /
-							
-						} else if
+						msgs_build_fatal
 						(
-							( nread = read( fd, seq + off, 1 ) ) == 1 &&
-							seq[ off ] != ESC
-						)
-						{
-							/ * Plain success. * /
-							
-							++off;
-							seq[ off ] = '\0';
-							
-						} else if( nread == 1 )
-						{
-							/ * Double-ESC. This REALLY needs to push the second ESC back. * /
-							
-							editorReadKey_ONRET( ESC );
-							
-						} else if( ref + 1 < time( (time_t*)0 ) )
-						{
-							/ * Timeout, send the escape. * /
-							
-							editorReadKey_ONRET( ESC );
-							
-						} else if( nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK )
-						{
-							/ * Generic real errors. * /
-							
-							;
-							
-						} else {
-							
-							/ *  * /
-							
-							;
-						}
+							(msgs**)0,
+								"\teditorReadKey() had an array overrun error. String: %s\n",
+								seq
+						);
+						exit( 1 );
+						
+					} else if
+					(
+						(
+							( nread = read( fd, seq + off, 1 ) ),
+							( e = errno ),
+							( 1 == nread )
+						) &&
+						ESC != seq[ off ]
+					)
+					{
+						/* Plain success. */
+						
+						++off;
+						seq[ off ] = '\0';
+						
+					} else if( 1 == nread )
+					{
+						/* Double-ESC. This REALLY needs to push the second ESC back. */
+						
+						editorReadKey_ONRET( ESC );
+						
+					} else if( ref + 1 < time( (time_t*)0 ) )
+					{
+						/* Timeout, send the escape. */
+						
+						editorReadKey_ONRET( ESC );
+						
+					} else if( -1 == nread && EAGAIN != e && EWOULDBLOCK != e )
+					{
+						/* Generic real errors. */
+						
+						msgs_build_fatal
+						(
+							(msgs**)0,
+								"\teditorReadKey() had a non-AGAIN read error: %d \n",
+								e
+						);
+						exit( 1 );
+						
+					} else if( 0 )
+					{
+						/* Generic maybe errors. */
+						
+						msgs_build_fatal
+						(
+							(msgs**)0,
+								"\teditorReadKey() had a non-typified error.\n"
+						);
+						exit( 1 );
+						
+					} else {
+						
+						/* Alternate route for maybe errors. */
 						
 						;
-					*/
-				}
-				if
-				(
-					( ref + 1 < time( (time_t*)0 ) ) ||
-					( nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK )
-				)
-				{
-					/* Detect lone ESC key via time-out. */
-					
-					E.display_test = 4;
-					
-					editorReadKey_ONRET( ESC );
-					
-				} else if
-				(
-					( nread = read( fd, seq + 1, 1 ) ) == 0 ||
-					seq[ 1 ] == ESC
-				)
-				{
-					/* ESC seems to flow through here on fast presses. */
-					
-					e = errno;
-					
-					if( 1 )
-					{
-						t = time( (time_t*)0 );
-						E.display_time = *localtime( &t );
 					}
 					
-					E.display_test = 1;
+				} else {
 					
-					editorReadKey_ONRET( ESC );
-					
-				} else if( ( nread = read( fd, seq + 1, 1 ) ) == 0 )
-				{
-					e = errno;
-					E.display_test = 2;
-					
-					if( 1 )
+					if
+					(
+						( ref + 1 < time( (time_t*)0 ) ) ||
+						( nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK )
+					)
 					{
-						t = time( (time_t*)0 );
-						E.display_time = *localtime( &t );
-					}
-					
-					editorReadKey_ONRET( ESC );
-				}
-				E.display_test = 3;
-				
-	            /* ESC [ sequences. */
-	            if( seq[ 1 ] == '[' )
-				{
-	                if( seq[ 2 ] >= '0' && seq[ 1 ] <= '9' )
+						/* Detect lone ESC key via time-out. */
+						
+						E.display_test = 4;
+						
+						editorReadKey_ONRET( ESC );
+						
+					} else if
+					(
+						( nread = read( fd, seq + 1, 1 ) ) == 0 ||
+						seq[ 1 ] == ESC
+					)
 					{
-	                    /* Extended escape, read additional byte. */
-	                    if( read( fd, seq + 3, 1 ) == 0 )
+						/* ESC seems to flow through here on fast presses. */
+						
+						e = errno;
+						
+						if( 1 )
 						{
-							editorReadKey_ONRET( ESC );
+							t = time( (time_t*)0 );
+							E.display_time = *localtime( &t );
 						}
-	                    if( seq[ 3 ] == '~')
+						
+						E.display_test = 1;
+						
+						editorReadKey_ONRET( ESC );
+						
+					} else if( ( nread = read( fd, seq + 1, 1 ) ) == 0 )
+					{
+						e = errno;
+						E.display_test = 2;
+						
+						if( 1 )
 						{
-	                        switch( seq[ 2 ] )
+							t = time( (time_t*)0 );
+							E.display_time = *localtime( &t );
+						}
+						
+						editorReadKey_ONRET( ESC );
+					}
+					E.display_test = 3;
+				}
+				
+	            
+				
+				if( 3 <= off )
+				{
+					/* ESC [ sequences. */
+		            if( seq[ 1 ] == '[' )
+					{
+		                if( seq[ 2 ] >= '0' && seq[ 1 ] <= '9' )
+						{
+		                    /* Extended escape, read additional byte. */
+		                    if( read( fd, seq + off, 1 ) == 0 )
 							{
-		                        case '3':
-									editorReadKey_ONRET( DEL_KEY );
-		                        case '5':
-									editorReadKey_ONRET( PAGE_UP );
-		                        case '6':
-									editorReadKey_ONRET( PAGE_DOWN );
+								editorReadKey_ONRET( ESC );
+							}
+							++off;
+		                    if( seq[ 3 ] == '~')
+							{
+		                        switch( seq[ 2 ] )
+								{
+			                        case '3':
+										editorReadKey_ONRET( DEL_KEY );
+			                        case '5':
+										editorReadKey_ONRET( PAGE_UP );
+			                        case '6':
+										editorReadKey_ONRET( PAGE_DOWN );
+									default:
+										msgs_build_fatal
+										(
+											(msgs**)0,
+												"\tNumeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
+												seq[ 2 ]
+										);
+										exit( 1 );
+		                        }
+		                    }
+							
+		                } else {
+		                    
+							switch( seq[ 2 ] )
+							{
+			                    case 'A':
+									editorReadKey_ONRET( ARROW_UP );
+			                    case 'B':
+									editorReadKey_ONRET( ARROW_DOWN );
+			                    case 'C':
+									editorReadKey_ONRET( ARROW_RIGHT );
+			                    case 'D':
+									editorReadKey_ONRET( ARROW_LEFT );
+			                    case 'H':
+									editorReadKey_ONRET( HOME_KEY );
+			                    case 'F':
+									editorReadKey_ONRET( END_KEY );
 								default:
 									msgs_build_fatal
 									(
 										(msgs**)0,
-											"\tNumeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
-											seq[ 2 ]
+											"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %d == %c\n",
+											(int)( seq[2] ), seq[ 2 ]
 									);
 									exit( 1 );
-	                        }
-	                    }
+		                    }
+		                }
 						
-	                } else {
-	                    
+		            } else if( seq[ 1 ] == 'O' )
+					{
+		            	/* ESC O sequences. */
+		                
 						switch( seq[ 2 ] )
 						{
-		                    case 'A':
-								editorReadKey_ONRET( ARROW_UP );
-		                    case 'B':
-								editorReadKey_ONRET( ARROW_DOWN );
-		                    case 'C':
-								editorReadKey_ONRET( ARROW_RIGHT );
-		                    case 'D':
-								editorReadKey_ONRET( ARROW_LEFT );
-		                    case 'H':
+			                case 'H':
 								editorReadKey_ONRET( HOME_KEY );
-		                    case 'F':
+			                case 'F':
 								editorReadKey_ONRET( END_KEY );
-							default:
+			                default:
 								msgs_build_fatal
 								(
 									(msgs**)0,
-										"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %d == %c\n",
-										(int)( seq[2] ), seq[ 2 ]
+										"\t\"ESC O\" in editorReadKey() had a strange value: %c\n",
+										seq[ 2 ]
 								);
 								exit( 1 );
-	                    }
-	                }
-					
-	            } else if( seq[ 1 ] == 'O' )
-				{
-	            	/* ESC O sequences. */
-	                
-					switch( seq[ 2 ] )
-					{
-		                case 'H':
-							editorReadKey_ONRET( HOME_KEY );
-		                case 'F':
-							editorReadKey_ONRET( END_KEY );
-		                default:
-							msgs_build_fatal
-							(
-								(msgs**)0,
-									"\t\"ESC O\" in editorReadKey() had a strange value: %c\n",
-									seq[ 2 ]
-							);
-							exit( 1 );
-	                }
-	            }
+		                }
+		            }
+				}
 	            break;
 	        default:
 	            editorReadKey_ONRET( seq[ 0 ] );
