@@ -540,14 +540,16 @@ int editorReadKey( int fd )
 {
 #warning "This is a prime candidate for a yield-based IO routine."
 	static char text[ 14 ] = { '\0', '\0', ' ', '\0', '\0', ' ',  '\0', '\0', ' ', '\0', '\0', ' ',  '\0', '\0' };
-    ssize_t nread;
-    char c, seq[ 4 ];
+	ssize_t nread;
+	size_t off = 0;
+	char c, seq[ 6 ];
 	time_t t, ref;
-    int res, ret = EOF, e;
+	int res, ret = EOF, e;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
 	
 	errno = 0;
 	
+		/* Pre-legalize the input sequence. */
 	seq[ 0 ] = '\0';
 	seq[ 1 ] = '\0';
 	
@@ -619,6 +621,8 @@ int editorReadKey( int fd )
 		);
 		exit( 1 );
 	}
+		/* We have a character, offset past it. */
+	off = 1;
 		/* Required for ESC key handling, NEVER gate this. */
 	ref = time( (time_t*)0 );
 	
@@ -639,6 +643,54 @@ int editorReadKey( int fd )
 				/*
 					It's probably time to consolidate reads in this loop into just one.
 				*/
+				if( 0 )
+				{
+					/*
+						/ * size_t off - 0; * /
+						
+						if( off >= sizeof( seq ) )
+						{
+							/ * Array overrun error. * /
+							
+						} else if
+						(
+							( nread = read( fd, seq + off, 1 ) ) == 1 &&
+							seq[ off ] != ESC
+						)
+						{
+							/ * Plain success. * /
+							
+							++off;
+							seq[ off ] = '\0';
+							
+						} else if( nread == 1 )
+						{
+							/ * Double-ESC. This REALLY needs to push the second ESC back. * /
+							
+							editorReadKey_ONRET( ESC );
+							
+						} else if( ref + 1 < time( (time_t*)0 ) )
+						{
+							/ * Timeout, send the escape. * /
+							
+							editorReadKey_ONRET( ESC );
+							
+						} else if( nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK )
+						{
+							/ * Generic real errors. * /
+							
+							;
+							
+						} else {
+							
+							/ *  * /
+							
+							;
+						}
+						
+						;
+					*/
+				}
 				if
 				(
 					( ref + 1 < time( (time_t*)0 ) ) ||
