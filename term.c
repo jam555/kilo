@@ -630,33 +630,35 @@ int editorReadKey( int fd )
 				seq[ 2 ] = '\0';
 				seq[ 3 ] = '\0';
 				
-	            /* If this is just an ESC, we'll timeout here. */
-					/* This DOESN'T seem to timeout. */
-					/*
-						Do we want a wrapper for the character read? Use w/ the first while?
-					*/
-				/* Timeout seems random? And some key presses seem to get missed? */
-				/*
-					One or another of these read()s causes a lock-up, figure out how to hunt for it.
+	            /*
+					Arrow keys get inserted as text, home key doesn't work, CTRL-Q seems fine, backspace seems fine.
 				*/
-				if( ref + 1 < time( (time_t*)0 ) )
+				/*
+					Incorrect keys are sometimes getting passed along.
+				*/
+				/*
+					It's probably time to consolidate reads in this loop into just one.
+				*/
+				if
+				(
+					( ref + 1 < time( (time_t*)0 ) ) ||
+					( nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK )
+				)
 				{
 					/* Detect lone ESC key via time-out. */
 					
 					E.display_test = 4;
 					
 					editorReadKey_ONRET( ESC );
-				}
-				/*
-					This completely breaks e.g. arrow keys.
-				*/
-				if
+					
+				} else if
 				(
 					( nread = read( fd, seq + 1, 1 ) ) == 0 ||
-					( nread == -1 && ( errno == EAGAIN || errno == EWOULDBLOCK ) ) ||
 					seq[ 1 ] == ESC
 				)
 				{
+					/* ESC seems to flow through here on fast presses. */
+					
 					e = errno;
 					
 					if( 1 )
@@ -679,8 +681,6 @@ int editorReadKey( int fd )
 						t = time( (time_t*)0 );
 						E.display_time = *localtime( &t );
 					}
-					
-					/* Do we REALLY want multiple read()s? Should we have ALL of them be the same in the coroutine version? */
 					
 					editorReadKey_ONRET( ESC );
 				}
@@ -737,8 +737,8 @@ int editorReadKey( int fd )
 								msgs_build_fatal
 								(
 									(msgs**)0,
-										"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
-										seq[ 2 ]
+										"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %d == %c\n",
+										(int)( seq[2] ), seq[ 2 ]
 								);
 								exit( 1 );
 	                    }
