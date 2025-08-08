@@ -556,7 +556,7 @@ int editorReadKey( int fd )
 	ssize_t nread;
 	size_t off = 0;
 	char c, seq[ 6 ];
-	time_t t, ref;
+	long long t, ref;
 	int res, ret = EOF, e;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
 	
@@ -607,8 +607,9 @@ int editorReadKey( int fd )
 	
 	if( 1 )
 	{
-		t = time( (time_t*)0 );
-		E.old_time = *localtime( &t );
+		time_t t_ = time( (time_t*)0 );
+		E.old_time = *localtime( &t_ );
+		E.llotime = t = nanotime();
 	}
 	while
 	(
@@ -640,7 +641,7 @@ int editorReadKey( int fd )
 		/* We have a character, offset past it. */
 	off = 1;
 		/* Required for ESC key handling, NEVER gate this. */
-	ref = time( (time_t*)0 );
+	ref = nanotime();
 	
     while( 1 )
 	{
@@ -698,7 +699,11 @@ int editorReadKey( int fd )
 						
 						editorReadKey_ONRET( ESC );
 						
-					} else if( ref + 1 < time( (time_t*)0 ) )
+					} else if
+					(
+						ref + ( 10 * 1000 * 1000 /* 10 ms? */ ) <
+						( E.lldtime = nanotime() )
+					)
 					{
 						/* Timeout, send the escape. */
 						
