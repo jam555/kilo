@@ -93,6 +93,7 @@ extern char
 #include "term.h"
 #include "msgs.h"
 #include "io/io.h"
+#include "nanotime.h"
 
 
 /* 6/June/2025: I've decided (several days ago) to rename the system in */
@@ -353,6 +354,7 @@ struct editorConfig
 	void *vptr;
 	struct tm display_time, old_time;
 	char *display_text;
+	long long lldtime, llotime;
 };
 
 enum KEY_ACTION{
