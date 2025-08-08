@@ -718,54 +718,6 @@ int editorReadKey( int fd )
 						;
 					}
 					
-				} else {
-					
-					if
-					(
-						( ref + 1 < time( (time_t*)0 ) ) ||
-						( nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK )
-					)
-					{
-						/* Detect lone ESC key via time-out. */
-						
-						E.display_test = 4;
-						
-						editorReadKey_ONRET( ESC );
-						
-					} else if
-					(
-						( nread = read( fd, seq + 1, 1 ) ) == 0 ||
-						seq[ 1 ] == ESC
-					)
-					{
-						/* ESC seems to flow through here on fast presses. */
-						
-						e = errno;
-						
-						if( 1 )
-						{
-							t = time( (time_t*)0 );
-							E.display_time = *localtime( &t );
-						}
-						
-						E.display_test = 1;
-						
-						editorReadKey_ONRET( ESC );
-						
-					} else if( ( nread = read( fd, seq + 1, 1 ) ) == 0 )
-					{
-						e = errno;
-						E.display_test = 2;
-						
-						if( 1 )
-						{
-							t = time( (time_t*)0 );
-							E.display_time = *localtime( &t );
-						}
-						
-						editorReadKey_ONRET( ESC );
-					}
-					E.display_test = 3;
 				}
 				
 	            
