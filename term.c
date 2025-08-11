@@ -616,85 +616,83 @@ int editorReadKey( int fd )
     while( 3 > off )
 	{
         /* Non-ESC has already been dispatched, so we don't need to test for that case. */
-		if( 1 )
+		
+		E.display_test = 0;
+		
+		/* size_t off - 0; */
+		
+		if( sizeof( seq ) <= off )
 		{
-			E.display_test = 0;
+			/* Array overrun error. This will sometimes trigger, including via Ctrl-Q. */
 			
-			/* size_t off - 0; */
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					"\teditorReadKey() had an array overrun error. String: %s\n",
+					seq
+			);
+			exit( 1 );
 			
-			if( sizeof( seq ) <= off )
-			{
-				/* Array overrun error. This will sometimes trigger, including via Ctrl-Q. */
-				
-				msgs_build_fatal
-				(
-					(msgs**)0,
-						"\teditorReadKey() had an array overrun error. String: %s\n",
-						seq
-				);
-				exit( 1 );
-				
-			} else if
+		} else if
+		(
 			(
-				(
-					( nread = read( fd, seq + off, 1 ) ),
-					( e = errno ),
-					( run = nanotime() ),
-					( 1 == nread )
-				) &&
-				ESC != seq[ off ]
-			)
-			{
-				/* Plain success. */
-				
-				++off;
-				seq[ off ] = '\0';
-				
-			} else if
+				( nread = read( fd, seq + off, 1 ) ),
+				( e = errno ),
+				( run = nanotime() ),
+				( 1 == nread )
+			) &&
+			ESC != seq[ off ]
+		)
+		{
+			/* Plain success. */
+			
+			++off;
+			seq[ off ] = '\0';
+			
+		} else if
+		(
+			ref + ( 5 * 1000 * 1000 /* 5 ms? */ ) <
+			E.lldtime
+		)
+		{
+			/* Timeout, send the escape. */
+			
+			editorReadKey_ONRET( ESC );
+			
+		} else if( 1 == nread )
+		{
+			/* Double-ESC. This REALLY needs to push the second ESC back. */
+			
+			editorReadKey_ONRET( ESC );
+			
+		} else if( -1 == nread && EAGAIN != e && EWOULDBLOCK != e )
+		{
+			/* Generic real errors. */
+			
+			msgs_build_fatal
 			(
-				ref + ( 5 * 1000 * 1000 /* 5 ms? */ ) <
-				E.lldtime
-			)
-			{
-				/* Timeout, send the escape. */
-				
-				editorReadKey_ONRET( ESC );
-				
-			} else if( 1 == nread )
-			{
-				/* Double-ESC. This REALLY needs to push the second ESC back. */
-				
-				editorReadKey_ONRET( ESC );
-				
-			} else if( -1 == nread && EAGAIN != e && EWOULDBLOCK != e )
-			{
-				/* Generic real errors. */
-				
-				msgs_build_fatal
-				(
-					(msgs**)0,
-						"\teditorReadKey() had a non-AGAIN read error: %d \n",
-						e
-				);
-				exit( 1 );
-				
-			} else if( 0 )
-			{
-				/* Generic maybe errors. */
-				
-				msgs_build_fatal
-				(
-					(msgs**)0,
-						"\teditorReadKey() had a non-typified error.\n"
-				);
-				exit( 1 );
-				
-			} else {
-				
-				/* Alternate route for maybe errors. */
-				
-				;
-			}
+				(msgs**)0,
+					"\teditorReadKey() had a non-AGAIN read error: %d \n",
+					e
+			);
+			exit( 1 );
+			
+		} else if( 0 )
+		{
+			/* Generic maybe errors. */
+			
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					"\teditorReadKey() had a non-typified error.\n"
+			);
+			exit( 1 );
+			
+		} else {
+			
+			/* Alternate route for maybe errors. */
+			
+			;
 		}
 	}
 	
