@@ -556,7 +556,7 @@ int editorReadKey( int fd )
 	ssize_t nread;
 	size_t off = 0;
 	char c, seq[ 6 ];
-	long long t, ref;
+	long long t, ref, run;
 	int res, ret = EOF, e;
 #define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
 	
@@ -576,6 +576,9 @@ int editorReadKey( int fd )
 			
 			if( ret != KEYBOARD_TIMEOUT )
 			{
+				E.llotime = t;
+				E.lldtime = run;
+				
 				off = 0;
 				while( off < 6 && seq[ off ] != '\0' )
 				{
@@ -609,7 +612,7 @@ int editorReadKey( int fd )
 	{
 		time_t t_ = time( (time_t*)0 );
 		E.old_time = *localtime( &t_ );
-		E.llotime = t = nanotime();
+		t = nanotime();
 	}
 	while
 	(
@@ -651,15 +654,6 @@ int editorReadKey( int fd )
 				seq[ 2 ] = '\0';
 				seq[ 3 ] = '\0';
 				
-	            /*
-					Arrow keys get inserted as text, home key doesn't work, CTRL-Q seems fine, backspace seems fine.
-				*/
-				/*
-					Incorrect keys are sometimes getting passed along.
-				*/
-				/*
-					It's probably time to consolidate reads in this loop into just one.
-				*/
 				if( 1 )
 				{
 					E.display_test = 0;
@@ -668,7 +662,7 @@ int editorReadKey( int fd )
 					
 					if( sizeof( seq ) <= off )
 					{
-						/* Array overrun error. */
+						/* Array overrun error. This will sometimes trigger, including via Ctrl-Q. */
 						
 						msgs_build_fatal
 						(
@@ -683,6 +677,7 @@ int editorReadKey( int fd )
 						(
 							( nread = read( fd, seq + off, 1 ) ),
 							( e = errno ),
+							( run = nanotime() ),
 							( 1 == nread )
 						) &&
 						ESC != seq[ off ]
@@ -693,19 +688,19 @@ int editorReadKey( int fd )
 						++off;
 						seq[ off ] = '\0';
 						
-					} else if( 1 == nread )
-					{
-						/* Double-ESC. This REALLY needs to push the second ESC back. */
-						
-						editorReadKey_ONRET( ESC );
-						
 					} else if
 					(
-						ref + ( 10 * 1000 * 1000 /* 10 ms? */ ) <
-						( E.lldtime = nanotime() )
+						ref + ( 5 * 1000 * 1000 /* 5 ms? */ ) <
+						E.lldtime
 					)
 					{
 						/* Timeout, send the escape. */
+						
+						editorReadKey_ONRET( ESC );
+						
+					} else if( 1 == nread )
+					{
+						/* Double-ESC. This REALLY needs to push the second ESC back. */
 						
 						editorReadKey_ONRET( ESC );
 						
