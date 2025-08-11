@@ -566,48 +566,6 @@ int editorReadKey( int fd )
 	seq[ 0 ] = '\0';
 	seq[ 1 ] = '\0';
 	
-	if( ret != EOF )
-	{
-		onret:
-		
-		if( seq[ res ] != 0 )
-		{
-			E.display_text = text;
-			
-			if( ret != KEYBOARD_TIMEOUT )
-			{
-				E.llotime = t;
-				E.lldtime = run;
-				
-				off = 0;
-				while( off < 6 && seq[ off ] != '\0' )
-				{
-					text[ ( off * 3 ) + 1 ] =
-						"0123456789ABCDEF"[ seq[ off ] & 15 ];
-					text[ off * 3 ] =
-						"0123456789ABCDEF"[ ( ( seq[ off ] & ~(char)15 ) / 16 ) & 15 ];
-					
-					++off;
-				}
-				text[ off * 3 ] = '\0';
-				if( isprint( seq[ 0 ] ) )
-				{
-					text[ 18 ] = seq[ 0 ];
-					
-				} else if( isprint( seq[ 1 ] ) )
-				{
-					text[ 18 ] = seq[ 1 ];
-					
-				} else if( isprint( seq[ 2 ] ) )
-				{
-					text[ 18 ] = seq[ 2 ];
-					
-				}
-			}
-		}
-		return( ret );
-	}
-	
 	if( 1 )
 	{
 		time_t t_ = time( (time_t*)0 );
@@ -645,6 +603,7 @@ int editorReadKey( int fd )
 	off = 1;
 		/* Required for ESC key handling, NEVER gate this. */
 	ref = nanotime();
+	
 	
 		/* Dispatch plain characters. */
 	if( seq[ 0 ] != ESC )
@@ -818,6 +777,49 @@ int editorReadKey( int fd )
 				);
 				exit( 1 );
 		}
+	}
+	
+	
+	if( ret != EOF )
+	{
+		onret:
+		
+		if( seq[ res ] != 0 )
+		{
+			E.display_text = text;
+			
+			if( ret != KEYBOARD_TIMEOUT )
+			{
+				E.llotime = t;
+				E.lldtime = run;
+				
+				off = 0;
+				while( off < 6 && seq[ off ] != '\0' )
+				{
+					text[ ( off * 3 ) + 1 ] =
+						"0123456789ABCDEF"[ seq[ off ] & 15 ];
+					text[ off * 3 ] =
+						"0123456789ABCDEF"[ ( ( seq[ off ] & ~(char)15 ) / 16 ) & 15 ];
+					
+					++off;
+				}
+				text[ off * 3 ] = '\0';
+				if( isprint( seq[ 0 ] ) )
+				{
+					text[ 18 ] = seq[ 0 ];
+					
+				} else if( isprint( seq[ 1 ] ) )
+				{
+					text[ 18 ] = seq[ 1 ];
+					
+				} else if( isprint( seq[ 2 ] ) )
+				{
+					text[ 18 ] = seq[ 2 ];
+					
+				}
+			}
+		}
+		return( ret );
 	}
 }
 
