@@ -780,47 +780,44 @@ int editorReadKey( int fd )
 	}
 	
 	
-	if( ret != EOF )
+	onret:
+	
+	if( seq[ res ] != 0 )
 	{
-		onret:
+		E.display_text = text;
 		
-		if( seq[ res ] != 0 )
+		if( ret != KEYBOARD_TIMEOUT )
 		{
-			E.display_text = text;
+			E.llotime = t;
+			E.lldtime = run;
 			
-			if( ret != KEYBOARD_TIMEOUT )
+			off = 0;
+			while( off < 6 && seq[ off ] != '\0' )
 			{
-				E.llotime = t;
-				E.lldtime = run;
+				text[ ( off * 3 ) + 1 ] =
+					"0123456789ABCDEF"[ seq[ off ] & 15 ];
+				text[ off * 3 ] =
+					"0123456789ABCDEF"[ ( ( seq[ off ] & ~(char)15 ) / 16 ) & 15 ];
 				
-				off = 0;
-				while( off < 6 && seq[ off ] != '\0' )
-				{
-					text[ ( off * 3 ) + 1 ] =
-						"0123456789ABCDEF"[ seq[ off ] & 15 ];
-					text[ off * 3 ] =
-						"0123456789ABCDEF"[ ( ( seq[ off ] & ~(char)15 ) / 16 ) & 15 ];
-					
-					++off;
-				}
-				text[ off * 3 ] = '\0';
-				if( isprint( seq[ 0 ] ) )
-				{
-					text[ 18 ] = seq[ 0 ];
-					
-				} else if( isprint( seq[ 1 ] ) )
-				{
-					text[ 18 ] = seq[ 1 ];
-					
-				} else if( isprint( seq[ 2 ] ) )
-				{
-					text[ 18 ] = seq[ 2 ];
-					
-				}
+				++off;
+			}
+			text[ off * 3 ] = '\0';
+			if( isprint( seq[ 0 ] ) )
+			{
+				text[ 18 ] = seq[ 0 ];
+				
+			} else if( isprint( seq[ 1 ] ) )
+			{
+				text[ 18 ] = seq[ 1 ];
+				
+			} else if( isprint( seq[ 2 ] ) )
+			{
+				text[ 18 ] = seq[ 2 ];
+				
 			}
 		}
-		return( ret );
 	}
+	return( ret );
 }
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
