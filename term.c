@@ -654,7 +654,7 @@ int editorReadKey( int fd )
 	
 	seq[ 2 ] = '\0';
 	seq[ 3 ] = '\0';
-    while( 1 )
+    while( 3 > off )
 	{
         /* Non-ESC has already been dispatched, so we don't need to test for that case. */
 		if( 1 )
@@ -737,90 +737,86 @@ int editorReadKey( int fd )
 				;
 			}
 		}
-		
-	          
-		
-		if( 3 <= off )
+	}
+	
+	
+	/* ESC [ sequences. */
+	if( seq[ 1 ] == '[' )
+	{
+		if( seq[ 2 ] >= '0' && seq[ 1 ] <= '9' )
 		{
-			/* ESC [ sequences. */
-			if( seq[ 1 ] == '[' )
+			/* Extended escape, read additional byte. */
+			if( read( fd, seq + off, 1 ) == 0 )
 			{
-				if( seq[ 2 ] >= '0' && seq[ 1 ] <= '9' )
-				{
-					/* Extended escape, read additional byte. */
-					if( read( fd, seq + off, 1 ) == 0 )
-					{
-						editorReadKey_ONRET( ESC );
-					}
-					++off;
-					if( seq[ 3 ] == '~')
-					{
-						switch( seq[ 2 ] )
-						{
-							case '3':
-								editorReadKey_ONRET( DEL_KEY );
-							case '5':
-								editorReadKey_ONRET( PAGE_UP );
-							case '6':
-								editorReadKey_ONRET( PAGE_DOWN );
-							default:
-								msgs_build_fatal
-								(
-									(msgs**)0,
-										"\tNumeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
-										seq[ 2 ]
-								);
-								exit( 1 );
-						}
-					}
-					
-				} else {
-					
-					switch( seq[ 2 ] )
-					{
-						case 'A':
-							editorReadKey_ONRET( ARROW_UP );
-						case 'B':
-							editorReadKey_ONRET( ARROW_DOWN );
-						case 'C':
-							editorReadKey_ONRET( ARROW_RIGHT );
-						case 'D':
-							editorReadKey_ONRET( ARROW_LEFT );
-						case 'H':
-							editorReadKey_ONRET( HOME_KEY );
-						case 'F':
-							editorReadKey_ONRET( END_KEY );
-						default:
-							msgs_build_fatal
-							(
-								(msgs**)0,
-									"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %d == %c\n",
-									(int)( seq[2] ), seq[ 2 ]
-							);
-							exit( 1 );
-					}
-				}
-				
-		    } else if( seq[ 1 ] == 'O' )
+				editorReadKey_ONRET( ESC );
+			}
+			++off;
+			if( seq[ 3 ] == '~')
 			{
-				/* ESC O sequences. */
-				
 				switch( seq[ 2 ] )
 				{
-					case 'H':
-						editorReadKey_ONRET( HOME_KEY );
-					case 'F':
-						editorReadKey_ONRET( END_KEY );
+					case '3':
+						editorReadKey_ONRET( DEL_KEY );
+					case '5':
+						editorReadKey_ONRET( PAGE_UP );
+					case '6':
+						editorReadKey_ONRET( PAGE_DOWN );
 					default:
 						msgs_build_fatal
 						(
 							(msgs**)0,
-								"\t\"ESC O\" in editorReadKey() had a strange value: %c\n",
+								"\tNumeric \"ESC [\" in editorReadKey() had a strange value: %c\n",
 								seq[ 2 ]
 						);
 						exit( 1 );
 				}
-		    }
+			}
+			
+		} else {
+			
+			switch( seq[ 2 ] )
+			{
+				case 'A':
+					editorReadKey_ONRET( ARROW_UP );
+				case 'B':
+					editorReadKey_ONRET( ARROW_DOWN );
+				case 'C':
+					editorReadKey_ONRET( ARROW_RIGHT );
+				case 'D':
+					editorReadKey_ONRET( ARROW_LEFT );
+				case 'H':
+					editorReadKey_ONRET( HOME_KEY );
+				case 'F':
+					editorReadKey_ONRET( END_KEY );
+				default:
+					msgs_build_fatal
+					(
+						(msgs**)0,
+							"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %d == %c\n",
+							(int)( seq[2] ), seq[ 2 ]
+					);
+					exit( 1 );
+			}
+		}
+		
+	} else if( seq[ 1 ] == 'O' )
+	{
+		/* ESC O sequences. */
+		
+		switch( seq[ 2 ] )
+		{
+			case 'H':
+				editorReadKey_ONRET( HOME_KEY );
+			case 'F':
+				editorReadKey_ONRET( END_KEY );
+			default:
+				msgs_build_fatal
+				(
+					(msgs**)0,
+						"\t\"ESC O\" in editorReadKey() had a strange value: %c\n",
+						seq[ 2 ]
+				);
+				exit( 1 );
 		}
 	}
 }
