@@ -552,13 +552,17 @@ int editorReadKey( int fd )
 			'\0', '\0', ' ' /* 20, 0x14 */,
 			
 			'\0', '\0'
-		};
+		},
+		pushback[ 5 ];
+	static size_t pushused = 0;
+	
+	long long t, ref, run; // Time vars.
 	ssize_t nread;
-	size_t off = 0;
-	char c, seq[ 6 ];
-	long long t, ref, run;
+	size_t off = 0, used = 0;
+	
 	int res, ret = EOF, e;
-#define editorReadKey_ONRET( val ) { ret = (val); goto onret; }
+#define editorReadKey_ONRET( val, used ) { ret = (val); pushused = (used); goto onret; }
+	char seq[ 6 ];
 	
 	errno = 0;
 	
@@ -572,35 +576,49 @@ int editorReadKey( int fd )
 		E.old_time = *localtime( &t_ );
 		t = nanotime();
 	}
-	while
-	(
-		(
-			nread = read( fd, seq, 1 )
-		) == 0 ||
-		( res = errno ) == EAGAIN ||
-		( res = errno ) == EWOULDBLOCK
-	)
+	if( pushused )
 	{
-		errno = 0;
-		if( res == EAGAIN || res == EWOULDBLOCK )
+		while( pushused )
 		{
-			editorReadKey_ONRET( KEYBOARD_TIMEOUT );
+			--pushused;
+			++used;
+			
+			seq[ pushused ] = pushback[ pushused ];
 		}
-	}
-    if( nread == -1 )
-	{
-		e = errno;
-		msgs_build_fatal
+		
+	} else {
+		
+		while
 		(
-			(msgs**)0,
-				
-				"\n\teditorReadKey()::read() failed: res == %d, err == %d.\n",
-				(int)nread, e
-		);
-		exit( 1 );
+			(
+				nread = read( fd, seq, 1 )
+			) == 0 ||
+			( e = errno ) == EAGAIN ||
+			e == EWOULDBLOCK
+		)
+		{
+			errno = 0;
+			if( e == EAGAIN || e == EWOULDBLOCK )
+			{
+				editorReadKey_ONRET( KEYBOARD_TIMEOUT, 0 );
+			}
+		}
+	    if( nread == -1 )
+		{
+			/* e = errno; */ // Already did this.
+			msgs_build_fatal
+			(
+				(msgs**)0,
+					
+					"\n\teditorReadKey()::read() failed: nread == %d, err == %d.\n",
+					(int)nread, e
+			);
+			exit( 1 );
+		}
+		
+			/* We have a character, offset past it. */
+		used = 1;
 	}
-		/* We have a character, offset past it. */
-	off = 1;
 		/* Required for ESC key handling, NEVER gate this. */
 	ref = nanotime();
 	
@@ -608,12 +626,12 @@ int editorReadKey( int fd )
 		/* Dispatch plain characters. */
 	if( seq[ 0 ] != ESC )
 	{
-		editorReadKey_ONRET( seq[ 0 ] );
+		editorReadKey_ONRET( seq[ 0 ], 0 );
 	}
 	
 	seq[ 2 ] = '\0';
 	seq[ 3 ] = '\0';
-    while( 3 > off )
+    while( 3 > used )
 	{
         /* Non-ESC has already been dispatched, so we don't need to test for that case. */
 		
@@ -621,7 +639,7 @@ int editorReadKey( int fd )
 		
 		/* size_t off - 0; */
 		
-		if( sizeof( seq ) <= off )
+		if( sizeof( seq ) <= used )
 		{
 			/* Array overrun error. This will sometimes trigger, including via Ctrl-Q. */
 			
@@ -636,18 +654,18 @@ int editorReadKey( int fd )
 		} else if
 		(
 			(
-				( nread = read( fd, seq + off, 1 ) ),
+				( nread = read( fd, seq + used, 1 ) ),
 				( e = errno ),
 				( run = nanotime() ),
 				( 1 == nread )
 			) &&
-			ESC != seq[ off ]
+			ESC != seq[ used ]
 		)
 		{
 			/* Plain success. */
 			
-			++off;
-			seq[ off ] = '\0';
+			++used;
+			seq[ used ] = '\0';
 			
 		} else if
 		(
@@ -657,13 +675,14 @@ int editorReadKey( int fd )
 		{
 			/* Timeout, send the escape. */
 			
-			editorReadKey_ONRET( ESC );
+			editorReadKey_ONRET( ESC, used - 1 );
 			
 		} else if( 1 == nread )
 		{
 			/* Double-ESC. This REALLY needs to push the second ESC back. */
+#warning "Do something to move extra charas into a static buffer!"
 			
-			editorReadKey_ONRET( ESC );
+			editorReadKey_ONRET( ESC, used - 1 );
 			
 		} else if( -1 == nread && EAGAIN != e && EWOULDBLOCK != e )
 		{
@@ -703,21 +722,21 @@ int editorReadKey( int fd )
 		if( seq[ 2 ] >= '0' && seq[ 1 ] <= '9' )
 		{
 			/* Extended escape, read additional byte. */
-			if( read( fd, seq + off, 1 ) == 0 )
+			if( read( fd, seq + used, 1 ) == 0 )
 			{
-				editorReadKey_ONRET( ESC );
+				editorReadKey_ONRET( ESC, 0 );
 			}
-			++off;
+			++used;
 			if( seq[ 3 ] == '~')
 			{
 				switch( seq[ 2 ] )
 				{
 					case '3':
-						editorReadKey_ONRET( DEL_KEY );
+						editorReadKey_ONRET( DEL_KEY, 0 );
 					case '5':
-						editorReadKey_ONRET( PAGE_UP );
+						editorReadKey_ONRET( PAGE_UP, 0 );
 					case '6':
-						editorReadKey_ONRET( PAGE_DOWN );
+						editorReadKey_ONRET( PAGE_DOWN, 0 );
 					default:
 						msgs_build_fatal
 						(
@@ -734,17 +753,17 @@ int editorReadKey( int fd )
 			switch( seq[ 2 ] )
 			{
 				case 'A':
-					editorReadKey_ONRET( ARROW_UP );
+					editorReadKey_ONRET( ARROW_UP, 0 );
 				case 'B':
-					editorReadKey_ONRET( ARROW_DOWN );
+					editorReadKey_ONRET( ARROW_DOWN, 0 );
 				case 'C':
-					editorReadKey_ONRET( ARROW_RIGHT );
+					editorReadKey_ONRET( ARROW_RIGHT, 0 );
 				case 'D':
-					editorReadKey_ONRET( ARROW_LEFT );
+					editorReadKey_ONRET( ARROW_LEFT, 0 );
 				case 'H':
-					editorReadKey_ONRET( HOME_KEY );
+					editorReadKey_ONRET( HOME_KEY, 0 );
 				case 'F':
-					editorReadKey_ONRET( END_KEY );
+					editorReadKey_ONRET( END_KEY, 0 );
 				default:
 					msgs_build_fatal
 					(
@@ -763,9 +782,9 @@ int editorReadKey( int fd )
 		switch( seq[ 2 ] )
 		{
 			case 'H':
-				editorReadKey_ONRET( HOME_KEY );
+				editorReadKey_ONRET( HOME_KEY, 0 );
 			case 'F':
-				editorReadKey_ONRET( END_KEY );
+				editorReadKey_ONRET( END_KEY, 0 );
 			default:
 				msgs_build_fatal
 				(
@@ -780,8 +799,10 @@ int editorReadKey( int fd )
 	
 	onret:
 	
-	if( seq[ res ] != 0 )
+	if( 0 != seq[ res ] )
 	{
+		/* Setup debug messaging. */
+		
 		E.display_text = text;
 		
 		if( ret != KEYBOARD_TIMEOUT )
@@ -813,6 +834,17 @@ int editorReadKey( int fd )
 				text[ 18 ] = seq[ 2 ];
 				
 			}
+		}
+	}
+	if( pushused )
+	{
+		/* Honestly, only timeout & double-escape use this. */
+		
+		off = 0;
+		while( off < pushused )
+		{
+			++off;
+			pushback[ pushused - off ] = seq[ used - off ];
 		}
 	}
 	return( ret );
