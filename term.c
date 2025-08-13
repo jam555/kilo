@@ -559,7 +559,7 @@ int editorReadKey( int fd )
 	ssize_t nread;
 	size_t off = 0, used = 0;
 	
-	int /*res,*/ ret = EOF, e;
+	int ret = EOF, e;
 #define editorReadKey_ONRET( val, used ) { ret = (val); pushused = (used); goto onret; }
 	char seq[ 6 ];
 	
@@ -569,10 +569,10 @@ int editorReadKey( int fd )
 	seq[ 0 ] = '\0';
 	seq[ 1 ] = '\0';
 	
-	if( 1 )
+	if( 0 )
 	{
 		time_t t_ = time( (time_t*)0 );
-		E.old_time = *localtime( &t_ );
+		// E.old_time = *localtime( &t_ );
 		t = nanotime();
 	}
 	if( pushused )
@@ -634,7 +634,7 @@ int editorReadKey( int fd )
 	{
         /* Non-ESC has already been dispatched, so we don't need to test for that case. */
 		
-		E.display_test = 0;
+		// E.display_test = 0;
 		
 		/* size_t off - 0; */
 		
@@ -666,11 +666,7 @@ int editorReadKey( int fd )
 			++used;
 			seq[ used ] = '\0';
 			
-		} else if
-		(
-			ref + ( 5 * 1000 * 1000 /* 5 ms? */ ) <
-			E.lldtime
-		)
+		} else if( ref + ( 5 * 1000 * 1000 /* 5 ms? */ ) < run )
 		{
 			/* Timeout, send the escape. */
 			
@@ -801,12 +797,12 @@ int editorReadKey( int fd )
 	{
 		/* Setup debug messaging. */
 		
-		E.display_text = text;
+		// E.display_text = text;
 		
 		if( ret != KEYBOARD_TIMEOUT )
 		{
-			E.llotime = t;
-			E.lldtime = run;
+			// E.llotime = t;
+			// E.lldtime = run;
 			
 			off = 0;
 			while( off < 6 && seq[ off ] != '\0' )
