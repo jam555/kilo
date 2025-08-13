@@ -70,6 +70,7 @@ void editorFind( int fd )
 	E.display_test = 0;
 	E.display_pointer = 0;
 	E.display_text = "Keyboard test";
+	E.altmsg = query;
 	
 	while( 1 )
 	{
@@ -309,4 +310,5 @@ void editorFind( int fd )
 	E.display_test = 0;
 	E.display_pointer = 0;
 	// E.display_text = 0;
+	E.altmsg = 0;
 }

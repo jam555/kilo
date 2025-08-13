@@ -450,7 +450,9 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 				// "*( E.vptr ) == %d;"
 				// "E.vptr(string) == %s"
 				
-				" text: %20.20s "
+				" text: %20.20s; "
+				
+				"        %s"
 				,
 					E.lldtime,
 					E.llotime,
@@ -470,6 +472,8 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 					E.display_text,
 					
 					
+					
+					E.altmsg, /* This probably belongs elsewhere, but that can come later. */
 					(int)0 /* Dummy arg, scares away comma errors. */
 			);
 		if( tmp < 0 )

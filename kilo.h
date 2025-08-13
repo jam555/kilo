@@ -343,7 +343,7 @@ struct editorConfig
 	statstate *statusinterface;
 		/* Replaces statusmsg. */
 	msgs *modemsg;
-	char *deathrattle;
+	char *deathrattle, *altmsg;
 	
 	int no_nonblock, didblock;
 	int stale;
