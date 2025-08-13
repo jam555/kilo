@@ -538,7 +538,6 @@ fatal:
  * escape sequences. */
 int editorReadKey( int fd )
 {
-#warning "This is a prime candidate for a yield-based IO routine."
 	static char
 		text[ 23 ] =
 		{
@@ -560,7 +559,7 @@ int editorReadKey( int fd )
 	ssize_t nread;
 	size_t off = 0, used = 0;
 	
-	int res, ret = EOF, e;
+	int /*res,*/ ret = EOF, e;
 #define editorReadKey_ONRET( val, used ) { ret = (val); pushused = (used); goto onret; }
 	char seq[ 6 ];
 	
@@ -680,7 +679,6 @@ int editorReadKey( int fd )
 		} else if( 1 == nread )
 		{
 			/* Double-ESC. This REALLY needs to push the second ESC back. */
-#warning "Do something to move extra charas into a static buffer!"
 			
 			editorReadKey_ONRET( ESC, used - 1 );
 			
@@ -799,7 +797,7 @@ int editorReadKey( int fd )
 	
 	onret:
 	
-	if( 0 != seq[ res ] )
+	if( 0 != seq[ 0 ] )
 	{
 		/* Setup debug messaging. */
 		
