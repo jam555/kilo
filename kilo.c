@@ -45,6 +45,10 @@
 
 
 
+static int try_coroed = 0;
+
+
+
 char *const kilodesc_string = "Kilo text-editor version: " KILO_VERSION;
 char *const thoudesc_string = "Thou terminal-environment version: " THOU_VERSION;
 
@@ -355,14 +359,30 @@ int main_coro( void *ign )
 	
 	main_args();
 	
-    initEditor();
+    if( try_coroed )
+	{
+		msgs_build_fatal( (msgs**)0,  "\tmain_coro(): try_coroed == true before code ready.\n" );
+		exit( 1 );
+		
+	} else {
+		
+		initEditor();
+	}
 		/* Leandro Pereira */
 		/* Was in initEditor() */
 #warning "Switch to sigaction() on at least some platforms."
     signal( SIGWINCH, handleSigWinCh );
 	
-    editorSelectSyntaxHighlight( args[ 1 ] );
-    editorOpen( args[ 1 ] );
+	if( try_coroed )
+	{
+		msgs_build_fatal( (msgs**)0,  "\tmain_coro(): try_coroed == true before code ready.\n" );
+		exit( 1 );
+		
+	} else {
+		
+	    editorSelectSyntaxHighlight( args[ 1 ] );
+	    editorOpen( args[ 1 ] );
+	}
     enableRawMode( STDIN_FILENO );
     /* editorSetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" ); */
 	/* msgs_build_note( &( E.modemsg ),  "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find" ); */
