@@ -43,6 +43,7 @@
 
 void editorFind( int fd )
 {
+#warning "Somehow this causes a delay to all following key inputs???"
 	char query[ KILO_QUERY_LEN + 1 ] = { 0 };
 	axis_type qlen = 0;
 	axis_type

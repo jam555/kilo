@@ -78,6 +78,7 @@ int statview_updatetime( statstate *stats )
 	
 	if( stats )
 	{
+#warning "Start using nanotime() from nanotime.h/.c"
 		time_t t = time( (time_t*)0 );
 		double dtime = difftime( t, stats->last_time );
 		if( dtime < 0.0 )
