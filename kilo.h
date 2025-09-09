@@ -108,6 +108,7 @@ extern char
 	!!!
 		Do this one first!
 	!!!
+	TODO: Modify editorRefreshScreen() in edtools.c to include per-line line-numbers.
 	TODO: Rename the "io" stuff to "galilean", to double-down on pun.
 	TODO: Try to transform editorProcessKeypress() into a coro system.
 	TODO: Start using the flags returned from the statview stuff to draw "markup text".
@@ -296,6 +297,9 @@ typedef struct hlcolor {
 
 typedef size_t axis_type;
 
+typedef struct millistate
+{
+} millistate;
 	/* TODO: Break this into separate window & pane (frame & glass?) */
 	/*  sections, to support multi-document capability. */
 	/* This gets initialized in initEditor() in edevents.c */
@@ -355,6 +359,8 @@ struct editorConfig
 	struct tm display_time, old_time;
 	char *display_text;
 	long long lldtime, llotime;
+	
+	millistate mstate;
 };
 
 enum KEY_ACTION{

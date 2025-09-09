@@ -45,17 +45,21 @@ typedef struct pane
 	int dummy_var;
 	
 } pane;
+	/* This is now going to be defined in kilo.h, it can move */
+	/*  here later. */
+/*
 typedef struct millistate
 {
 	corohead *head;
 	char *filename;
-		/* The target is volatile, not the pointer. */
+		/ * The target is volatile, not the pointer. * /
 	struct editorConfig volatile *Econf;
-		/* The pointer is volatile, not the target. */
+		/ * The pointer is volatile, not the target. * /
 	corohead *volatile ret_dest;
 	pane here;
 	
 } millistate;
+*/
 #define build_millistate( chead, Eptr, data, pane ) \
 	(millistate){ \
 		(chead), \

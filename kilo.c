@@ -470,7 +470,15 @@ int main_coro( void *ign )
 		
 		if( /* 1 */ E.stale )
 		{
-	        editorRefreshScreen();
+	        if( try_coroed )
+			{
+				msgs_build_fatal( (msgs**)0,  "\tmain_coro(): try_coroed == true before code ready.\n" );
+				exit( 1 );
+				
+			} else {
+				
+				editorRefreshScreen();
+			}
 			
 			if( E.stale )
 			{
@@ -480,10 +488,22 @@ int main_coro( void *ign )
 		}
 		/* E.display_test = E.statusinterface->last_size; */
 		
-			/* TODO: Subject this to a mode switch! */
-			/*  If mode != notepad, then run input through CLI mode! */
-			/*  For CLI mode, try to use "linenoise" from the same author. */
-        editorProcessKeypress( STDIN_FILENO );
+		if( try_coroed )
+		{
+			msgs_build_fatal( (msgs**)0,  "\tmain_coro(): try_coroed == true before code ready.\n" );
+			exit( 1 );
+			
+		} else {
+			
+				/* TODO: Subject this to a mode switch! */
+				/*  If mode != notepad, then run input through CLI mode! */
+				/*  For CLI mode, try to use "linenoise" from the same author. */
+	        editorProcessKeypress( STDIN_FILENO );
+				/* Note: the try_coroed == true branch needs to work before trying a CLI. */
+				/* Also, in the IDEAL case the mode-switch will be done inside the basic */
+				/*  I/O code instead of here, so that e.g. the editor literally never sees */
+				/*  the mode-switch keypress. */
+		}
 		/* E.display_test = E.statusinterface->last_size; */
 		
 		if( hadVtAlrm )
