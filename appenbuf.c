@@ -223,7 +223,7 @@ void abFree( struct abuf *ab )
 				return( -2 );
 			}
 			
-			int abfull = 0, utilfull = 0;
+			/* int abfull = 0, */ /* utilfull = 0 ; */
 			size_t ablen = 0, utillen = 0;
 			
 			size_t loopsz = 0;
@@ -392,41 +392,19 @@ void editorStatusLine
 	);
 }
 
-	/* Renders the message line. The message will eventually move to the status line, and be replaced with a CLI area. */
+	/* Renders the message line. The message will eventually move to the */
+	/*  status line, and be replaced with a CLI area. */
 	/* See editorStatusLine() for argument info. */
-#warning "Remove all the debug cruft from abMessageLine()."
 void abMessageLine( struct abuf *ab, struct abuf *util )
 {
 	(void)util;
 	
 	abAppend( ab,  " ", 1 );
 	abAppend( util,  " ", 1 );
-	/* return; */
-	
-	size_t msglen;
-	msgs_view msgsv = msgs_peek();
-	if( !msgsv.buf || !( msgsv.buf->b ) )
-	{
-		msglen = 0;
-		
-	} else {
-		
-		msglen = strlen( msgsv.buf->b );
-	}
 	
 	
 	if( MILA_DISPLAYTEST_MESSAGE )
 	{
-		/*
-		typedef struct statview_view
-		{
-			char *start;
-			size_t len;
-			unsigned char msgsflags;
-			
-		} statview_view;
-		*/
-		
 		char status[ 160 ];
 		int tmp;
 		size_t len;
@@ -439,16 +417,9 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 				
 				"time == %lld; "
 				"old time == %lld; "
-				// "time == %d:%d; "
-				// "old time == %d:%d; "
 				
 				"E.d test == %d; "
-				// "E.d test (off) == 0x%x; "
 				"E.d ptr (base) = 0x%jx, "
-				
-				// "E.vptr (memb&) = %p; "
-				// "*( E.vptr ) == %d;"
-				// "E.vptr(string) == %s"
 				
 				" text: %20.20s; "
 				
@@ -456,25 +427,12 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 				,
 					E.lldtime,
 					E.llotime,
-					// E.display_time.tm_min,
-					// E.display_time.tm_sec,
-					// E.old_time.tm_min,
-					// E.old_time.tm_sec,
 					
 					(int)( E.display_test ),
-					// (int)( E.display_test ),
 					(intmax_t)( E.display_pointer ),
 					
-					// (void*)( E.vptr ),
-					// *( (int*)E.vptr ),
-					// (void*)( E.vptr ),
-					
 					E.display_text,
-					
-					
-					
-					E.altmsg, /* This probably belongs elsewhere, but that can come later. */
-					(int)0 /* Dummy arg, scares away comma errors. */
+					E.altmsg /* This probably belongs elsewhere, but that can come later. */
 			);
 		if( tmp < 0 )
 		{
@@ -492,6 +450,21 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 			1
 	)
 	{
+			/* Should we do something more with this? Or trust statview to do message switching? */
+		/*
+		msgs_view msgsv = msgs_peek();
+		size_t msglen;
+		if( !msgsv.buf || !( msgsv.buf->b ) )
+		{
+			msglen = 0;
+			
+		} else {
+			
+			msglen = strlen( msgsv.buf->b );
+		}
+		*/
+		
+		
 		statview_view sv = { 0 };
 		
 		if( !statview_fetchmsg( E.statusinterface, /* E.screencols */ 12,  &sv ) )
@@ -502,12 +475,6 @@ void abMessageLine( struct abuf *ab, struct abuf *util )
 		
 		abAppend( ab, sv.start, sv.len );
 		abAppend( util, sv.start, sv.len );
-		
-		
-		/*
-		abAppend( ab, msgsv.buf->b, msglen <= E.screencols ? msglen : E.screencols );
-		abAppend( util, msgsv.buf->b, msglen <= E.screencols ? msglen : E.screencols );
-		*/
 	}
 }
 void editorMessageLine( struct abuf *ab, struct abuf *util )

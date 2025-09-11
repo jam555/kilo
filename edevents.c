@@ -162,14 +162,18 @@ void editorMoveCursor( int key )
     size_t rowlen = ( row ? row->size : 0 );
     if( filecol > rowlen )
 	{
-        E.cx -= ( filecol - rowlen );
-        if( E.cx < 0 )
+		if( rowlen < filecol && E.cx + rowlen < filecol )
 		{
-            E.coloff += E.cx;
+            size_t deltax = filecol - rowlen;
+			deltax -= E.cx;
+			
+			E.coloff += deltax;
             E.cx = 0;
 			
-        }
-		
+		} else {
+			
+			E.cx -= ( filecol - rowlen );
+		}
     }
 }
 
@@ -375,6 +379,8 @@ void initEditor( void )
 	E.deathrattle = 0;
 	
 	E.statusmsg_time = time( NULL );
+	
+	E.mstate = &milli;
     
 	if( !E.altscr && !E.no_altscr )
     {

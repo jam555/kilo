@@ -310,8 +310,12 @@ int statview_fetchmsg( statstate *stats, size_t usable_width,  statview_view *da
 		
 		if( 0 )
 		{
-			E.display_test = data->len;
-			E.display_pointer = data->start;
+			if( SIZE_MAX < data->len )
+			{
+				return( -3 );
+			}
+			E.display_test = (int)( data->len );
+			E.display_pointer = (intmax_t)( data->start );
 			E.display_text = data->start;
 		}
 		

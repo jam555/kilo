@@ -74,6 +74,23 @@
 	
 	
 	
+		/* The Progressive/Responsive partitioning code. */
+	int abRespodapt
+	(
+		struct abuf *ab,
+		size_t abwide,
+		
+		struct abuf *util,
+		size_t utilwide,
+		
+		char **stati,
+			/* Effective length, only considers space consumed. */
+		size_t *lene,
+			/* Memory length, includes escape sequences. */
+		size_t *lens,
+		size_t count
+	);
+	
 	void abStatusLine
 	(
 		struct abuf *ab, struct abuf *util,
