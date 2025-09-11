@@ -297,9 +297,7 @@ typedef struct hlcolor {
 
 typedef size_t axis_type;
 
-typedef struct millistate
-{
-} millistate;
+typedef struct millistate millistate;
 	/* TODO: Break this into separate window & pane (frame & glass?) */
 	/*  sections, to support multi-document capability. */
 	/* This gets initialized in initEditor() in edevents.c */
@@ -321,7 +319,6 @@ struct editorConfig
 	char statusmsg[80];
 	time_t statusmsg_time;
 	
-	struct editorSyntax *syntax;    /* Current syntax highlight, or NULL. */
 	
 	
 	/* The things below have been added to convert this into a window-tracker. They are currently unused. */
@@ -360,8 +357,15 @@ struct editorConfig
 	char *display_text;
 	long long lldtime, llotime;
 	
-	millistate mstate;
+	millistate *mstate;
 };
+struct millistate
+{
+		/* Current syntax highlight, or NULL. */
+	struct editorSyntax *syntax;
+	
+	/* We'll define a default instance for now. */
+} milli;
 
 enum KEY_ACTION{
         KEY_NULL = 0,       /* NULL */
