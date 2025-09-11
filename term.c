@@ -58,12 +58,25 @@ int mila_initterm_xterm()
 		
 		const char altscren[] = MILA_TERMCODES_23;
 		const size_t altscren_len = sizeof( altscren );
-		ssize_t res = write( STDOUT_FILENO, altscren, altscren_len );
-		if( res < 0 || (size_t)res != altscren_len )
+		
+		const char *text = altscren;
+		size_t len = altscren_len;
+		ssize_t res;
+		while( len )
 		{
-#warning "This should be expanded to handle incomplete writes."
-			msgs_build_fatal( (msgs**)0,  "\tUnable to select the alternate screen display buffer.\n" );
-			exit( 1 );
+			res = write( STDOUT_FILENO, altscren, altscren_len );
+			if( res < 0 )
+			{
+				msgs_build_fatal( (msgs**)0,  "\tUnable to select the alternate screen display buffer.\n" );
+				exit( 1 );
+			}
+			if( (size_t)res > len )
+			{
+				msgs_build_fatal( (msgs**)0,  "\tmila_initterm_xterm() wrote more than available.\n" );
+				exit( 1 );
+			}
+			len -= (size_t)res;
+			text += res;
 		}
 		E.altscr = 1;
 		
@@ -382,10 +395,10 @@ void disableRawMode( int fd )
 		if( res < 0 )
 		{
 			tmp = errno;
-#warning "Start using msgs here."
-			printf
+			msgs_build_fatal
 			(
-				"\n\tdisableRawMode()::fcntl()1 failed: res == %d, errno == %d.\n",
+				(msgs**)0,
+					"\n\tdisableRawMode()::fcntl()1 failed: res == %d, errno == %d.\n",
 					res,
 					tmp
 			);
@@ -398,9 +411,10 @@ void disableRawMode( int fd )
 		if( res < 0 )
 		{
 			tmp = errno;
-			printf
+			msgs_build_fatal
 			(
-				"\n\tdisableRawMode()::fcntl()2 failed: res == %d, errno == %d.\n",
+				(msgs**)0,
+					"\n\tdisableRawMode()::fcntl()2 failed: res == %d, errno == %d.\n",
 					res,
 					tmp
 			);
@@ -553,9 +567,10 @@ int editorReadKey( int fd )
 			'\0', '\0'
 		},
 		pushback[ 5 ];
+	(void)text; /* Silence a warning. */
 	static size_t pushused = 0;
 	
-	long long t, ref, run; // Time vars.
+	long long /* t, */ ref, run; // Time vars.
 	ssize_t nread;
 	size_t off = 0, used = 0;
 	
@@ -571,9 +586,9 @@ int editorReadKey( int fd )
 	
 	if( 0 )
 	{
-		time_t t_ = time( (time_t*)0 );
+		// time_t t_ = time( (time_t*)0 );
 		// E.old_time = *localtime( &t_ );
-		t = nanotime();
+		// t = nanotime();
 	}
 	if( pushused )
 	{
@@ -764,6 +779,8 @@ int editorReadKey( int fd )
 						(msgs**)0,
 							"\tNon-numeric \"ESC [\" in editorReadKey() had a strange value: %d == %c\n",
 							(int)( seq[2] ), seq[ 2 ]
+								/* 54 == 6 is page down, 53 == 5 is page up. */
+									/* Why is this here? It should go elsewhere! */
 					);
 					exit( 1 );
 			}
