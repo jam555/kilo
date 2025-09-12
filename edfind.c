@@ -56,15 +56,17 @@ void editorFind( int fd )
 	
 #define FIND_RESTORE_HL do { \
     if( saved_hl ) { \
-        memcpy( E.row[ saved_hl_line ].hl, saved_hl, E.row[ saved_hl_line ].rsize ); \
+        memcpy( E.mstate->row[ saved_hl_line ].hl, saved_hl, E.mstate->row[ saved_hl_line ].rsize ); \
         free( saved_hl ); /* Vuong Hoang */ \
         saved_hl = NULL; \
     } \
 } while (0)
 	
 	/* Save the cursor position in order to restore it later. */
-	axis_type saved_cx = E.cx, saved_cy = E.cy;
-	axis_type saved_coloff = E.coloff, saved_rowoff = E.rowoff;
+	axis_type
+		saved_cx = E.mstate->cursor.x,
+		saved_cy = E.mstate->cursor.y;
+	axis_type saved_coloff = E.mstate->coloff, saved_rowoff = E.mstate->rowoff;
 	/* msgs *msgtmp = 0; */ /* Was used to track msgs{} for later deactivation maybe? */
 	
 	// E.display_text = query;
@@ -110,10 +112,10 @@ void editorFind( int fd )
 			
 			if( c == ESC )
 			{
-				E.cx = saved_cx;
-				E.cy = saved_cy;
-				E.coloff = saved_coloff;
-				E.rowoff = saved_rowoff;
+				E.mstate->cursor.x = saved_cx;
+				E.mstate->cursor.y = saved_cy;
+				E.mstate->coloff = saved_coloff;
+				E.mstate->rowoff = saved_rowoff;
 				
 				// E.display_text = "ESC key.";
 				
@@ -211,14 +213,14 @@ void editorFind( int fd )
 				curneg = !has_match;
 			
 			/* Actually search. */
-			for( i = 0; i && (unsigned)i < E.numrows; i++ )
+			for( i = 0; i && (unsigned)i < E.mstate->numrows; i++ )
 			{
 				/* The iteration is this ENTIRE conditional cascade. */
 				if( find_next < 0 && currow <= 0 )
 				{
-					if( E.numrows >= 1 )
+					if( E.mstate->numrows >= 1 )
 					{
-						currow = E.numrows - 1;
+						currow = E.mstate->numrows - 1;
 						curneg = 0;
 						
 					} else {
@@ -227,7 +229,7 @@ void editorFind( int fd )
 						curneg = 1;
 					}
 					
-				} else if( find_next > 0 && currow + 1 == E.numrows )
+				} else if( find_next > 0 && currow + 1 == E.mstate->numrows )
 				{
 					currow = 0;
 					curneg = 0;
@@ -244,10 +246,10 @@ void editorFind( int fd )
 				
 				
 					/* Actual comparison. */
-				match = strstr( E.row[ currow ].render, query );
+				match = strstr( E.mstate->row[ currow ].render, query );
 				if( match )
 				{
-					match_offset = match - E.row[ currow ].render;
+					match_offset = match - E.mstate->row[ currow ].render;
 					if( match_offset < 0 )
 					{
 						/* Throw some sort of error. */
@@ -265,7 +267,7 @@ void editorFind( int fd )
 			{
                 /* If we have a match, then ( !curneg ). */
 				
-				erow *row = &E.row[ currow ];
+				erow *row = &( E.mstate->row[ currow ] );
                 last_match = currow;
 				has_match = !curneg;
 				
@@ -277,31 +279,43 @@ void editorFind( int fd )
 					memset( row->hl + match_offset, HL_MATCH, qlen );
 				}
 				
-				E.cy = 0;
-				E.cx = (axis_type)match_offset;
-				E.rowoff = currow;
-				E.coloff = 0;
+				E.mstate->cursor.y = 0;
+				E.mstate->cursor.x = (axis_type)match_offset;
+				E.mstate->rowoff = currow;
+				E.mstate->coloff = 0;
 				
 				/* Scroll horizontally as needed. */
-				if( E.cx > E.screencols )
+				if( E.mstate->cursor.x > E.screencols )
 				{
-					ptrdiff_t diff = (ptrdiff_t)( E.cx - E.screencols );
+					ptrdiff_t diff = (ptrdiff_t)( E.mstate->cursor.x - E.screencols );
 					
-					if( diff && E.cx < (size_t)( diff ) )
+					if( diff && E.mstate->cursor.x < (size_t)( diff ) )
 					{
-						msgs_build_fatal( (msgs**)0,  "\teditorFind() err 1. diff: %d; E.cx: %zu\n", (int)diff, E.cx );
+						msgs_build_fatal
+						(
+							(msgs**)0,
+								"\teditorFind() err 1. diff: %d; E.cx: %zu\n",
+								(int)diff,
+								E.mstate->cursor.x
+						);
 						exit( 1 );
 					}
-					E.cx -= (size_t)diff;
-					if( !diff && E.coloff < (size_t)( -diff ) )
+					E.mstate->cursor.x -= (size_t)diff;
+					if( !diff && E.mstate->coloff < (size_t)( -diff ) )
 					{
-						msgs_build_fatal( (msgs**)0,  "\teditorFind err 2. diff: $d; E.coloff: %zu\n", (int)diff, E.coloff );
+						msgs_build_fatal
+						(
+							(msgs**)0,
+								"\teditorFind err 2. diff: $d; E.coloff: %zu\n",
+								(int)diff,
+								E.mstate->coloff
+						);
 						exit( 1 );
 					}
 #pragma GCC diagnostic push
 	/* Silence the conversion complaint, we've already verified the range. */
 # pragma GCC diagnostic ignored "-Wsign-conversion"
-					E.coloff += diff;
+					E.mstate->coloff += diff;
 #pragma GCC diagnostic pop
                 }
             }

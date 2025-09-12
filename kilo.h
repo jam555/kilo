@@ -296,6 +296,12 @@ typedef struct hlcolor {
 } hlcolor;
 
 typedef size_t axis_type;
+#warning "Start using coordinates{} in more places."
+typedef struct coordinates
+{
+	axis_type x, y;
+	
+} coordinates;
 
 typedef struct millistate millistate;
 	/* TODO: Break this into separate window & pane (frame & glass?) */
@@ -305,17 +311,10 @@ struct editorConfig
 {
 	int no_altscr;  /* Forbid usage of the alternate-screen. */
 	
-	axis_type cx,cy;  /* Cursor x and y position in characters */
-	axis_type rowoff;     /* Offset of row displayed. */
-	axis_type coloff;     /* Offset of column displayed. */
 	axis_type screenrows; /* Number of rows that we can show */
 	axis_type screencols; /* Number of cols that we can show */
-	axis_type numrows;    /* Number of rows */
 	int rawmode;    /* Is terminal raw mode enabled? */
 	int altscr;     /* Is terminal alternate-screen selected? */
-	erow *row;      /* Rows */
-	int dirty;      /* File modified but not saved. */
-	char *filename; /* Currently open filename */
 	char statusmsg[80];
 	time_t statusmsg_time;
 	
@@ -337,10 +336,8 @@ struct editorConfig
 	axis_type externrows; /* Number of rows that we can show */
 	axis_type externcols; /* Number of cols that we can show */
 	
-		/* This is where our progress-target currently lies. We need to move the appenbuf.c */
-		/*  stuff to using this instead of accessing the status directly. In particular, it */
-		/*  should implement ticker-tape behavior, when the status-message is larger than the */
-		/*  allocated space! */
+	
+	/* Various messaging stuff. */
 	statstate *statusinterface;
 		/* Replaces statusmsg. */
 	msgs *modemsg;
@@ -349,6 +346,7 @@ struct editorConfig
 	int no_nonblock, didblock;
 	int stale;
 	
+	/* These are just used for debugging info. */
 		/* Print this to the CLI line of the utility area, so that it can be used to debug the status line display. */
 	int display_test;
 	intmax_t display_pointer;
@@ -361,11 +359,25 @@ struct editorConfig
 };
 struct millistate
 {
+	char *filename;			/* Currently open filename */
+	
+		/* I had considered leaving this in editorConfig{}, but the possible */
+		/*  restriction of legal cursor locations in some modes (including */
+		/*  this editor!) mean that actually isn't a swell idea. */
+		/* Note that this WAS cx & cy, but is now cursor.[x,y] . */
+	coordinates cursor;		/* Cursor x and y position in characters */
+	
+	erow *row;				/* Rows */
+	axis_type numrows;		/* Number of rows */
+	axis_type rowoff;		/* Offset of row displayed. */
+	axis_type coloff;		/* Offset of column displayed. */
+	int dirty;				/* File modified but not saved. */
+	
 		/* Current syntax highlight, or NULL. */
 	struct editorSyntax *syntax;
-	
+};
 	/* We'll define a default instance for now. */
-} milli;
+extern millistate milli;
 
 enum KEY_ACTION{
         KEY_NULL = 0,       /* NULL */

@@ -79,7 +79,7 @@ void editorUpdateSyntax( erow *row )
     row->hl = realloc( row->hl, row->rsize );
     memset( row->hl, HL_NORMAL, row->rsize );
 
-    if( E.syntax == NULL )
+    if( E.mstate->syntax == NULL )
 	{
 		return; /* No syntax, everything is HL_NORMAL. */
 	}
@@ -87,10 +87,10 @@ void editorUpdateSyntax( erow *row )
     int  prev_sep, in_string;
 	size_t i, in_comment;
     char *p;
-    char **keywords = E.syntax->keywords;
-    char *scs = E.syntax->singleline_comment_start;
-    char *mcs = E.syntax->multiline_comment_start;
-    char *mce = E.syntax->multiline_comment_end;
+    char **keywords = E.mstate->syntax->keywords;
+    char *scs = E.mstate->syntax->singleline_comment_start;
+    char *mcs = E.mstate->syntax->multiline_comment_start;
+    char *mce = E.mstate->syntax->multiline_comment_end;
 
     /* Point to the first non-space char. */
     p = row->render;
@@ -106,7 +106,7 @@ void editorUpdateSyntax( erow *row )
 
     /* If the previous line has an open comment, this line starts
      * with an open comment state. */
-    if( row->idx > 0 && editorRowHasOpenComment( &E.row[ row->idx - 1 ] ) )
+    if( row->idx > 0 && editorRowHasOpenComment( &E.mstate->row[ row->idx - 1 ] ) )
 	{
         in_comment = 1;
 	}
@@ -259,9 +259,9 @@ void editorUpdateSyntax( erow *row )
      * state changed. This may recursively affect all the following rows
      * in the file. */
     int oc = editorRowHasOpenComment( row );
-    if( row->hl_oc != oc && row->idx + 1 < E.numrows )
+    if( row->hl_oc != oc && row->idx + 1 < E.mstate->numrows )
 	{
-        editorUpdateSyntax( &E.row[ row->idx + 1 ] );
+        editorUpdateSyntax( &E.mstate->row[ row->idx + 1 ] );
     }
 	row->hl_oc = oc;
 }
@@ -305,7 +305,7 @@ void editorSelectSyntaxHighlight( char *filename )
 			{
                 if( s->filematch[ i ][ 0 ] != '.' || p[ patlen ] == '\0' )
 				{
-                    E.syntax = s;
+                    E.mstate->syntax = s;
                     return;
                 }
             }

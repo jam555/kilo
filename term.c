@@ -279,8 +279,8 @@ void mila_term_cursseek_setpos( int alter, int ofile, size_t row, size_t col )
 		
 	} else if( alter == -1 )
 	{
-		row -= E.cx;
-		col -= E.cy;
+		row -= E.mstate->cursor.x;
+		col -= E.mstate->cursor.y;
 		
 		CU_jumptarget: ;
 		

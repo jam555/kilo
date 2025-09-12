@@ -50,91 +50,94 @@
 /* Handle cursor position change because arrow keys were pressed. */
 void editorMoveCursor( int key )
 {
-	size_t filerow = E.rowoff + E.cy;
-    size_t filecol = E.coloff + E.cx;
-    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
+	size_t filerow = E.mstate->rowoff + E.mstate->cursor.y;
+    size_t filecol = E.mstate->coloff + E.mstate->cursor.x;
+    erow *row =
+		( filerow >= E.mstate->numrows ) ?
+			NULL :
+			&( E.mstate->row[ filerow ] );
 
     switch( key )
 	{
 	    case ARROW_LEFT:
-			if( E.cx == 0 )
+			if( E.mstate->cursor.x == 0 )
 			{
-	            if( E.coloff )
+	            if( E.mstate->coloff )
 				{
-	                E.coloff--; /* Changes displayed column. */
+	                ( E.mstate->coloff )--; /* Changes displayed column. */
 					
 	            } else {
 	                
 					if( filerow > 0 )
 					{
 #warning "Verify that this properly handles vertical movement."
-	                    E.cy--;
-	                    E.cx = E.row[ filerow - 1 ].size;
-	                    if( E.cx > E.screencols - 1 )
+	                    ( E.mstate->cursor.y )--;
+	                    ( E.mstate->cursor.x ) = E.mstate->row[ filerow - 1 ].size;
+	                    if( ( E.mstate->cursor.x ) > E.screencols - 1 )
 						{
-	                        E.coloff = E.cx - E.screencols + 1;
-	                        E.cx = E.screencols - 1;
+	                        E.mstate->coloff = ( E.mstate->cursor.x ) - E.screencols + 1;
+	                        ( E.mstate->cursor.x ) = E.screencols - 1;
 	                    }
 	                }
 	            }
 				
 	        } else {
 	            
-				E.cx -= 1;
+				( E.mstate->cursor.x ) -= 1;
 	        }
 	        break;
 			
 	    case ARROW_RIGHT:
 			if( row && filecol < row->size )
 			{
-	            if( E.cx == E.screencols - 1 )
+	            if( ( E.mstate->cursor.x ) == E.screencols - 1 )
 				{
-	                E.coloff++;
+	                ( E.mstate->coloff )++;
 					
 	            } else {
 	                
-					E.cx += 1;
+					( E.mstate->cursor.x ) += 1;
 	            }
 				
 	        } else if( row && filecol == row->size )
 			{
-	            E.cx = 0;
-	            E.coloff = 0;
-	            if( E.cy == E.screenrows - 1 )
+	            ( E.mstate->cursor.x ) = 0;
+	            E.mstate->coloff = 0;
+	            if( ( E.mstate->cursor.y ) == E.screenrows - 1 )
 				{
-	                E.rowoff++;
+	                ( E.mstate->rowoff )++;
 					
 	            } else {
 	                
-					E.cy += 1;
+					( E.mstate->cursor.y ) += 1;
 	            }
 	        }
 	        break;
 			
 	    case ARROW_UP:
-			if( E.cy == 0 )
+			if( ( E.mstate->cursor.y ) == 0 )
 			{
-	            if( E.rowoff )
+	            if( E.mstate->rowoff )
 				{
-					E.rowoff--;
+					( E.mstate->rowoff )--;
 				}
 				
 	        } else {
 	            
-				E.cy -= 1;
+				( E.mstate->cursor.y ) -= 1;
 	        }
 	        break;
 			
 	    case ARROW_DOWN:
-			if( filerow < E.numrows )
+			if( filerow < E.mstate->numrows )
 			{
-	            if( E.cy == E.screenrows - 1 )
+	            if( ( E.mstate->cursor.y ) == E.screenrows - 1 )
 				{
-	                E.rowoff++;
+	                ( E.mstate->rowoff )++;
 					
 	            } else {
 	                
-					E.cy += 1;
+					( E.mstate->cursor.y ) += 1;
 	            }
 	        }
 	        break;
@@ -153,26 +156,26 @@ void editorMoveCursor( int key )
 	/*  column" than a character can next be added. */
 	
     /* Fix cx if the current line has not enough chars. */
-    filerow = E.rowoff + E.cy;
-    filecol = E.coloff + E.cx;
+    filerow = E.mstate->rowoff + ( E.mstate->cursor.y );
+    filecol = E.mstate->coloff + ( E.mstate->cursor.x );
     row =
-		( filerow < E.numrows ) ?
-			&E.row[ filerow ] :
+		( filerow < E.mstate->numrows ) ?
+			&( E.mstate->row[ filerow ] ) :
 			NULL;
     size_t rowlen = ( row ? row->size : 0 );
     if( filecol > rowlen )
 	{
-		if( rowlen < filecol && E.cx + rowlen < filecol )
+		if( rowlen < filecol && ( E.mstate->cursor.x ) + rowlen < filecol )
 		{
             size_t deltax = filecol - rowlen;
-			deltax -= E.cx;
+			deltax -= ( E.mstate->cursor.x );
 			
-			E.coloff += deltax;
-            E.cx = 0;
+			E.mstate->coloff += deltax;
+            ( E.mstate->cursor.x ) = 0;
 			
 		} else {
 			
-			E.cx -= ( filecol - rowlen );
+			( E.mstate->cursor.x ) -= ( filecol - rowlen );
 		}
     }
 }
@@ -198,7 +201,7 @@ void editorProcessKeypress( int fd )
 	         * to the edited file. */
 			/* Instead of ignoring Ctrl-C, let's treat it ALMOST like */
 			/*  Ctrl-Q. */
-			if( E.dirty && quit_times )
+			if( E.mstate->dirty && quit_times )
 			{
 #warning "Add a dedicated mode-message to msgs.c"
 				msgs_build_alert
@@ -222,7 +225,7 @@ void editorProcessKeypress( int fd )
 	        break;
 	    case CTRL_Q:        /* Ctrl-q */
 	        /* Quit if the file was already saved. */
-	        if( E.dirty && quit_times )
+	        if( E.mstate->dirty && quit_times )
 			{
 #warning "Add a dedicated mode-message to msgs.c"
 				msgs_build_alert
@@ -250,13 +253,13 @@ void editorProcessKeypress( int fd )
 	        break;
 	    case PAGE_UP:
 	    case PAGE_DOWN:
-	        if( c == PAGE_UP && E.cy != 0 )
+	        if( c == PAGE_UP && ( E.mstate->cursor.y ) != 0 )
 			{
-				E.cy = 0;
+				( E.mstate->cursor.y ) = 0;
 				
-	        } else if( c == PAGE_DOWN && E.cy != E.screenrows-1 )
+	        } else if( c == PAGE_DOWN && ( E.mstate->cursor.y ) != E.screenrows-1 )
 			{
-				E.cy = E.screenrows - 1;
+				( E.mstate->cursor.y ) = E.screenrows - 1;
 	        }
 			{
 		        size_t times = E.screenrows;
@@ -296,7 +299,7 @@ void editorProcessKeypress( int fd )
 
 int editorFileWasModified( void )
 {
-    return E.dirty;
+    return( E.mstate->dirty );
 }
 
 	/* Leandro Pereira */
@@ -311,7 +314,12 @@ void updateWindowSize( void )
 		) == -1
 	)
 	{
-		msgs_build_fatal( (msgs**)0,  "\tupdateWindowSize() was unable to query the screen for size (columns / rows)\n" );
+		msgs_build_fatal
+		(
+			(msgs**)0,
+				"\tupdateWindowSize() was unable to query the screen for size"
+				" (columns / rows)\n"
+		);
         exit( 1 );
     }
     
@@ -322,13 +330,13 @@ void updateWindowSize( void )
 void handleSigWinCh2( int unused __attribute__((unused)) )
 {
     updateWindowSize();
-    if( E.cy > E.screenrows )
+    if( ( E.mstate->cursor.y ) > E.screenrows )
 	{
-		E.cy = E.screenrows - 1;
+		( E.mstate->cursor.y ) = E.screenrows - 1;
 	}
-    if( E.cx > E.screencols )
+    if( ( E.mstate->cursor.x ) > E.screencols )
 	{
-		E.cx = E.screencols - 1;
+		( E.mstate->cursor.x ) = E.screencols - 1;
 	}
     editorRefreshScreen();
 }
@@ -339,19 +347,25 @@ void initEditor( void )
 #warning "since the editor will be turned into just a mode."
     signal_links *sl;
 	
-	E.cx = 0;
-    E.cy = 0;
-    E.rowoff = 0;
-    E.coloff = 0;
-    E.screenrows = 0;
+	E.mstate = &milli;
+		E.mstate->filename = NULL;
+		
+		( E.mstate->cursor.x ) = 0;
+		( E.mstate->cursor.y ) = 0;
+		
+		E.mstate->row = NULL;
+		E.mstate->numrows = 0;
+		E.mstate->rowoff = 0;
+		E.mstate->coloff = 0;
+		E.mstate->dirty = 0;
+		
+		E.mstate->syntax = NULL;
+	
+    
+	E.screenrows = 0;
     E.screencols = 0;
-    E.numrows = 0;
     E.rawmode = 0;
     E.altscr = 0;
-    E.row = NULL;
-    E.dirty = 0;
-    E.filename = NULL;
-    E.syntax = NULL;
 	/* Members of E below here aren't currently used. */
 	/* E.orig_termios ; */
 	E.utilrow = 0;
@@ -379,8 +393,6 @@ void initEditor( void )
 	E.deathrattle = 0;
 	
 	E.statusmsg_time = time( NULL );
-	
-	E.mstate = &milli;
     
 	if( !E.altscr && !E.no_altscr )
     {
@@ -410,11 +422,11 @@ int editorOpen( char *filename )
 {
     FILE *fp;
 
-    E.dirty = 0;
-    free( E.filename );
+    E.mstate->dirty = 0;
+    free( E.mstate->filename );
     size_t fnlen = strlen( filename ) + 1;
-    E.filename = malloc( fnlen );
-    memcpy( E.filename, filename, fnlen );
+    E.mstate->filename = malloc( fnlen );
+    memcpy( E.mstate->filename, filename, fnlen );
 
     fp = fopen( filename, "r" );
     if( !fp )
@@ -442,11 +454,11 @@ int editorOpen( char *filename )
         }
 			/* We've already verified the range of linelen, */
 			/*  so we can safely cast. */
-		editorInsertRow( E.numrows, line, (size_t)linelen );
+		editorInsertRow( E.mstate->numrows, line, (size_t)linelen );
     }
     free( line );
     fclose( fp );
-    E.dirty = 0;
+    E.mstate->dirty = 0;
     return 0;
 }
 
@@ -455,7 +467,7 @@ int editorSave( void )
 {
     size_t len;
     char *buf = editorRowsToString( &len );
-    int fd = open( E.filename, O_RDWR | O_CREAT, 0644 );
+    int fd = open( E.mstate->filename, O_RDWR | O_CREAT, 0644 );
     if( fd == -1 )
 	{
 		goto writeerr;
@@ -477,7 +489,7 @@ int editorSave( void )
 
     close( fd );
     free( buf );
-    E.dirty = 0;
+    E.mstate->dirty = 0;
 	{
     	msgs *msg;
 		if( msgs_build_note( &msg,  "%d bytes written on disk", len ) && msg )

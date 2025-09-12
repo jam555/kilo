@@ -54,19 +54,36 @@ void editorUpdateRow( erow *row )
     free( row->render );
     for( j = 0; j < row->size; j++ )
 	{
-        if( row->chars[ j ] == TAB ) tabs++;
+        if( row->chars[ j ] == TAB )
+		{
+			tabs++;
+		}
 	}
 	
     unsigned long long allocsize =
-        (unsigned long long) row->size + tabs * MILA_TABSIZE + nonprint * 9 + 1;
+        (unsigned long long)( row->size ) +
+		tabs * MILA_TABSIZE +
+		nonprint * 9 +
+		1;
     if( allocsize > UINT32_MAX )
 	{
         	/* TODO: Print WHICH row it is. */
-		msgs_build_fatal( (msgs**)0,  "\tSome line of the edited file is too long for kilo\n" );
+		msgs_build_fatal
+		(
+			(msgs**)0,
+				"\tSome line of the edited file is too long for kilo\n"
+		);
         exit( 1 );
     }
 
-    row->render = malloc( row->size + tabs * MILA_TABSIZE + nonprint * 9 + 1 );
+    row->render =
+		malloc
+		(
+			row->size +
+			tabs * MILA_TABSIZE +
+			nonprint * 9 +
+			1
+		);
     idx = 0;
     for( j = 0; j < row->size; j++ )
 	{
@@ -94,23 +111,41 @@ void editorUpdateRow( erow *row )
  * if required. */
 void editorInsertRow( size_t at, char *s, size_t len )
 {
-    if( at > E.numrows ) return;
-    E.row = realloc( E.row, sizeof( erow ) * ( E.numrows + 1 ) );
-    if( at != E.numrows ) {
-        memmove( E.row + at + 1, E.row + at, sizeof( E.row[ 0 ] ) * ( E.numrows - at ) );
-        for( size_t j = at + 1; j <= E.numrows; j++ ) E.row[ j ].idx++;
+    if( at > E.mstate->numrows )
+	{
+		return;
+	}
+    E.mstate->row =
+		realloc
+		(
+			E.mstate->row,
+			sizeof( erow ) * ( E.mstate->numrows + 1 )
+		);
+    if( at != E.mstate->numrows )
+	{
+        memmove
+		(
+			E.mstate->row + at + 1,
+			E.mstate->row + at,
+			sizeof( E.mstate->row[ 0 ] ) *
+				( E.mstate->numrows - at )
+		);
+        for( size_t j = at + 1; j <= E.mstate->numrows; j++ )
+		{
+			( E.mstate->row[ j ].idx )++;
+		}
     }
-    E.row[ at ].size = len;
-    E.row[ at ].chars = malloc( len + 1 );
-    memcpy( E.row[ at ].chars, s, len + 1 );
-    E.row[ at ].hl = NULL;
-    E.row[ at ].hl_oc = 0;
-    E.row[ at ].render = NULL;
-    E.row[ at ].rsize = 0;
-    E.row[ at ].idx = at;
-    editorUpdateRow( E.row + at );
-    E.numrows++;
-    E.dirty++;
+    E.mstate->row[ at ].size = len;
+    E.mstate->row[ at ].chars = malloc( len + 1 );
+    memcpy( E.mstate->row[ at ].chars, s, len + 1 );
+    E.mstate->row[ at ].hl = NULL;
+    E.mstate->row[ at ].hl_oc = 0;
+    E.mstate->row[ at ].render = NULL;
+    E.mstate->row[ at ].rsize = 0;
+    E.mstate->row[ at ].idx = at;
+    editorUpdateRow( E.mstate->row + at );
+    ( E.mstate->numrows )++;
+    ( E.mstate->dirty )++;
 }
 
 /* Free row's heap allocated stuff. */
@@ -127,19 +162,25 @@ void editorDelRow( size_t at )
 {
     erow *row;
 
-    if( at >= E.numrows )
+    if( at >= E.mstate->numrows )
 	{
 		return;
     }
-	row = E.row+at;
+	row = ( E.mstate->row ) + at;
     editorFreeRow( row );
-    memmove( E.row + at, E.row + at + 1, sizeof( E.row[ 0 ] ) * ( E.numrows - at - 1 ) );
-    for( size_t j = at; j < E.numrows-1; j++ )
+    memmove
+	(
+		( E.mstate->row ) + at,
+		( E.mstate->row ) + at + 1,
+		sizeof( E.mstate->row[ 0 ] ) *
+			( ( E.mstate->numrows ) - at - 1 )
+	);
+    for( size_t j = at; j < ( E.mstate->numrows ) - 1; j++ )
 	{
-		E.row[ j ].idx++;
+		( E.mstate->row[ j ].idx )++;
     }
-	E.numrows--;
-    E.dirty++;
+	( E.mstate->numrows )--;
+    ( E.mstate->dirty )++;
 }
 
 /* Turn the editor rows into a single heap-allocated string.
@@ -153,9 +194,9 @@ char *editorRowsToString( size_t *buflen )
     size_t j;
 
     /* Compute count of bytes */
-    for( j = 0; j < E.numrows; j++ )
+    for( j = 0; j < E.mstate->numrows; j++ )
 	{
-        totlen += E.row[ j ].size + 1; /* +1 is for "\n" at end of every row */
+        totlen += ( E.mstate->row[ j ].size ) + 1; /* +1 is for "\n" at end of every row */
     }
 	if( totlen > INT_MAX )
 	{
@@ -165,10 +206,15 @@ char *editorRowsToString( size_t *buflen )
     totlen++; /* Also make space for nulterm */
 
     p = buf = malloc( totlen );
-    for( j = 0; j < E.numrows; j++ )
+    for( j = 0; j < E.mstate->numrows; j++ )
 	{
-        memcpy( p, E.row[ j ].chars, E.row[ j ].size );
-        p += E.row[ j ].size;
+        memcpy
+		(
+			p,
+			E.mstate->row[ j ].chars,
+			E.mstate->row[ j ].size
+		);
+        p += E.mstate->row[ j ].size;
         *p = '\n';
         p++;
     }
@@ -186,8 +232,18 @@ void editorRowInsertChar( erow *row, size_t at, int c )
          * current length by more than a single character. */
         size_t padlen = at-row->size;
         /* In the next line +2 means: new char and null term. */
-        row->chars = realloc( row->chars, row->size + padlen + 2 );
-        memset( row->chars + row->size, ' ', padlen );
+        row->chars =
+			realloc
+			(
+				row->chars,
+				row->size + padlen + 2
+			);
+        memset
+		(
+			row->chars + row->size,
+			' ',
+			padlen
+		);
         row->chars[ row->size + padlen + 1 ] = '\0';
         row->size += padlen + 1;
 		
@@ -196,7 +252,12 @@ void editorRowInsertChar( erow *row, size_t at, int c )
 		/* If we are in the middle of the string just make space for 1 new
          * char plus the (already existing) null term. */
         row->chars = realloc( row->chars, row->size + 2 );
-        memmove( row->chars + at + 1, row->chars + at, row->size - at + 1 );
+        memmove
+		(
+			row->chars + at + 1,
+			row->chars + at,
+			row->size - at + 1
+		);
         row->size++;
     }
     if( CHAR_MIN > c || c > CHAR_MAX )
@@ -206,18 +267,28 @@ void editorRowInsertChar( erow *row, size_t at, int c )
 	}
 	row->chars[ at ] = (char)c;
     editorUpdateRow( row );
-    E.dirty++;
+    ( E.mstate->dirty )++;
 }
 
 /* Append the string 's' at the end of a row */
 void editorRowAppendString( erow *row, char *s, size_t len )
 {
-    row->chars = realloc( row->chars, row->size + len + 1 );
-    memcpy( row->chars + row->size, s, len );
+    row->chars =
+		realloc
+		(
+			row->chars,
+			row->size + len + 1
+		);
+    memcpy
+	(
+		row->chars + row->size,
+		s,
+		len
+	);
     row->size += len;
     row->chars[ row->size ] = '\0';
     editorUpdateRow( row );
-    E.dirty++;
+    ( E.mstate->dirty )++;
 }
 
 /* Delete the character at offset 'at' from the specified row. */
@@ -227,52 +298,63 @@ void editorRowDelChar( erow *row, size_t at )
 	{
 		return;
 	}
-    memmove( row->chars + at, row->chars + at + 1, row->size - at );
+    memmove
+	(
+		row->chars + at,
+		row->chars + at + 1,
+		row->size - at
+	);
     editorUpdateRow( row );
     row->size--;
-    E.dirty++;
+    ( E.mstate->dirty )++;
 }
 
 /* Insert the specified char at the current prompt position. */
 void editorInsertChar( int c )
 {
-    size_t filerow = E.rowoff+E.cy;
-    size_t filecol = E.coloff+E.cx;
-    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
+    size_t filerow = E.mstate->rowoff + ( E.mstate->cursor.y );
+    size_t filecol = E.mstate->coloff + ( E.mstate->cursor.x );
+    erow *row =
+		( filerow >= E.mstate->numrows ) ?
+			NULL :
+			&( E.mstate->row[ filerow ] );
 
     /* If the row where the cursor is currently located does not exist in our
      * logical representaion of the file, add enough empty rows as needed. */
     if( !row )
 	{
-        while( E.numrows <= filerow )
+        while( E.mstate->numrows <= filerow )
 		{
-            editorInsertRow( E.numrows, "", 0 );
+            editorInsertRow( E.mstate->numrows, "", 0 );
 		}
     }
-    row = &E.row[ filerow ];
+    row = &( E.mstate->row[ filerow ] );
     editorRowInsertChar( row, filecol, c );
-    if( E.cx == E.screencols - 1 )
+    if( ( E.mstate->cursor.x ) == E.screencols - 1 )
 	{
-        E.coloff++;
+        ( E.mstate->coloff )++;
 		
     } else {
         
-		E.cx++;
+		( E.mstate->cursor.x )++;
     }
-	E.dirty++;
+	( E.mstate->dirty )++;
 }
 
 /* Inserting a newline is slightly complex as we have to handle inserting a
  * newline in the middle of a line, splitting the line as needed. */
 void editorInsertNewline( void )
 {
-    size_t filerow = E.rowoff + E.cy;
-    size_t filecol = E.coloff + E.cx;
-    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
+    size_t filerow = E.mstate->rowoff + ( E.mstate->cursor.y );
+    size_t filecol = E.mstate->coloff + ( E.mstate->cursor.x );
+    erow *row =
+		( filerow >= E.mstate->numrows ) ?
+			NULL :
+			&( E.mstate->row[ filerow ] );
 
     if( !row )
 	{
-        if( filerow == E.numrows )
+        if( filerow == E.mstate->numrows )
 		{
             editorInsertRow( filerow, "", 0 );
             goto fixcursor;
@@ -292,31 +374,39 @@ void editorInsertNewline( void )
     } else {
         
 		/* We are in the middle of a line. Split it between two rows. */
-        editorInsertRow( filerow + 1, row->chars + filecol, row->size - filecol );
-        row = &E.row[ filerow ];
+        editorInsertRow
+		(
+			filerow + 1,
+			row->chars + filecol,
+			row->size - filecol
+		);
+        row = &( E.mstate->row[ filerow ] );
         row->chars[ filecol ] = '\0';
         row->size = filecol;
         editorUpdateRow( row );
     }
 fixcursor:
-    if( E.cy == E.screenrows - 1 )
+    if( ( E.mstate->cursor.y ) == E.screenrows - 1 )
 	{
-        E.rowoff++;
+        ( E.mstate->rowoff )++;
 		
     } else {
         
-		E.cy++;
+		( E.mstate->cursor.y )++;
     }
-    E.cx = 0;
-    E.coloff = 0;
+    ( E.mstate->cursor.x ) = 0;
+    E.mstate->coloff = 0;
 }
 
 /* Delete the char at the current prompt position. */
 void editorDelChar( void )
 {
-	size_t filerow = E.rowoff + E.cy;
-	size_t filecol = E.coloff + E.cx;
-	erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
+	size_t filerow = E.mstate->rowoff + ( E.mstate->cursor.y );
+	size_t filecol = E.mstate->coloff + ( E.mstate->cursor.x );
+	erow *row =
+		( filerow >= E.mstate->numrows ) ?
+			NULL :
+			&( E.mstate->row[ filerow ] );
 	
 	if( !row || ( filecol == 0 && filerow == 0 ) )
 	{
@@ -326,41 +416,46 @@ void editorDelChar( void )
 	{
 		/* Handle the case of column 0, we need to move the current line
 		 * on the right of the previous one. */
-		filecol = E.row[ filerow - 1 ].size;
-		editorRowAppendString( &E.row[ filerow - 1 ], row->chars, row->size );
+		filecol = E.mstate->row[ filerow - 1 ].size;
+		editorRowAppendString
+		(
+			&( E.mstate->row[ filerow - 1 ] ),
+			row->chars,
+			row->size
+		);
 		editorDelRow( filerow );
 		row = NULL;
-		if( E.cy == 0 )
+		if( ( E.mstate->cursor.y ) == 0 )
 		{
-			E.rowoff--;
+			( E.mstate->rowoff )--;
 			
 		} else {
 			
-			E.cy--;
+			( E.mstate->cursor.y )--;
 		}
-		E.cx = filecol;
-		if( E.cx >= E.screencols )
+		( E.mstate->cursor.x ) = filecol;
+		if( ( E.mstate->cursor.x ) >= E.screencols )
 		{
-			size_t shift = ( E.screencols-E.cx ) + 1;
-			E.cx -= shift;
-			E.coloff += shift;
+			size_t shift = ( E.screencols - ( E.mstate->cursor.x ) ) + 1;
+			( E.mstate->cursor.x ) -= shift;
+			E.mstate->coloff += shift;
 		}
 		
 	} else {
 		
 		editorRowDelChar( row, filecol - 1 );
-		if( E.cx == 0 && E.coloff )
+		if( ( E.mstate->cursor.x ) == 0 && E.mstate->coloff )
 		{
-			E.coloff--;
+			( E.mstate->coloff )--;
 			
 		} else {
 			
-			E.cx--;
+			( E.mstate->cursor.x )--;
 		}
 	}
 	if( row )
 	{
 		editorUpdateRow( row );
 	}
-	E.dirty++;
+	( E.mstate->dirty )++;
 }

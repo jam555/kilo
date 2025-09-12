@@ -308,16 +308,16 @@ void abStatusLine
 			
 			"%.20s - %zu lines  |  %zu : %zu/%zu  | %s%s",
 				/* File ID. Should a scrolling directory path be appended? */
-				E.filename,
-				E.numrows,
+				E.mstate->filename,
+				E.mstate->numrows,
 				
 				/* Position. */
-				E.cx + 1,
-				E.rowoff + E.cy + 1,
-				E.numrows,
+				E.mstate->cursor.x + 1,
+				E.mstate->rowoff + E.mstate->cursor.y + 1,
+				E.mstate->numrows,
 				
 				/* Edit status. */
-				( E.dirty ? " (modified)" : "" ),
+				( E.mstate->dirty ? " (modified)" : "" ),
 				( 0 ? " (read-only)" : " (read/write)" )
 		);
 	if( tmp < 0 )
@@ -346,7 +346,7 @@ void abStatusLine
 			/* Note that this should really indicate the active pane. */
 			"Text-editor Mode, file: %s ",
 				/* TODO: Change this to include the directory path too? Or just remove? */
-				E.filename
+				E.mstate->filename
 		);
 	if( tmp < 0 )
 	{

@@ -46,7 +46,7 @@ void editorCalc_CurScreenPos( size_t *x, size_t *y )
 {
 	/* TODO: Alter this to take VTAB into account for *y */
 	
-	size_t x_ = 1, y_ = E.cy + 1;
+	size_t x_ = 1, y_ = ( E.mstate->cursor.y ) + 1;
 	if( !x )
 	{
 		x = &x_;
@@ -57,11 +57,14 @@ void editorCalc_CurScreenPos( size_t *x, size_t *y )
 	}
 	
     size_t j;
-    size_t filerow = E.rowoff + E.cy;
-    erow *row = ( filerow >= E.numrows ) ? NULL : &E.row[ filerow ];
+    size_t filerow = E.mstate->rowoff + ( E.mstate->cursor.y );
+    erow *row =
+		( filerow >= E.mstate->numrows ) ?
+			NULL :
+			&( E.mstate->row[ filerow ] );
     if( row )
 	{
-        for( j = E.coloff; j < ( E.cx + E.coloff ); j++ )
+        for( j = E.mstate->coloff; j < ( ( E.mstate->cursor.x ) + E.mstate->coloff ); j++ )
 		{
             if( j < row->size && row->chars[ j ] == TAB )
 			{
@@ -77,7 +80,7 @@ void editorCalc_CurScreenPos( size_t *x, size_t *y )
 	/*  e.g. E.cx */
 void editorUpdateCurPos( struct abuf *ab )
 {
-	size_t cx = 1, cy = E.cy + 1;
+	size_t cx = 1, cy = ( E.mstate->cursor.y ) + 1;
 	
 	editorCalc_CurScreenPos( &cx, &cy );
 	mila_ab_curseek( ab, 2,   cy, cx, "" ); /* Move cursor. */
@@ -103,11 +106,11 @@ void editorRefreshScreen( void )
     mila_ab_curseek_home( &ab );
     for( y = 0; y < E.screenrows; y++ )
 	{
-        size_t filerow = E.rowoff + y;
+        size_t filerow = E.mstate->rowoff + y;
 		
-        if( filerow >= E.numrows )
+        if( filerow >= E.mstate->numrows )
 		{
-            if( E.numrows == 0 && y == E.screenrows / 3 )
+            if( E.mstate->numrows == 0 && y == E.screenrows / 3 )
 			{
                 char welcome[ 80 ];
 				mila_term_printWelcomeMessage
@@ -120,9 +123,9 @@ void editorRefreshScreen( void )
             continue;
         }
 
-        r = &E.row[ filerow ];
+        r = &( E.mstate->row[ filerow ] );
 
-        size_t len = r->rsize - E.coloff;
+        size_t len = r->rsize - E.mstate->coloff;
         int current_color = -1;
         if( len > 0 )
 		{
@@ -130,8 +133,8 @@ void editorRefreshScreen( void )
 			{
 				len = E.screencols;
 			}
-            char *c = r->render + E.coloff;
-            unsigned char *hl = r->hl + E.coloff;
+            char *c = r->render + E.mstate->coloff;
+            unsigned char *hl = r->hl + E.mstate->coloff;
             size_t j;
             for( j = 0; j < len; j++ )
 			{
